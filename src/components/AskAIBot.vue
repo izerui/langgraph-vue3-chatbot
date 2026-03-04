@@ -82,7 +82,7 @@ async function handleSubmit() {
     // 流式发送消息
     const messageId = crypto.randomUUID()
     const streamResponse = client.runs.stream(
-      threadId.value,
+      threadId.value!,
       props.assistantId,
       {
         input: {
@@ -94,10 +94,6 @@ async function handleSubmit() {
         },
         config: {
           tags: ['serv'],
-          metadata: {
-            chat_title: userMessage.slice(0, 50),
-            chat_client: 'vue'
-          },
           configurable: {
             model_provider: 'openai',
             model: 'MiniMax/MiniMax-M2.5',
@@ -108,10 +104,10 @@ async function handleSubmit() {
           user_id: 'user001',
           name: userMessage.slice(0, 50)
         },
-        stream_mode: ['messages-tuple', 'values', 'custom'] as any,
+        streamMode: ['messages-tuple', 'values', 'custom'],
         stream_resumable: false,
         on_disconnect: 'cancel'
-      }
+      } as any
     )
 
     let assistantMessageId = `assistant-${Date.now()}`
@@ -129,22 +125,44 @@ async function handleSubmit() {
     ]
 
     for await (const chunk of streamResponse) {
+      console.log('chunk:', chunk)
       const chunkEvent = chunk.event as string
 
+      // 处理不同的 stream_mode 返回格式
+      let content = ''
+
       if (chunkEvent === 'messages' || chunkEvent === 'messages/partial') {
-        const messageChunk = (chunk.data as any)?.message?.content
-        if (messageChunk) {
-          const content = typeof messageChunk === 'string'
-            ? messageChunk
-            : messageChunk[0]?.text || ''
-
-          assistantContent += content
-
-          // 更新最后一条消息
-          const lastIndex = messages.value.length - 1
-          if (messages.value[lastIndex].role === 'assistant') {
-            messages.value[lastIndex].content = assistantContent
+        // messages-tuple 模式
+        const data = chunk.data as any
+        if (data?.chunk?.text) {
+          content = data.chunk.text
+        } else if (data?.message?.content) {
+          const messageContent = data.message.content
+          content = typeof messageContent === 'string'
+            ? messageContent
+            : messageContent[0]?.text || ''
+        }
+      } else if (chunkEvent === 'values') {
+        // values 模式
+        const data = chunk.data as any
+        if (data?.messages) {
+          const msgs = data.messages
+          if (Array.isArray(msgs) && msgs.length > 0) {
+            const lastMsg = msgs[msgs.length - 1]
+            content = typeof lastMsg.content === 'string'
+              ? lastMsg.content
+              : lastMsg.content?.[0]?.text || ''
           }
+        }
+      }
+
+      if (content) {
+        assistantContent += content
+
+        // 更新最后一条消息
+        const lastIndex = messages.value.length - 1
+        if (messages.value[lastIndex]?.role === 'assistant') {
+          messages.value[lastIndex].content = assistantContent
         }
       }
     }
