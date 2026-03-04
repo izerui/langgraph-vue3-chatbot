@@ -3,16 +3,28 @@ import { ref, computed } from 'vue'
 import { Client } from '@langchain/langgraph-sdk'
 import type { PromptInputMessage } from '@/components/ai-elements/prompt-input'
 import type { ChatStatus } from 'ai'
-import type { AttachmentData } from '@/components/ai-elements/attachments'
 import {
   Conversation,
   ConversationContent,
   ConversationScrollButton,
 } from '@/components/ai-elements/conversation'
 import {
+  Attachment,
+  AttachmentPreview,
+  AttachmentRemove,
+  Attachments,
+} from '@/components/ai-elements/attachments'
+import type { AttachmentData } from '@/components/ai-elements/attachments'
+import {
   Message,
   MessageAction,
   MessageActions,
+  MessageBranch,
+  MessageBranchContent,
+  MessageBranchNext,
+  MessageBranchPage,
+  MessageBranchPrevious,
+  MessageBranchSelector,
   MessageContent,
   MessageResponse,
   MessageToolbar,
@@ -32,13 +44,17 @@ import {
 } from '@/components/ai-elements/model-selector'
 import {
   PromptInput,
+  PromptInputActionAddAttachments,
+  PromptInputActionMenu,
+  PromptInputActionMenuContent,
+  PromptInputActionMenuTrigger,
   PromptInputBody,
   PromptInputButton,
   PromptInputFooter,
+  PromptInputProvider,
   PromptInputSubmit,
   PromptInputTextarea,
   PromptInputTools,
-  usePromptInputProvider,
 } from '@/components/ai-elements/prompt-input'
 import { Suggestion, Suggestions } from '@/components/ai-elements/suggestion'
 import { CheckIcon, CopyIcon, GlobeIcon, RefreshCcwIcon, ThumbsDownIcon, ThumbsUpIcon } from 'lucide-vue-next'
@@ -69,10 +85,25 @@ const modelId = ref('gpt-4o')
 const modelSelectorOpen = ref(false)
 
 // 消息列表
-interface ChatMessage {
+interface MessageVersion {
   id: string
-  from: 'user' | 'assistant'
   content: string
+}
+
+interface MessageAttachment {
+  id: string
+  type: 'file'
+  url?: string
+  mediaType: string
+  filename: string
+}
+
+interface ChatMessage {
+  key: string
+  from: 'user' | 'assistant'
+  content?: string
+  versions?: MessageVersion[]
+  attachments?: AttachmentData[]
 }
 
 const messages = ref<ChatMessage[]>([])
@@ -81,9 +112,9 @@ const disliked = ref<Record<string, boolean>>({})
 
 // 模型列表
 const models = [
-  { id: 'gpt-4o', name: 'GPT-4o', chef: 'OpenAI', chefSlug: 'openai', providers: ['openai'] },
-  { id: 'gpt-4o-mini', name: 'GPT-4o Mini', chef: 'OpenAI', chefSlug: 'openai', providers: ['openai'] },
-  { id: 'claude-sonnet', name: 'Claude Sonnet', chef: 'Anthropic', chefSlug: 'anthropic', providers: ['anthropic'] },
+  { id: 'gpt-4o', name: 'GPT-4o', chef: 'OpenAI', chefSlug: 'openai', providers: ['openai', 'azure'] },
+  { id: 'gpt-4o-mini', name: 'GPT-4o Mini', chef: 'OpenAI', chefSlug: 'openai', providers: ['openai', 'azure'] },
+  { id: 'claude-sonnet', name: 'Claude 4 Sonnet', chef: 'Anthropic', chefSlug: 'anthropic', providers: ['anthropic', 'azure', 'google'] },
 ]
 
 const selectedModelData = computed(() => models.find(m => m.id === modelId.value))
@@ -95,19 +126,6 @@ const suggestions = [
   '给我讲个笑话',
   '今天天气怎么样？'
 ]
-
-// 使用 PromptInput Provider
-const { textInput, submitForm } = usePromptInputProvider({
-  onSubmit: async (message: PromptInputMessage) => {
-    const text = message.text.trim()
-    const hasAttachments = message.files.length > 0
-
-    if (!text && !hasAttachments) return
-
-    status.value = 'submitted'
-    await handleSubmit(text || 'Sent with attachments')
-  }
-})
 
 // 切换展开状态
 function toggleExpanded() {
@@ -124,7 +142,7 @@ async function handleSubmit(userMessage: string) {
   messages.value = [
     ...messages.value,
     {
-      id: `user-${Date.now()}`,
+      key: `user-${Date.now()}`,
       from: 'user',
       content: userMessage
     }
@@ -172,11 +190,11 @@ async function handleSubmit(userMessage: string) {
     )
 
     // 添加空的助手消息
-    const assistantMessageId = `assistant-${Date.now()}`
+    const assistantMessageKey = `assistant-${Date.now()}`
     messages.value = [
       ...messages.value,
       {
-        id: assistantMessageId,
+        key: assistantMessageKey,
         from: 'assistant',
         content: ''
       }
@@ -229,13 +247,28 @@ async function handleSubmit(userMessage: string) {
     messages.value = [
       ...messages.value,
       {
-        id: `error-${Date.now()}`,
+        key: `error-${Date.now()}`,
         from: 'assistant',
         content: '抱歉，发生了一些错误，请稍后重试。'
       }
     ]
     status.value = 'ready'
   }
+}
+
+// 处理表单提交
+function handleFormSubmit(message: PromptInputMessage) {
+  const hasText = !!message.text
+  const hasAttachments = message.files?.length > 0
+
+  if (!hasText && !hasAttachments) {
+    return
+  }
+
+  status.value = 'submitted'
+
+  const text = message.text?.trim() || ''
+  handleSubmit(text || 'Sent with attachments')
 }
 
 // 选择建议
@@ -301,59 +334,137 @@ function toggleDislike(key: string) {
           <ConversationContent>
             <Message
               v-for="message in messages"
-              :key="message.id"
+              :key="message.key"
               :from="message.from"
             >
-              <MessageContent>
-                <MessageResponse
-                  v-if="message.from === 'assistant'"
-                  :content="message.content"
-                />
-                <template v-else>
-                  {{ message.content }}
-                </template>
-              </MessageContent>
+              <!-- 多版本消息显示 -->
+              <MessageBranch
+                v-if="message.versions && message.versions.length > 1"
+                :default-branch="0"
+              >
+                <MessageBranchContent>
+                  <MessageContent
+                    v-for="version in message.versions"
+                    :key="version.id"
+                  >
+                    <MessageResponse :content="version.content" />
+                  </MessageContent>
+                </MessageBranchContent>
 
-              <!-- 助手消息显示操作按钮 -->
-              <MessageActions v-if="message.from === 'assistant'">
-                <MessageAction
-                  label="Retry"
-                  tooltip="重新生成"
-                  @click="handleRetry"
-                >
-                  <RefreshCcwIcon class="size-4" />
-                </MessageAction>
+                <MessageToolbar v-if="message.from === 'assistant'">
+                  <MessageBranchSelector :from="message.from">
+                    <MessageBranchPrevious />
+                    <MessageBranchPage />
+                    <MessageBranchNext />
+                  </MessageBranchSelector>
 
-                <MessageAction
-                  label="Like"
-                  tooltip="喜欢"
-                  @click="toggleLike(message.id)"
+                  <MessageActions>
+                    <MessageAction
+                      label="Retry"
+                      tooltip="重新生成"
+                      @click="handleRetry"
+                    >
+                      <RefreshCcwIcon class="size-4" />
+                    </MessageAction>
+
+                    <MessageAction
+                      label="Like"
+                      tooltip="喜欢"
+                      @click="toggleLike(message.key)"
+                    >
+                      <ThumbsUpIcon
+                        class="size-4"
+                        :fill="liked[message.key] ? 'currentColor' : 'none'"
+                      />
+                    </MessageAction>
+
+                    <MessageAction
+                      label="Dislike"
+                      tooltip="不喜欢"
+                      @click="toggleDislike(message.key)"
+                    >
+                      <ThumbsDownIcon
+                        class="size-4"
+                        :fill="disliked[message.key] ? 'currentColor' : 'none'"
+                      />
+                    </MessageAction>
+
+                    <MessageAction
+                      label="Copy"
+                      tooltip="复制"
+                      @click="handleCopy(message.versions?.[0]?.content || '')"
+                    >
+                      <CopyIcon class="size-4" />
+                    </MessageAction>
+                  </MessageActions>
+                </MessageToolbar>
+              </MessageBranch>
+
+              <!-- 单版本消息显示 -->
+              <div v-else>
+                <Attachments
+                  v-if="message.attachments && message.attachments.length > 0"
                 >
-                  <ThumbsUpIcon
-                    class="size-4"
-                    :fill="liked[message.id] ? 'currentColor' : 'none'"
+                  <Attachment
+                    v-for="attachment in message.attachments"
+                    :key="attachment.id"
+                    :data="attachment"
+                  >
+                    <AttachmentPreview />
+                    <AttachmentRemove />
+                  </Attachment>
+                </Attachments>
+
+                <MessageContent>
+                  <MessageResponse
+                    v-if="message.from === 'assistant'"
+                    :content="message.content || ''"
                   />
-                </MessageAction>
+                  <template v-else>
+                    {{ message.content }}
+                  </template>
+                </MessageContent>
 
-                <MessageAction
-                  label="Dislike"
-                  tooltip="不喜欢"
-                  @click="toggleDislike(message.id)"
-                >
-                  <ThumbsDownIcon
-                    class="size-4"
-                    :fill="disliked[message.id] ? 'currentColor' : 'none'"
-                  />
-                </MessageAction>
+                <MessageActions v-if="message.from === 'assistant'">
+                  <MessageAction
+                    label="Retry"
+                    tooltip="重新生成"
+                    @click="handleRetry"
+                  >
+                    <RefreshCcwIcon class="size-4" />
+                  </MessageAction>
 
-                <MessageAction
-                  label="Copy"
-                  tooltip="复制"
-                  @click="handleCopy(message.content)"
-                >
-                  <CopyIcon class="size-4" />
-                </MessageAction>
-              </MessageActions>
+                  <MessageAction
+                    label="Like"
+                    tooltip="喜欢"
+                    @click="toggleLike(message.key)"
+                  >
+                    <ThumbsUpIcon
+                      class="size-4"
+                      :fill="liked[message.key] ? 'currentColor' : 'none'"
+                    />
+                  </MessageAction>
+
+                  <MessageAction
+                    label="Dislike"
+                    tooltip="不喜欢"
+                    @click="toggleDislike(message.key)"
+                  >
+                    <ThumbsDownIcon
+                      class="size-4"
+                      :fill="disliked[message.key] ? 'currentColor' : 'none'"
+                    />
+                  </MessageAction>
+
+                  <MessageAction
+                    label="Copy"
+                    tooltip="复制"
+                    @click="handleCopy(message.content || '')"
+                  >
+                    <CopyIcon class="size-4" />
+                  </MessageAction>
+                </MessageActions>
+              </div>
             </Message>
           </ConversationContent>
           <ConversationScrollButton />
@@ -373,85 +484,83 @@ function toggleDislike(key: string) {
 
         <!-- 输入区域 -->
         <div class="input-wrapper">
-          <PromptInput
-            multiple
-            @submit="(message: PromptInputMessage) => {
-              const text = message.text.trim()
-              if (!text && !message.files.length) return
-              status = 'submitted'
-              handleSubmit(text || 'Sent with attachments')
-            }"
-          >
-            <PromptInputBody>
-              <PromptInputTextarea />
-            </PromptInputBody>
+          <PromptInputProvider @submit="handleFormSubmit">
+            <PromptInput multiple global-drop class="w-full">
+              <PromptInputBody>
+                <PromptInputTextarea />
+              </PromptInputBody>
 
-            <PromptInputFooter>
-              <PromptInputTools>
-                <PromptInputButton
-                  :variant="useWebSearch ? 'default' : 'ghost'"
-                  @click="toggleWebSearch"
-                >
-                  <GlobeIcon :size="16" />
-                  <span>Search</span>
-                </PromptInputButton>
+              <PromptInputFooter>
+                <PromptInputTools>
+                  <PromptInputActionMenu>
+                    <PromptInputActionMenuTrigger />
+                    <PromptInputActionMenuContent>
+                      <PromptInputActionAddAttachments />
+                    </PromptInputActionMenuContent>
+                  </PromptInputActionMenu>
 
-                <ModelSelector v-model:open="modelSelectorOpen">
-                  <ModelSelectorTrigger as-child>
-                    <PromptInputButton>
-                      <ModelSelectorLogo
-                        v-if="selectedModelData?.chefSlug"
-                        :provider="selectedModelData.chefSlug"
-                      />
-                      <ModelSelectorName v-if="selectedModelData?.name">
-                        {{ selectedModelData.name }}
-                      </ModelSelectorName>
-                    </PromptInputButton>
-                  </ModelSelectorTrigger>
+                  <PromptInputButton
+                    :variant="useWebSearch ? 'default' : 'ghost'"
+                    @click="toggleWebSearch"
+                  >
+                    <GlobeIcon :size="16" />
+                    <span>Search</span>
+                  </PromptInputButton>
 
-                  <ModelSelectorContent>
-                    <ModelSelectorInput placeholder="Search models..." />
-                    <ModelSelectorList>
-                      <ModelSelectorEmpty>No models found.</ModelSelectorEmpty>
+                  <ModelSelector v-model:open="modelSelectorOpen">
+                    <ModelSelectorTrigger as-child>
+                      <PromptInputButton>
+                        <ModelSelectorLogo
+                          v-if="selectedModelData?.chefSlug"
+                          :provider="selectedModelData.chefSlug"
+                        />
+                        <ModelSelectorName v-if="selectedModelData?.name">
+                          {{ selectedModelData.name }}
+                        </ModelSelectorName>
+                      </PromptInputButton>
+                    </ModelSelectorTrigger>
 
-                      <ModelSelectorGroup
-                        v-for="chef in ['OpenAI', 'Anthropic']"
-                        :key="chef"
-                        :heading="chef"
-                      >
-                        <ModelSelectorItem
-                          v-for="m in models.filter(model => model.chef === chef)"
-                          :key="m.id"
-                          :value="m.id"
-                          @select="() => handleModelSelect(m.id)"
+                    <ModelSelectorContent>
+                      <ModelSelectorInput placeholder="Search models..." />
+                      <ModelSelectorList>
+                        <ModelSelectorEmpty>No models found.</ModelSelectorEmpty>
+
+                        <ModelSelectorGroup
+                          v-for="chef in ['OpenAI', 'Anthropic']"
+                          :key="chef"
+                          :heading="chef"
                         >
-                          <ModelSelectorLogo :provider="m.chefSlug" />
-                          <ModelSelectorName>{{ m.name }}</ModelSelectorName>
-                          <ModelSelectorLogoGroup>
-                            <ModelSelectorLogo
-                              v-for="provider in m.providers"
-                              :key="provider"
-                              :provider="provider"
+                          <ModelSelectorItem
+                            v-for="m in models.filter(model => model.chef === chef)"
+                            :key="m.id"
+                            :value="m.id"
+                            @select="() => handleModelSelect(m.id)"
+                          >
+                            <ModelSelectorLogo :provider="m.chefSlug" />
+                            <ModelSelectorName>{{ m.name }}</ModelSelectorName>
+                            <ModelSelectorLogoGroup>
+                              <ModelSelectorLogo
+                                v-for="provider in m.providers"
+                                :key="provider"
+                                :provider="provider"
+                              />
+                            </ModelSelectorLogoGroup>
+                            <CheckIcon
+                              v-if="modelId === m.id"
+                              class="ml-auto size-4"
                             />
-                          </ModelSelectorLogoGroup>
-                          <CheckIcon
-                            v-if="modelId === m.id"
-                            class="ml-auto size-4"
-                          />
-                          <div v-else class="ml-auto size-4" />
-                        </ModelSelectorItem>
-                      </ModelSelectorGroup>
-                    </ModelSelectorList>
-                  </ModelSelectorContent>
-                </ModelSelector>
-              </PromptInputTools>
+                            <div v-else class="ml-auto size-4" />
+                          </ModelSelectorItem>
+                        </ModelSelectorGroup>
+                      </ModelSelectorList>
+                    </ModelSelectorContent>
+                  </ModelSelector>
+                </PromptInputTools>
 
-              <PromptInputSubmit
-                :disabled="status === 'streaming'"
-                :status="status"
-              />
-            </PromptInputFooter>
-          </PromptInput>
+                <PromptInputSubmit :status="status" />
+              </PromptInputFooter>
+            </PromptInput>
+          </PromptInputProvider>
         </div>
       </div>
     </Transition>
