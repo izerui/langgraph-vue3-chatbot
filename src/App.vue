@@ -58,3 +58,126 @@ import AskAIBot from './components/AskAIBot.vue'
     />
   </div>
 </template>
+
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #f5f5f5;
+}
+
+.app-container {
+  min-height: 100vh;
+  position: relative;
+}
+
+header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 32px 20px;
+  text-align: center;
+}
+
+header h1 {
+  font-size: 28px;
+  margin-bottom: 8px;
+}
+
+.subtitle {
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+main {
+  padding: 20px;
+}
+
+.content {
+  max-width: 800px;
+  margin: 0 auto;
+  background: #fff;
+  padding: 32px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.content h2 {
+  margin-bottom: 16px;
+  color: #333;
+}
+
+.content ul {
+  margin: 16px 0;
+  padding-left: 24px;
+}
+
+.content li {
+  margin: 10px 0;
+  color: #555;
+  line-height: 1.6;
+}
+
+.content code {
+  background: #f0f0f0;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.9em;
+  color: #e65100;
+}
+
+.features {
+  margin-top: 32px;
+}
+
+.features h3 {
+  margin-bottom: 16px;
+  color: #333;
+}
+
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.feature-card {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.feature-card h4 {
+  color: #667eea;
+  margin-bottom: 8px;
+}
+
+.feature-card p {
+  font-size: 14px;
+  color: #666;
+}
+
+.setup-guide {
+  margin-top: 32px;
+  padding: 20px;
+  background: #fff8e1;
+  border-radius: 8px;
+  border: 1px solid #ffe0b2;
+}
+
+.setup-guide h3 {
+  color: #f57c00;
+  margin-bottom: 12px;
+}
+
+.setup-guide p {
+  color: #666;
+  line-height: 1.6;
+  margin-bottom: 8px;
+}
+</style>
