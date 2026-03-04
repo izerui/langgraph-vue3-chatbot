@@ -480,8 +480,9 @@ function toggleDislike(key: string) {
   position: absolute;
   bottom: 70px;
   right: 0;
-  width: 380px;
-  height: 520px;
+  width: max(300px, min(500px, calc(100vw - 40px)));
+  height: 80vh;
+  max-height: 80vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -575,7 +576,7 @@ function toggleDislike(key: string) {
 @media (max-width: 480px) {
   .chat-window {
     width: calc(100vw - 40px);
-    height: calc(100vh - 120px);
+    height: 80vh;
     right: -10px;
   }
 }
