@@ -3,6 +3,16 @@ import { ref } from 'vue'
 import { Client } from '@langchain/langgraph-sdk'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import {
+  Conversation,
+  ConversationContent,
+  ConversationEmptyState,
+} from '@/components/ai-elements/conversation'
+import {
+  Message,
+  MessageAvatar,
+  MessageContent,
+} from '@/components/ai-elements/message'
 
 // 简化的消息类型
 interface ChatMessage {
@@ -24,7 +34,7 @@ const props = withDefaults(defineProps<Props>(), {
   defaultExpanded: false
 })
 
-// LangGraph Client - 使用完整 URL
+// LangGraph Client
 const client = new Client({
   apiUrl: window.location.origin + '/langgraph'
 })
@@ -73,7 +83,7 @@ async function handleSubmit() {
       const thread = await client.threads.create({
         metadata: {
           user_id: 'user001',
-          name: userMessage.slice(0, 50) // 使用用户输入的前50个字符作为名称
+          name: userMessage.slice(0, 50)
         }
       })
       threadId.value = thread.thread_id
@@ -132,7 +142,6 @@ async function handleSubmit() {
       let content = ''
 
       if (chunkEvent === 'messages' || chunkEvent === 'messages/partial') {
-        // messages-tuple 模式
         const data = chunk.data as any
         if (data?.chunk?.text) {
           content = data.chunk.text
@@ -143,7 +152,6 @@ async function handleSubmit() {
             : messageContent[0]?.text || ''
         }
       } else if (chunkEvent === 'values') {
-        // values 模式
         const data = chunk.data as any
         if (data?.messages) {
           const msgs = data.messages
@@ -217,36 +225,34 @@ function handleKeydown(e: KeyboardEvent) {
           </button>
         </div>
 
-        <!-- 消息列表 -->
-        <div class="messages-container">
-          <!-- 空状态 -->
-          <div v-if="messages.length === 0" class="empty-state">
-            <div class="empty-icon">💬</div>
-            <p>有什么可以帮助你的吗？</p>
-          </div>
+        <!-- 对话区域使用 ai-elements 组件 -->
+        <Conversation class="messages-container">
+          <ConversationContent>
+            <ConversationEmptyState v-if="messages.length === 0">
+              <div class="empty-state">
+                <div class="empty-icon">💬</div>
+                <p>有什么可以帮助你的吗？</p>
+              </div>
+            </ConversationEmptyState>
 
-          <!-- 消息 -->
-          <div
-            v-for="msg in messages"
-            :key="msg.id"
-            class="message"
-            :class="msg.role"
-          >
-            <div class="message-avatar">
-              {{ msg.role === 'user' ? '👤' : '🤖' }}
-            </div>
-            <div class="message-content">
-              {{ msg.content }}
-            </div>
-          </div>
+            <template v-for="msg in messages" :key="msg.id">
+              <Message :from="msg.role">
+                <MessageAvatar src="">
+                  {{ msg.role === 'user' ? '👤' : '🤖' }}
+                </MessageAvatar>
+                <MessageContent>
+                  {{ msg.content }}
+                </MessageContent>
+              </Message>
+            </template>
 
-          <!-- 加载中 -->
-          <div v-if="isLoading && messages.length > 0 && messages[messages.length - 1].role === 'user'" class="loading-indicator">
-            <span class="loading-dot"></span>
-            <span class="loading-dot"></span>
-            <span class="loading-dot"></span>
-          </div>
-        </div>
+            <div v-if="isLoading && messages.length > 0 && messages[messages.length - 1].role === 'user'" class="loading-indicator">
+              <span class="loading-dot"></span>
+              <span class="loading-dot"></span>
+              <span class="loading-dot"></span>
+            </div>
+          </ConversationContent>
+        </Conversation>
 
         <!-- 建议区域 -->
         <div v-if="suggestions.length > 0 && !isLoading && messages.length > 0" class="suggestions-container">
@@ -345,12 +351,7 @@ function handleKeydown(e: KeyboardEvent) {
 
 .messages-container {
   flex: 1;
-  overflow-y: auto;
-  padding: 16px;
-  background-color: #f9fafb;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+  overflow: hidden;
 }
 
 .empty-state {
@@ -364,56 +365,10 @@ function handleKeydown(e: KeyboardEvent) {
 
 .empty-icon { font-size: 48px; margin-bottom: 12px; }
 
-.message {
-  display: flex;
-  gap: 12px;
-  max-width: 85%;
-}
-
-.message.user {
-  align-self: flex-end;
-  flex-direction: row-reverse;
-}
-
-.message.assistant {
-  align-self: flex-start;
-}
-
-.message-avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  flex-shrink: 0;
-}
-
-.message.user .message-avatar {
-  background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-}
-
-.message-content {
-  background: #fff;
-  padding: 12px 16px;
-  border-radius: 16px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
-.message.user .message-content {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-}
-
 .loading-indicator {
   display: flex;
   gap: 4px;
   padding: 12px;
-  align-self: flex-start;
 }
 
 .loading-dot {
