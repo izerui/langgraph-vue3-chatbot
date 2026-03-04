@@ -1,26 +1,47 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { Client } from '@langchain/langgraph-sdk'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import type { PromptInputMessage } from '@/components/ai-elements/prompt-input'
+import type { ChatStatus } from 'ai'
+import type { AttachmentData } from '@/components/ai-elements/attachments'
 import {
   Conversation,
   ConversationContent,
-  ConversationEmptyState,
+  ConversationScrollButton,
 } from '@/components/ai-elements/conversation'
 import {
   Message,
-  MessageAvatar,
+  MessageAction,
+  MessageActions,
   MessageContent,
+  MessageResponse,
+  MessageToolbar,
 } from '@/components/ai-elements/message'
-
-// 简化的消息类型
-interface ChatMessage {
-  id: string
-  role: 'user' | 'assistant'
-  content: string
-  createdAt: Date
-}
+import {
+  ModelSelector,
+  ModelSelectorContent,
+  ModelSelectorEmpty,
+  ModelSelectorGroup,
+  ModelSelectorInput,
+  ModelSelectorItem,
+  ModelSelectorList,
+  ModelSelectorLogo,
+  ModelSelectorLogoGroup,
+  ModelSelectorName,
+  ModelSelectorTrigger,
+} from '@/components/ai-elements/model-selector'
+import {
+  PromptInput,
+  PromptInputBody,
+  PromptInputButton,
+  PromptInputFooter,
+  PromptInputSubmit,
+  PromptInputTextarea,
+  PromptInputTools,
+  usePromptInputProvider,
+} from '@/components/ai-elements/prompt-input'
+import { Suggestion, Suggestions } from '@/components/ai-elements/suggestion'
+import { CheckIcon, CopyIcon, GlobeIcon, RefreshCcwIcon, ThumbsDownIcon, ThumbsUpIcon } from 'lucide-vue-next'
 
 interface Props {
   assistantId?: string
@@ -41,17 +62,52 @@ const client = new Client({
 
 // 状态
 const isExpanded = ref(props.defaultExpanded)
-const messages = ref<ChatMessage[]>([])
-const input = ref('')
-const isLoading = ref(false)
 const threadId = ref<string | null>(null)
+const status = ref<ChatStatus>('ready')
+const useWebSearch = ref(false)
+const modelId = ref('gpt-4o')
+const modelSelectorOpen = ref(false)
+
+// 消息列表
+interface ChatMessage {
+  id: string
+  from: 'user' | 'assistant'
+  content: string
+}
+
+const messages = ref<ChatMessage[]>([])
+const liked = ref<Record<string, boolean>>({})
+const disliked = ref<Record<string, boolean>>({})
+
+// 模型列表
+const models = [
+  { id: 'gpt-4o', name: 'GPT-4o', chef: 'OpenAI', chefSlug: 'openai', providers: ['openai'] },
+  { id: 'gpt-4o-mini', name: 'GPT-4o Mini', chef: 'OpenAI', chefSlug: 'openai', providers: ['openai'] },
+  { id: 'claude-sonnet', name: 'Claude Sonnet', chef: 'Anthropic', chefSlug: 'anthropic', providers: ['anthropic'] },
+]
+
+const selectedModelData = computed(() => models.find(m => m.id === modelId.value))
 
 // 建议列表
-const suggestions = ref<string[]>([
+const suggestions = [
   '你好，请介绍一下自己',
   '你能做什么？',
-  '给我讲个笑话'
-])
+  '给我讲个笑话',
+  '今天天气怎么样？'
+]
+
+// 使用 PromptInput Provider
+const { textInput, submitForm } = usePromptInputProvider({
+  onSubmit: async (message: PromptInputMessage) => {
+    const text = message.text.trim()
+    const hasAttachments = message.files.length > 0
+
+    if (!text && !hasAttachments) return
+
+    status.value = 'submitted'
+    await handleSubmit(text || 'Sent with attachments')
+  }
+})
 
 // 切换展开状态
 function toggleExpanded() {
@@ -59,26 +115,22 @@ function toggleExpanded() {
 }
 
 // 发送消息
-async function handleSubmit() {
-  if (!input.value.trim() || isLoading.value) return
+async function handleSubmit(userMessage: string) {
+  if (status.value === 'streaming') return
 
-  const userMessage = input.value.trim()
-  input.value = ''
-  isLoading.value = true
+  status.value = 'streaming'
 
   // 添加用户消息
   messages.value = [
     ...messages.value,
     {
       id: `user-${Date.now()}`,
-      role: 'user',
-      content: userMessage,
-      createdAt: new Date()
+      from: 'user',
+      content: userMessage
     }
   ]
 
   try {
-    // 创建或使用现有线程
     if (!threadId.value) {
       const thread = await client.threads.create({
         metadata: {
@@ -89,7 +141,6 @@ async function handleSubmit() {
       threadId.value = thread.thread_id
     }
 
-    // 流式发送消息
     const messageId = crypto.randomUUID()
     const streamResponse = client.runs.stream(
       threadId.value!,
@@ -120,25 +171,21 @@ async function handleSubmit() {
       } as any
     )
 
-    let assistantMessageId = `assistant-${Date.now()}`
-    let assistantContent = ''
-
-    // 添加空消息用于显示
+    // 添加空的助手消息
+    const assistantMessageId = `assistant-${Date.now()}`
     messages.value = [
       ...messages.value,
       {
         id: assistantMessageId,
-        role: 'assistant',
-        content: '',
-        createdAt: new Date()
+        from: 'assistant',
+        content: ''
       }
     ]
 
-    for await (const chunk of streamResponse) {
-      console.log('chunk:', chunk)
-      const chunkEvent = chunk.event as string
+    let assistantContent = ''
 
-      // 处理不同的 stream_mode 返回格式
+    for await (const chunk of streamResponse) {
+      const chunkEvent = chunk.event as string
       let content = ''
 
       if (chunkEvent === 'messages' || chunkEvent === 'messages/partial') {
@@ -169,40 +216,65 @@ async function handleSubmit() {
 
         // 更新最后一条消息
         const lastIndex = messages.value.length - 1
-        if (messages.value[lastIndex]?.role === 'assistant') {
+        if (messages.value[lastIndex]?.from === 'assistant') {
           messages.value[lastIndex].content = assistantContent
         }
       }
     }
+
+    status.value = 'ready'
   } catch (error) {
     console.error('Error sending message:', error)
 
-    // 添加错误消息
     messages.value = [
       ...messages.value,
       {
         id: `error-${Date.now()}`,
-        role: 'assistant',
-        content: '抱歉，发生了一些错误，请稍后重试。',
-        createdAt: new Date()
+        from: 'assistant',
+        content: '抱歉，发生了一些错误，请稍后重试。'
       }
     ]
-  } finally {
-    isLoading.value = false
+    status.value = 'ready'
   }
 }
 
 // 选择建议
-function selectSuggestion(suggestion: string) {
-  input.value = suggestion
-  handleSubmit()
+function handleSuggestionClick(suggestion: string) {
+  status.value = 'submitted'
+  handleSubmit(suggestion)
 }
 
-// 键盘提交
-function handleKeydown(e: KeyboardEvent) {
-  if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault()
-    handleSubmit()
+// 选择模型
+function handleModelSelect(id: string) {
+  modelId.value = id
+  modelSelectorOpen.value = false
+}
+
+// 切换搜索
+function toggleWebSearch() {
+  useWebSearch.value = !useWebSearch.value
+}
+
+// 消息操作
+function handleCopy(content: string) {
+  navigator.clipboard.writeText(content)
+}
+
+function handleRetry() {
+  console.log('Retrying...')
+}
+
+function toggleLike(key: string) {
+  liked.value = {
+    ...liked.value,
+    [key]: !liked.value[key],
+  }
+}
+
+function toggleDislike(key: string) {
+  disliked.value = {
+    ...disliked.value,
+    [key]: !disliked.value[key],
   }
 }
 </script>
@@ -215,7 +287,6 @@ function handleKeydown(e: KeyboardEvent) {
         <!-- 头部 -->
         <div class="chat-header">
           <div class="chat-title">
-            <span class="title-icon">🤖</span>
             <span class="title-text">{{ assistantName }}</span>
           </div>
           <button class="close-btn" @click="toggleExpanded" type="button">
@@ -225,64 +296,162 @@ function handleKeydown(e: KeyboardEvent) {
           </button>
         </div>
 
-        <!-- 对话区域使用 ai-elements 组件 -->
-        <Conversation class="messages-container">
+        <!-- 对话区域 -->
+        <Conversation>
           <ConversationContent>
-            <ConversationEmptyState v-if="messages.length === 0">
-              <div class="empty-state">
-                <div class="empty-icon">💬</div>
-                <p>有什么可以帮助你的吗？</p>
-              </div>
-            </ConversationEmptyState>
+            <Message
+              v-for="message in messages"
+              :key="message.id"
+              :from="message.from"
+            >
+              <MessageContent>
+                <MessageResponse
+                  v-if="message.from === 'assistant'"
+                  :content="message.content"
+                />
+                <template v-else>
+                  {{ message.content }}
+                </template>
+              </MessageContent>
 
-            <template v-for="msg in messages" :key="msg.id">
-              <Message :from="msg.role">
-                <MessageAvatar src="">
-                  {{ msg.role === 'user' ? '👤' : '🤖' }}
-                </MessageAvatar>
-                <MessageContent>
-                  {{ msg.content }}
-                </MessageContent>
-              </Message>
-            </template>
+              <!-- 助手消息显示操作按钮 -->
+              <MessageActions v-if="message.from === 'assistant'">
+                <MessageAction
+                  label="Retry"
+                  tooltip="重新生成"
+                  @click="handleRetry"
+                >
+                  <RefreshCcwIcon class="size-4" />
+                </MessageAction>
 
-            <div v-if="isLoading && messages.length > 0 && messages[messages.length - 1].role === 'user'" class="loading-indicator">
-              <span class="loading-dot"></span>
-              <span class="loading-dot"></span>
-              <span class="loading-dot"></span>
-            </div>
+                <MessageAction
+                  label="Like"
+                  tooltip="喜欢"
+                  @click="toggleLike(message.id)"
+                >
+                  <ThumbsUpIcon
+                    class="size-4"
+                    :fill="liked[message.id] ? 'currentColor' : 'none'"
+                  />
+                </MessageAction>
+
+                <MessageAction
+                  label="Dislike"
+                  tooltip="不喜欢"
+                  @click="toggleDislike(message.id)"
+                >
+                  <ThumbsDownIcon
+                    class="size-4"
+                    :fill="disliked[message.id] ? 'currentColor' : 'none'"
+                  />
+                </MessageAction>
+
+                <MessageAction
+                  label="Copy"
+                  tooltip="复制"
+                  @click="handleCopy(message.content)"
+                >
+                  <CopyIcon class="size-4" />
+                </MessageAction>
+              </MessageActions>
+            </Message>
           </ConversationContent>
+          <ConversationScrollButton />
         </Conversation>
 
         <!-- 建议区域 -->
-        <div v-if="suggestions.length > 0 && !isLoading && messages.length > 0" class="suggestions-container">
-          <div class="suggestions-list">
-            <Button
-              v-for="(suggestion, index) in suggestions"
-              :key="index"
-              variant="outline"
-              size="sm"
-              @click="selectSuggestion(suggestion)"
-            >
-              {{ suggestion }}
-            </Button>
-          </div>
+        <div class="suggestions-wrapper">
+          <Suggestions v-if="messages.length > 0">
+            <Suggestion
+              v-for="suggestion in suggestions"
+              :key="suggestion"
+              :suggestion="suggestion"
+              @click="handleSuggestionClick"
+            />
+          </Suggestions>
         </div>
 
         <!-- 输入区域 -->
-        <div class="input-container">
-          <Input
-            v-model="input"
-            placeholder="输入您的问题..."
-            :disabled="isLoading"
-            @keydown="handleKeydown"
-          />
-          <Button
-            :disabled="!input.trim() || isLoading"
-            @click="handleSubmit"
+        <div class="input-wrapper">
+          <PromptInput
+            multiple
+            @submit="(message: PromptInputMessage) => {
+              const text = message.text.trim()
+              if (!text && !message.files.length) return
+              status = 'submitted'
+              handleSubmit(text || 'Sent with attachments')
+            }"
           >
-            {{ isLoading ? '发送中...' : '发送' }}
-          </Button>
+            <PromptInputBody>
+              <PromptInputTextarea />
+            </PromptInputBody>
+
+            <PromptInputFooter>
+              <PromptInputTools>
+                <PromptInputButton
+                  :variant="useWebSearch ? 'default' : 'ghost'"
+                  @click="toggleWebSearch"
+                >
+                  <GlobeIcon :size="16" />
+                  <span>Search</span>
+                </PromptInputButton>
+
+                <ModelSelector v-model:open="modelSelectorOpen">
+                  <ModelSelectorTrigger as-child>
+                    <PromptInputButton>
+                      <ModelSelectorLogo
+                        v-if="selectedModelData?.chefSlug"
+                        :provider="selectedModelData.chefSlug"
+                      />
+                      <ModelSelectorName v-if="selectedModelData?.name">
+                        {{ selectedModelData.name }}
+                      </ModelSelectorName>
+                    </PromptInputButton>
+                  </ModelSelectorTrigger>
+
+                  <ModelSelectorContent>
+                    <ModelSelectorInput placeholder="Search models..." />
+                    <ModelSelectorList>
+                      <ModelSelectorEmpty>No models found.</ModelSelectorEmpty>
+
+                      <ModelSelectorGroup
+                        v-for="chef in ['OpenAI', 'Anthropic']"
+                        :key="chef"
+                        :heading="chef"
+                      >
+                        <ModelSelectorItem
+                          v-for="m in models.filter(model => model.chef === chef)"
+                          :key="m.id"
+                          :value="m.id"
+                          @select="() => handleModelSelect(m.id)"
+                        >
+                          <ModelSelectorLogo :provider="m.chefSlug" />
+                          <ModelSelectorName>{{ m.name }}</ModelSelectorName>
+                          <ModelSelectorLogoGroup>
+                            <ModelSelectorLogo
+                              v-for="provider in m.providers"
+                              :key="provider"
+                              :provider="provider"
+                            />
+                          </ModelSelectorLogoGroup>
+                          <CheckIcon
+                            v-if="modelId === m.id"
+                            class="ml-auto size-4"
+                          />
+                          <div v-else class="ml-auto size-4" />
+                        </ModelSelectorItem>
+                      </ModelSelectorGroup>
+                    </ModelSelectorList>
+                  </ModelSelectorContent>
+                </ModelSelector>
+              </PromptInputTools>
+
+              <PromptInputSubmit
+                :disabled="status === 'streaming'"
+                :status="status"
+              />
+            </PromptInputFooter>
+          </PromptInput>
         </div>
       </div>
     </Transition>
@@ -305,7 +474,6 @@ function handleKeydown(e: KeyboardEvent) {
   bottom: 20px;
   right: 20px;
   z-index: 9999;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 .chat-window {
@@ -314,21 +482,22 @@ function handleKeydown(e: KeyboardEvent) {
   right: 0;
   width: 380px;
   height: 520px;
-  background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  background: var(--background);
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
 }
 
 .chat-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: #fff;
+  padding: 12px 16px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  flex-shrink: 0;
 }
 
 .chat-title {
@@ -337,98 +506,59 @@ function handleKeydown(e: KeyboardEvent) {
   gap: 8px;
 }
 
-.title-icon { font-size: 20px; }
-.title-text { font-size: 16px; font-weight: 600; }
+.title-text {
+  font-size: 14px;
+  font-weight: 600;
+}
 
 .close-btn {
-  background: rgba(255, 255, 255, 0.2);
+  background: transparent;
   border: none;
-  border-radius: 8px;
-  padding: 6px;
+  border-radius: 6px;
+  padding: 4px;
   cursor: pointer;
-  color: #fff;
-}
-
-.messages-container {
-  flex: 1;
-  overflow: hidden;
-}
-
-.empty-state {
+  color: var(--primary-foreground);
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100%;
-  color: #9ca3af;
 }
 
-.empty-icon { font-size: 48px; margin-bottom: 12px; }
-
-.loading-indicator {
-  display: flex;
-  gap: 4px;
-  padding: 12px;
+.close-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
 }
 
-.loading-dot {
-  width: 8px;
-  height: 8px;
-  background-color: #9ca3af;
-  border-radius: 50%;
-  animation: bounce 1.4s infinite ease-in-out;
+.suggestions-wrapper {
+  padding: 8px 12px;
+  border-top: 1px solid var(--border);
+  background: var(--background);
+  flex-shrink: 0;
 }
 
-.loading-dot:nth-child(1) { animation-delay: 0s; }
-.loading-dot:nth-child(2) { animation-delay: 0.2s; }
-.loading-dot:nth-child(3) { animation-delay: 0.4s; }
-
-@keyframes bounce {
-  0%, 80%, 100% { transform: translateY(0); }
-  40% { transform: translateY(-6px); }
-}
-
-.suggestions-container {
-  padding: 8px 16px;
-  border-top: 1px solid #e5e7eb;
-  background: #f9fafb;
-}
-
-.suggestions-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.input-container {
-  display: flex;
-  gap: 8px;
-  padding: 12px 16px;
-  background-color: #fff;
-  border-top: 1px solid #e5e7eb;
-}
-
-.input-container :deep(input) {
-  flex: 1;
+.input-wrapper {
+  padding: 8px 12px;
+  border-top: 1px solid var(--border);
+  background: var(--background);
+  flex-shrink: 0;
 }
 
 .float-button {
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--primary);
   border: none;
   cursor: pointer;
-  color: #fff;
+  color: var(--primary-foreground);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .float-button:hover {
   transform: scale(1.05);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
 }
 
 .slide-up-enter-active,
