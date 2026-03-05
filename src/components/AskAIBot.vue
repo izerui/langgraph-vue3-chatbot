@@ -337,7 +337,7 @@ function toggleDislike(key: string) {
     <!-- 聊天窗口 -->
     <Transition name="slide-up">
       <div v-if="isExpanded" class="chat-window">
-        <!-- 头部 -->
+        <!-- ===== 头部区域 ===== -->
         <div class="chat-header">
           <div class="chat-title">
             <span class="title-text">{{ assistantName }}</span>
@@ -349,15 +349,16 @@ function toggleDislike(key: string) {
           </button>
         </div>
 
-        <!-- 对话区域 -->
+        <!-- ===== 对话区域 ===== -->
         <Conversation>
           <ConversationContent>
+            <!-- 消息列表 -->
             <Message
               v-for="message in messages"
               :key="message.key"
               :from="message.from"
             >
-              <!-- 多版本消息显示 -->
+              <!-- 多版本消息显示（用于展示 AI 多次生成的结果） -->
               <MessageBranch
                 v-if="message.versions.length > 1"
                 :default-branch="0"
@@ -422,6 +423,7 @@ function toggleDislike(key: string) {
 
               <!-- 单版本消息显示 -->
               <div v-else>
+                <!-- 附件显示 -->
                 <Attachments
                   v-if="message.attachments && message.attachments.length > 0"
                 >
@@ -435,7 +437,7 @@ function toggleDislike(key: string) {
                   </Attachment>
                 </Attachments>
 
-                <!-- 来源引用 -->
+                <!-- ===== 来源引用 ===== -->
                 <Sources v-if="message.sources && message.sources.length > 0">
                   <SourcesTrigger :count="message.sources.length" />
                   <SourcesContent>
@@ -448,7 +450,7 @@ function toggleDislike(key: string) {
                   </SourcesContent>
                 </Sources>
 
-                <!-- 推理过程 -->
+                <!-- ===== 推理过程 ===== -->
                 <Reasoning
                   v-if="message.reasoning"
                   :duration="message.reasoning.duration"
@@ -457,6 +459,7 @@ function toggleDislike(key: string) {
                   <ReasoningContent :content="message.reasoning.content" />
                 </Reasoning>
 
+                <!-- ===== 消息内容 ===== -->
                 <MessageContent>
                   <MessageResponse
                     v-if="message.from === 'assistant'"
@@ -467,6 +470,7 @@ function toggleDislike(key: string) {
                   </template>
                 </MessageContent>
 
+                <!-- ===== 消息操作按钮 ===== -->
                 <MessageActions v-if="message.from === 'assistant'">
                   <MessageAction
                     label="Retry"
@@ -474,28 +478,6 @@ function toggleDislike(key: string) {
                     @click="handleRetry"
                   >
                     <RefreshCcwIcon class="size-4" />
-                  </MessageAction>
-
-                  <MessageAction
-                    label="Like"
-                    tooltip="喜欢"
-                    @click="toggleLike(message.key)"
-                  >
-                    <ThumbsUpIcon
-                      class="size-4"
-                      :fill="liked[message.key] ? 'currentColor' : 'none'"
-                    />
-                  </MessageAction>
-
-                  <MessageAction
-                    label="Dislike"
-                    tooltip="不喜欢"
-                    @click="toggleDislike(message.key)"
-                  >
-                    <ThumbsDownIcon
-                      class="size-4"
-                      :fill="disliked[message.key] ? 'currentColor' : 'none'"
-                    />
                   </MessageAction>
 
                   <MessageAction
@@ -512,7 +494,7 @@ function toggleDislike(key: string) {
           <ConversationScrollButton />
         </Conversation>
 
-        <!-- 建议区域 -->
+        <!-- ===== 建议区域 ===== -->
         <div class="suggestions-wrapper">
           <Suggestions>
             <Suggestion
@@ -524,24 +506,29 @@ function toggleDislike(key: string) {
           </Suggestions>
         </div>
 
-        <!-- 输入区域 -->
+        <!-- ===== 输入区域 ===== -->
         <div class="input-wrapper">
+          <!-- ===== 输入框组件 ===== -->
           <PromptInput
             multiple
             global-drop
             class="w-full"
             @submit="handleFormSubmit"
           >
+            <!-- 附件显示区域 -->
             <PromptInputHeader>
               <PromptInputAttachmentsDisplay />
             </PromptInputHeader>
 
+            <!-- 文本输入区域 -->
             <PromptInputBody>
               <PromptInputTextarea />
             </PromptInputBody>
 
+            <!-- 底部工具栏 -->
             <PromptInputFooter>
               <PromptInputTools>
+                <!-- 添加附件菜单 -->
                 <PromptInputActionMenu>
                   <PromptInputActionMenuTrigger />
                   <PromptInputActionMenuContent>
@@ -549,8 +536,10 @@ function toggleDislike(key: string) {
                   </PromptInputActionMenuContent>
                 </PromptInputActionMenu>
 
+                <!-- 语音输入按钮 -->
                 <PromptInputSpeechButton />
 
+                <!-- 网页搜索开关 -->
                 <PromptInputButton
                   :variant="useWebSearch ? 'default' : 'ghost'"
                   @click="toggleWebSearch"
@@ -559,6 +548,7 @@ function toggleDislike(key: string) {
                   <span>Search</span>
                 </PromptInputButton>
 
+                <!-- ===== 模型选择器 ===== -->
                 <ModelSelector v-model:open="modelSelectorOpen">
                   <ModelSelectorTrigger as-child>
                     <PromptInputButton>
@@ -609,6 +599,7 @@ function toggleDislike(key: string) {
                 </ModelSelector>
               </PromptInputTools>
 
+              <!-- ===== 发送按钮 ===== -->
               <PromptInputSubmit :status="status" />
             </PromptInputFooter>
           </PromptInput>
@@ -616,7 +607,7 @@ function toggleDislike(key: string) {
       </div>
     </Transition>
 
-    <!-- 悬浮按钮 -->
+    <!-- ===== 悬浮按钮 ===== -->
     <button class="float-button" @click="toggleExpanded" type="button">
       <svg v-if="isExpanded" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M18 6L6 18M6 6l12 12"/>
