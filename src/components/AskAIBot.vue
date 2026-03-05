@@ -51,11 +51,14 @@ import {
   PromptInputBody,
   PromptInputButton,
   PromptInputFooter,
-  PromptInputProvider,
+  PromptInputHeader,
+  PromptInputSpeechButton,
   PromptInputSubmit,
   PromptInputTextarea,
   PromptInputTools,
 } from '@/components/ai-elements/prompt-input'
+import { Reasoning, ReasoningContent, ReasoningTrigger } from '@/components/ai-elements/reasoning'
+import { Source, Sources, SourcesContent, SourcesTrigger } from '@/components/ai-elements/sources'
 import { Suggestion, Suggestions } from '@/components/ai-elements/suggestion'
 import { CheckIcon, CopyIcon, GlobeIcon, RefreshCcwIcon, ThumbsDownIcon, ThumbsUpIcon } from 'lucide-vue-next'
 
@@ -98,12 +101,24 @@ interface MessageAttachment {
   filename: string
 }
 
+interface MessageSource {
+  href: string
+  title: string
+}
+
+interface MessageReasoning {
+  content: string
+  duration: number
+}
+
 interface ChatMessage {
   key: string
   from: 'user' | 'assistant'
   content?: string
   versions?: MessageVersion[]
   attachments?: AttachmentData[]
+  sources?: MessageSource[]
+  reasoning?: MessageReasoning
 }
 
 const messages = ref<ChatMessage[]>([])
@@ -415,6 +430,28 @@ function toggleDislike(key: string) {
                   </Attachment>
                 </Attachments>
 
+                <!-- 来源引用 -->
+                <Sources v-if="message.sources && message.sources.length > 0">
+                  <SourcesTrigger :count="message.sources.length" />
+                  <SourcesContent>
+                    <Source
+                      v-for="source in message.sources"
+                      :key="source.href"
+                      :href="source.href"
+                      :title="source.title"
+                    />
+                  </SourcesContent>
+                </Sources>
+
+                <!-- 推理过程 -->
+                <Reasoning
+                  v-if="message.reasoning"
+                  :duration="message.reasoning.duration"
+                >
+                  <ReasoningTrigger />
+                  <ReasoningContent :content="message.reasoning.content" />
+                </Reasoning>
+
                 <MessageContent>
                   <MessageResponse
                     v-if="message.from === 'assistant'"
@@ -484,83 +521,90 @@ function toggleDislike(key: string) {
 
         <!-- 输入区域 -->
         <div class="input-wrapper">
-          <PromptInputProvider @submit="handleFormSubmit">
-            <PromptInput multiple global-drop class="w-full">
-              <PromptInputBody>
-                <PromptInputTextarea />
-              </PromptInputBody>
+          <PromptInput
+            multiple
+            global-drop
+            class="w-full"
+            @submit="handleFormSubmit"
+          >
+            <PromptInputHeader />
 
-              <PromptInputFooter>
-                <PromptInputTools>
-                  <PromptInputActionMenu>
-                    <PromptInputActionMenuTrigger />
-                    <PromptInputActionMenuContent>
-                      <PromptInputActionAddAttachments />
-                    </PromptInputActionMenuContent>
-                  </PromptInputActionMenu>
+            <PromptInputBody>
+              <PromptInputTextarea />
+            </PromptInputBody>
 
-                  <PromptInputButton
-                    :variant="useWebSearch ? 'default' : 'ghost'"
-                    @click="toggleWebSearch"
-                  >
-                    <GlobeIcon :size="16" />
-                    <span>Search</span>
-                  </PromptInputButton>
+            <PromptInputFooter>
+              <PromptInputTools>
+                <PromptInputActionMenu>
+                  <PromptInputActionMenuTrigger />
+                  <PromptInputActionMenuContent>
+                    <PromptInputActionAddAttachments />
+                  </PromptInputActionMenuContent>
+                </PromptInputActionMenu>
 
-                  <ModelSelector v-model:open="modelSelectorOpen">
-                    <ModelSelectorTrigger as-child>
-                      <PromptInputButton>
-                        <ModelSelectorLogo
-                          v-if="selectedModelData?.chefSlug"
-                          :provider="selectedModelData.chefSlug"
-                        />
-                        <ModelSelectorName v-if="selectedModelData?.name">
-                          {{ selectedModelData.name }}
-                        </ModelSelectorName>
-                      </PromptInputButton>
-                    </ModelSelectorTrigger>
+                <PromptInputSpeechButton />
 
-                    <ModelSelectorContent>
-                      <ModelSelectorInput placeholder="Search models..." />
-                      <ModelSelectorList>
-                        <ModelSelectorEmpty>No models found.</ModelSelectorEmpty>
+                <PromptInputButton
+                  :variant="useWebSearch ? 'default' : 'ghost'"
+                  @click="toggleWebSearch"
+                >
+                  <GlobeIcon :size="16" />
+                  <span>Search</span>
+                </PromptInputButton>
 
-                        <ModelSelectorGroup
-                          v-for="chef in ['OpenAI', 'Anthropic']"
-                          :key="chef"
-                          :heading="chef"
+                <ModelSelector v-model:open="modelSelectorOpen">
+                  <ModelSelectorTrigger as-child>
+                    <PromptInputButton>
+                      <ModelSelectorLogo
+                        v-if="selectedModelData?.chefSlug"
+                        :provider="selectedModelData.chefSlug"
+                      />
+                      <ModelSelectorName v-if="selectedModelData?.name">
+                        {{ selectedModelData.name }}
+                      </ModelSelectorName>
+                    </PromptInputButton>
+                  </ModelSelectorTrigger>
+
+                  <ModelSelectorContent>
+                    <ModelSelectorInput placeholder="Search models..." />
+                    <ModelSelectorList>
+                      <ModelSelectorEmpty>No models found.</ModelSelectorEmpty>
+
+                      <ModelSelectorGroup
+                        v-for="chef in ['OpenAI', 'Anthropic']"
+                        :key="chef"
+                        :heading="chef"
+                      >
+                        <ModelSelectorItem
+                          v-for="m in models.filter(model => model.chef === chef)"
+                          :key="m.id"
+                          :value="m.id"
+                          @select="() => handleModelSelect(m.id)"
                         >
-                          <ModelSelectorItem
-                            v-for="m in models.filter(model => model.chef === chef)"
-                            :key="m.id"
-                            :value="m.id"
-                            @select="() => handleModelSelect(m.id)"
-                          >
-                            <ModelSelectorLogo :provider="m.chefSlug" />
-                            <ModelSelectorName>{{ m.name }}</ModelSelectorName>
-                            <ModelSelectorLogoGroup>
-                              <ModelSelectorLogo
-                                v-for="provider in m.providers"
-                                :key="provider"
-                                :provider="provider"
-                              />
-                            </ModelSelectorLogoGroup>
-                            <CheckIcon
-                              v-if="modelId === m.id"
-                              class="ml-auto size-4"
+                          <ModelSelectorLogo :provider="m.chefSlug" />
+                          <ModelSelectorName>{{ m.name }}</ModelSelectorName>
+                          <ModelSelectorLogoGroup>
+                            <ModelSelectorLogo
+                              v-for="provider in m.providers"
+                              :key="provider"
+                              :provider="provider"
                             />
-                            <div v-else class="ml-auto size-4" />
-                          </ModelSelectorItem>
-                        </ModelSelectorGroup>
-                      </ModelSelectorList>
-                    </ModelSelectorContent>
-                  </ModelSelector>
-                </PromptInputTools>
+                          </ModelSelectorLogoGroup>
+                          <CheckIcon
+                            v-if="modelId === m.id"
+                            class="ml-auto size-4"
+                          />
+                          <div v-else class="ml-auto size-4" />
+                        </ModelSelectorItem>
+                      </ModelSelectorGroup>
+                    </ModelSelectorList>
+                  </ModelSelectorContent>
+                </ModelSelector>
+              </PromptInputTools>
 
-                <PromptInputSubmit :status="status" />
-              </PromptInputFooter>
-            </PromptInput>
-          </PromptInputProvider>
+              <PromptInputSubmit :status="status" />
+            </PromptInputFooter>
+          </PromptInput>
         </div>
       </div>
     </Transition>
