@@ -70,7 +70,7 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   assistantId: 'research',
-  assistantName: 'Research',
+  assistantName: 'Chat',
   defaultExpanded: false
 })
 

@@ -6,198 +6,139 @@ import ChatBotExample from './components/ai-elements/examples/chatbot.vue'
 <template>
   <div class="app-container">
     <header>
-      <h1>🤖 AI Chat</h1>
-      <p class="subtitle">Vue 3 + @ai-sdk/vue</p>
+      <h1>AI Chat</h1>
+      <p>Vue 3 + LangGraph 聊天组件示例</p>
     </header>
 
     <main>
-      <div class="content">
-        <h2>欢迎使用 AI Chat</h2>
-        <p>本应用展示如何使用 <strong>@ai-sdk/vue</strong> 构建 AI 聊天应用：</p>
-
+      <section class="intro">
+        <h2>组件介绍</h2>
+        <p>本项目展示如何使用 <strong>AI 元素组件库</strong> 构建 AI 聊天应用：</p>
         <ul>
-          <li>✅ 使用 <code>@ai-sdk/vue</code> 官方 hooks</li>
-          <li>✅ 流式响应支持 - 实时消息更新</li>
-          <li>✅ 组件化设计 - 轻松集成到其他工程</li>
-          <li>✅ 工具调用支持</li>
+          <li>基于 <code>@langchain/langgraph-sdk</code> 流式响应</li>
+          <li>模块化组件设计</li>
+          <li>支持工具调用、推理过程、来源引用</li>
         </ul>
+      </section>
 
-        <div class="features">
-          <h3>核心功能</h3>
-          <div class="feature-grid">
-            <div class="feature-card">
-              <h4>💬 对话</h4>
-              <p>支持多轮对话，上下文自动保持</p>
-            </div>
-            <div class="feature-card">
-              <h4>📡 流式响应</h4>
-              <p>实时显示 AI 生成内容</p>
-            </div>
-            <div class="feature-card">
-              <h4>🎨 组件化</h4>
-              <p>可复用的 AskAIBot 组件</p>
-            </div>
-            <div class="feature-card">
-              <h4>⚙️ 可配置</h4>
-              <p>支持自定义 API 端点</p>
-            </div>
-          </div>
-        </div>
+      <div class="divider">
+        <span class="divider-text">组件示例</span>
+      </div>
 
-        <div class="setup-guide">
-          <h3>⚙️ 后端配置</h3>
-          <p>确保后端 API 运行并实现 AI SDK 流式响应格式。</p>
-          <p>默认 API 端点: <code>/api/chat</code></p>
-        </div>
-
-        <!-- AI 元素组件示例 -->
-        <div class="component-demo">
-          <h3>🎨 组件示例 - Chatbot UI</h3>
-          <div class="demo-container">
-            <ChatBotExample />
-          </div>
-        </div>
+      <div class="demo-container">
+        <ChatBotExample />
       </div>
     </main>
 
-    <!-- AI 聊天组件 - 右下角悬浮 -->
     <AskAIBot
       assistant-id="research"
+      assistant-name="我的助手"
       :default-expanded="false"
     />
   </div>
 </template>
 
 <style>
-
 body {
+  margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background: #f5f5f5;
 }
 
 .app-container {
   min-height: 100vh;
-  position: relative;
+  padding-bottom: 80px;
 }
 
 header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #333;
   color: white;
-  padding: 32px 20px;
+  padding: 24px;
   text-align: center;
 }
 
 header h1 {
-  font-size: 28px;
-  margin-bottom: 8px;
+  margin: 0 0 8px;
 }
 
-.subtitle {
-  font-size: 14px;
-  opacity: 0.9;
+header p {
+  margin: 0;
+  opacity: 0.8;
 }
 
 main {
+  max-width: 900px;
+  margin: 0 auto;
   padding: 20px;
 }
 
-.content {
-  max-width: 800px;
-  margin: 0 auto;
+section {
   background: #fff;
-  padding: 32px;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
 }
 
-.content h2 {
-  margin-bottom: 16px;
+section h2 {
+  margin-top: 0;
   color: #333;
 }
 
-.content ul {
-  margin: 16px 0;
-  padding-left: 24px;
-}
-
-.content li {
-  margin: 10px 0;
-  color: #555;
+section p {
+  color: #666;
   line-height: 1.6;
 }
 
-.content code {
+section ul {
+  color: #666;
+  line-height: 1.8;
+}
+
+code {
   background: #f0f0f0;
   padding: 2px 8px;
   border-radius: 4px;
-  font-size: 0.9em;
   color: #e65100;
 }
 
-.features {
-  margin-top: 32px;
-}
-
-.features h3 {
-  margin-bottom: 16px;
-  color: #333;
-}
-
-.feature-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
-}
-
-.feature-card {
-  background: #f8f9fa;
-  padding: 20px;
+pre {
+  background: #1e1e1e;
+  color: #d4d4d4;
+  padding: 16px;
   border-radius: 8px;
-  border: 1px solid #e9ecef;
+  overflow-x: auto;
 }
 
-.feature-card h4 {
-  color: #667eea;
-  margin-bottom: 8px;
+pre code {
+  background: none;
+  padding: 0;
+  color: inherit;
 }
 
-.feature-card p {
+.divider {
+  display: flex;
+  align-items: center;
+  margin: 30px 0;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid #ddd;
+}
+
+.divider-text {
+  padding: 0 20px;
+  color: #666;
   font-size: 14px;
-  color: #666;
-}
-
-.setup-guide {
-  margin-top: 32px;
-  padding: 20px;
-  background: #fff8e1;
-  border-radius: 8px;
-  border: 1px solid #ffe0b2;
-}
-
-.setup-guide h3 {
-  color: #f57c00;
-  margin-bottom: 12px;
-}
-
-.setup-guide p {
-  color: #666;
-  line-height: 1.6;
-  margin-bottom: 8px;
-}
-
-.component-demo {
-  margin-top: 32px;
-}
-
-.component-demo h3 {
-  margin-bottom: 16px;
-  color: #333;
 }
 
 .demo-container {
   height: 600px;
-  border: 1px solid #e9ecef;
+  border: 1px solid #ddd;
   border-radius: 8px;
   overflow: hidden;
+  background: #fff;
 }
 </style>
