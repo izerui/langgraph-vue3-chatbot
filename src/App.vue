@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import AskAIBot from './components/AskAIBot.vue'
+import ChatBotExample from './components/ai-elements/examples/chatbot.vue'
 </script>
 
 <template>
@@ -47,6 +48,14 @@ import AskAIBot from './components/AskAIBot.vue'
           <h3>⚙️ 后端配置</h3>
           <p>确保后端 API 运行并实现 AI SDK 流式响应格式。</p>
           <p>默认 API 端点: <code>/api/chat</code></p>
+        </div>
+
+        <!-- AI 元素组件示例 -->
+        <div class="component-demo">
+          <h3>🎨 组件示例 - Chatbot UI</h3>
+          <div class="demo-container">
+            <ChatBotExample />
+          </div>
         </div>
       </div>
     </main>
@@ -174,5 +183,21 @@ main {
   color: #666;
   line-height: 1.6;
   margin-bottom: 8px;
+}
+
+.component-demo {
+  margin-top: 32px;
+}
+
+.component-demo h3 {
+  margin-bottom: 16px;
+  color: #333;
+}
+
+.demo-container {
+  height: 600px;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  overflow: hidden;
 }
 </style>

@@ -13,7 +13,7 @@
     "@langchain/core": "^1.1.30",
     "@langchain/langgraph-sdk": "^1.6.5",
     "@vueuse/core": "^14.2.1",
-    "ai": "^4.3.19",
+    "ai": "^6.0.116",
     "ai-elements-vue": "^1.4.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

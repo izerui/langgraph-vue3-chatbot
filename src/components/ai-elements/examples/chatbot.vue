@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import type { PromptInputMessage } from '@/components/ai-elements/prompt-input'
-import type { ChatStatus, ToolUIPart } from 'ai'
+
+// 自定义类型 - ai 包中不存在这些类型
+type ChatStatus = 'ready' | 'submitted' | 'streaming'
+
+interface ToolInvocationState {
+  state: 'input-available' | 'streaming' | 'result-available' | 'error'
+}
 import { Conversation, ConversationContent, ConversationScrollButton } from '@/components/ai-elements/conversation'
 import {
   Message,
@@ -47,7 +53,7 @@ import { Suggestion, Suggestions } from '@/components/ai-elements/suggestion'
 import { CheckIcon, GlobeIcon } from 'lucide-vue-next'
 import { nanoid } from 'nanoid'
 import { computed, ref } from 'vue'
-import PromptInputAttachmentsDisplay from './prompt-input-attachments-display.vue'
+// import PromptInputAttachmentsDisplay from './prompt-input-attachments-display.vue'
 
 interface MessageVersion {
   id: string
@@ -67,7 +73,7 @@ interface MessageReasoning {
 interface MessageTool {
   name: string
   description: string
-  status: ToolUIPart['state']
+  status: ToolInvocationState['state']
   parameters: Record<string, unknown>
   result?: string
   error?: string
@@ -533,7 +539,7 @@ function toggleWebSearch() {
           @submit="handleSubmit"
         >
           <PromptInputHeader>
-            <PromptInputAttachmentsDisplay />
+<!--            <PromptInputAttachmentsDisplay />-->
           </PromptInputHeader>
 
           <PromptInputBody>
