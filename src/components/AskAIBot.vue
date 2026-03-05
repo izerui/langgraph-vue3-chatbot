@@ -509,7 +509,7 @@ function toggleDislike(key: string) {
 
         <!-- 建议区域 -->
         <div class="suggestions-wrapper">
-          <Suggestions v-if="messages.length > 0">
+          <Suggestions>
             <Suggestion
               v-for="suggestion in suggestions"
               :key="suggestion"
