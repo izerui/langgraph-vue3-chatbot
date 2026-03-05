@@ -76,7 +76,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 // LangGraph Client
 const client = new Client({
-  apiUrl: window.location.origin + '/langgraph'
+  apiUrl: window.location.origin + '/agent'
 })
 
 // 状态

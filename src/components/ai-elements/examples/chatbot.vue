@@ -47,7 +47,7 @@ import { Suggestion, Suggestions } from '@/components/ai-elements/suggestion'
 import { CheckIcon, GlobeIcon } from 'lucide-vue-next'
 import { nanoid } from 'nanoid'
 import { computed, ref } from 'vue'
-// import PromptInputAttachmentsDisplay from './prompt-input-attachments-display.vue'
+import PromptInputAttachmentsDisplay from './prompt-input-attachments-display.vue'
 
 interface MessageVersion {
   id: string
@@ -533,7 +533,7 @@ function toggleWebSearch() {
           @submit="handleSubmit"
         >
           <PromptInputHeader>
-<!--            <PromptInputAttachmentsDisplay />-->
+            <PromptInputAttachmentsDisplay />
           </PromptInputHeader>
 
           <PromptInputBody>
