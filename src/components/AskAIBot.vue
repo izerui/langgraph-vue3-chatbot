@@ -9,7 +9,7 @@ import {
   ConversationScrollButton,
 } from '@/components/ai-elements/conversation'
 import {
-  Attachment,
+  Attachment as AttachmentComponent,
   AttachmentPreview,
   AttachmentRemove,
   Attachments,
@@ -61,6 +61,7 @@ import { Reasoning, ReasoningContent, ReasoningTrigger } from '@/components/ai-e
 import { Source, Sources, SourcesContent, SourcesTrigger } from '@/components/ai-elements/sources'
 import { Suggestion, Suggestions } from '@/components/ai-elements/suggestion'
 import { CheckIcon, CopyIcon, GlobeIcon, RefreshCcwIcon, ThumbsDownIcon, ThumbsUpIcon } from 'lucide-vue-next'
+import { usePromptInput } from '@/components/ai-elements/prompt-input'
 
 interface Props {
   assistantId?: string
@@ -114,8 +115,7 @@ interface MessageReasoning {
 interface ChatMessage {
   key: string
   from: 'user' | 'assistant'
-  content?: string
-  versions?: MessageVersion[]
+  versions: MessageVersion[]
   attachments?: AttachmentData[]
   sources?: MessageSource[]
   reasoning?: MessageReasoning
@@ -124,6 +124,9 @@ interface ChatMessage {
 const messages = ref<ChatMessage[]>([])
 const liked = ref<Record<string, boolean>>({})
 const disliked = ref<Record<string, boolean>>({})
+
+// 附件管理
+const { files, removeFile } = usePromptInput()
 
 // 模型列表
 const models = [
@@ -154,12 +157,16 @@ async function handleSubmit(userMessage: string) {
   status.value = 'streaming'
 
   // 添加用户消息
+  const userMessageId = `user-${Date.now()}`
   messages.value = [
     ...messages.value,
     {
-      key: `user-${Date.now()}`,
+      key: userMessageId,
       from: 'user',
-      content: userMessage
+      versions: [{
+        id: userMessageId,
+        content: userMessage
+      }]
     }
   ]
 
@@ -205,13 +212,16 @@ async function handleSubmit(userMessage: string) {
     )
 
     // 添加空的助手消息
-    const assistantMessageKey = `assistant-${Date.now()}`
+    const assistantMessageId = `assistant-${Date.now()}`
     messages.value = [
       ...messages.value,
       {
-        key: assistantMessageKey,
+        key: assistantMessageId,
         from: 'assistant',
-        content: ''
+        versions: [{
+          id: assistantMessageId,
+          content: ''
+        }]
       }
     ]
 
@@ -247,10 +257,10 @@ async function handleSubmit(userMessage: string) {
       if (content) {
         assistantContent += content
 
-        // 更新最后一条消息
+        // 更新最后一条消息的版本内容
         const lastIndex = messages.value.length - 1
         if (messages.value[lastIndex]?.from === 'assistant') {
-          messages.value[lastIndex].content = assistantContent
+          messages.value[lastIndex].versions[0].content = assistantContent
         }
       }
     }
@@ -259,12 +269,16 @@ async function handleSubmit(userMessage: string) {
   } catch (error) {
     console.error('Error sending message:', error)
 
+    const errorMessageId = `error-${Date.now()}`
     messages.value = [
       ...messages.value,
       {
-        key: `error-${Date.now()}`,
+        key: errorMessageId,
         from: 'assistant',
-        content: '抱歉，发生了一些错误，请稍后重试。'
+        versions: [{
+          id: errorMessageId,
+          content: '抱歉，发生了一些错误，请稍后重试。'
+        }]
       }
     ]
     status.value = 'ready'
@@ -354,7 +368,7 @@ function toggleDislike(key: string) {
             >
               <!-- 多版本消息显示 -->
               <MessageBranch
-                v-if="message.versions && message.versions.length > 1"
+                v-if="message.versions.length > 1"
                 :default-branch="0"
               >
                 <MessageBranchContent>
@@ -455,10 +469,10 @@ function toggleDislike(key: string) {
                 <MessageContent>
                   <MessageResponse
                     v-if="message.from === 'assistant'"
-                    :content="message.content || ''"
+                    :content="message.versions[0]?.content || ''"
                   />
                   <template v-else>
-                    {{ message.content }}
+                    {{ message.versions[0]?.content }}
                   </template>
                 </MessageContent>
 
@@ -527,7 +541,22 @@ function toggleDislike(key: string) {
             class="w-full"
             @submit="handleFormSubmit"
           >
-            <PromptInputHeader />
+            <PromptInputHeader>
+                            <Attachments
+                v-if="files.length > 0"
+                variant="inline"
+              >
+                <AttachmentComponent
+                  v-for="attachment in files"
+                  :key="attachment.id"
+                  :data="attachment"
+                  @remove="removeFile(attachment.id)"
+                >
+                  <AttachmentPreview />
+                  <AttachmentRemove />
+                </AttachmentComponent>
+              </Attachments>
+            </PromptInputHeader>
 
             <PromptInputBody>
               <PromptInputTextarea />
