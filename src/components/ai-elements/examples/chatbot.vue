@@ -1,12 +1,6 @@
 <script setup lang="ts">
 import type { PromptInputMessage } from '@/components/ai-elements/prompt-input'
-
-// 自定义类型 - ai 包中不存在这些类型
-type ChatStatus = 'ready' | 'submitted' | 'streaming'
-
-interface ToolInvocationState {
-  state: 'input-available' | 'streaming' | 'result-available' | 'error'
-}
+import type { ChatStatus, ToolUIPart } from 'ai'
 import { Conversation, ConversationContent, ConversationScrollButton } from '@/components/ai-elements/conversation'
 import {
   Message,
@@ -73,7 +67,7 @@ interface MessageReasoning {
 interface MessageTool {
   name: string
   description: string
-  status: ToolInvocationState['state']
+  status: ToolUIPart['state']
   parameters: Record<string, unknown>
   result?: string
   error?: string
