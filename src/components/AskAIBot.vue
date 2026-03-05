@@ -3,7 +3,7 @@ import { ref, computed } from 'vue'
 import { Client } from '@langchain/langgraph-sdk'
 import type { PromptInputMessage } from '@/components/ai-elements/prompt-input'
 import type { ChatStatus } from 'ai'
-import PromptInputAttachmentsDisplay from './PromptInputAttachmentsDisplay.vue'
+import PromptInputAttachmentsDisplay from './input-attachments-display.vue'
 import {
   Conversation,
   ConversationContent,
