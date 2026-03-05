@@ -696,8 +696,8 @@ function toggleDislike(key: string) {
 }
 
 .float-button {
-  width: 56px;
-  height: 56px;
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
   background: var(--primary);
   border: none;
