@@ -3,17 +3,12 @@ import { ref, computed } from 'vue'
 import { Client } from '@langchain/langgraph-sdk'
 import type { PromptInputMessage } from '@/components/ai-elements/prompt-input'
 import type { ChatStatus } from 'ai'
+import PromptInputAttachmentsDisplay from './PromptInputAttachmentsDisplay.vue'
 import {
   Conversation,
   ConversationContent,
   ConversationScrollButton,
 } from '@/components/ai-elements/conversation'
-import {
-  Attachment as AttachmentComponent,
-  AttachmentPreview,
-  AttachmentRemove,
-  Attachments,
-} from '@/components/ai-elements/attachments'
 import type { AttachmentData } from '@/components/ai-elements/attachments'
 import {
   Message,
@@ -61,7 +56,6 @@ import { Reasoning, ReasoningContent, ReasoningTrigger } from '@/components/ai-e
 import { Source, Sources, SourcesContent, SourcesTrigger } from '@/components/ai-elements/sources'
 import { Suggestion, Suggestions } from '@/components/ai-elements/suggestion'
 import { CheckIcon, CopyIcon, GlobeIcon, RefreshCcwIcon, ThumbsDownIcon, ThumbsUpIcon } from 'lucide-vue-next'
-import { usePromptInput } from '@/components/ai-elements/prompt-input'
 
 interface Props {
   assistantId?: string
@@ -124,9 +118,6 @@ interface ChatMessage {
 const messages = ref<ChatMessage[]>([])
 const liked = ref<Record<string, boolean>>({})
 const disliked = ref<Record<string, boolean>>({})
-
-// 附件管理
-const { files, removeFile } = usePromptInput()
 
 // 模型列表
 const models = [
@@ -542,20 +533,7 @@ function toggleDislike(key: string) {
             @submit="handleFormSubmit"
           >
             <PromptInputHeader>
-                            <Attachments
-                v-if="files.length > 0"
-                variant="inline"
-              >
-                <AttachmentComponent
-                  v-for="attachment in files"
-                  :key="attachment.id"
-                  :data="attachment"
-                  @remove="removeFile(attachment.id)"
-                >
-                  <AttachmentPreview />
-                  <AttachmentRemove />
-                </AttachmentComponent>
-              </Attachments>
+              <PromptInputAttachmentsDisplay />
             </PromptInputHeader>
 
             <PromptInputBody>
