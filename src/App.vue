@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import AskAIBot from './components/AskAIBot.vue'
+import AskAIBot from './components/ai-bot/AskAIBot.vue'
 import ChatBotExample from './components/ai-elements/examples/chatbot.vue'
 </script>
 
