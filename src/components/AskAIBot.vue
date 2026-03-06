@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { Client } from '@langchain/langgraph-sdk'
+import type { HumanMessage, AIMessage } from '@langchain/langgraph-sdk'
 import type { PromptInputMessage } from '@/components/ai-elements/prompt-input'
 import type { ChatStatus } from 'ai'
 import PromptInputAttachmentsDisplay from './input-attachments-display.vue'
@@ -57,6 +58,10 @@ import { Source, Sources, SourcesContent, SourcesTrigger } from '@/components/ai
 import { Suggestion, Suggestions } from '@/components/ai-elements/suggestion'
 import { CheckIcon, CopyIcon, GlobeIcon, RefreshCcwIcon, ThumbsDownIcon, ThumbsUpIcon } from 'lucide-vue-next'
 
+// ========== LangGraph SDK 类型 (从 @langchain/langgraph-sdk 导入) ==========
+// 参考文档: docs/chat-flow.md
+// type Message = HumanMessage | AIMessage | ToolMessage | SystemMessage | FunctionMessage | RemoveMessage
+
 interface Props {
   assistantId?: string
   assistantName?: string
@@ -70,8 +75,14 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 // LangGraph Client
+// 使用 VITE_LANGGRAPH_API_URL 环境变量
+// 开发环境默认使用 http://localhost:2024
+// API Key 通过 VITE_LANGGRAPH_API_KEY 环境变量配置
+const apiUrl = import.meta.env.VITE_LANGGRAPH_API_URL || 'http://localhost:2024'
+const apiKey = import.meta.env.VITE_LANGGRAPH_API_KEY
 const client = new Client({
-  apiUrl: window.location.origin + '/agent'
+  apiUrl,
+  apiKey: apiKey || undefined
 })
 
 // 状态
@@ -82,10 +93,54 @@ const useWebSearch = ref(false)
 const modelId = ref('gpt-4o')
 const modelSelectorOpen = ref(false)
 
-// 消息列表
+// ========== 消息处理工具函数 (使用 LangGraph SDK 类型) ==========
+
+// 消息内容类型 (来自 SDK)
+type MessageContentText = { type: 'text'; text: string }
+type MessageContentImageUrl = { type: 'image_url'; image_url: string | { url: string; detail?: 'auto' | 'low' | 'high' } }
+type MessageContentComplex = MessageContentText | MessageContentImageUrl
+type MessageContent = string | MessageContentComplex[]
+
+// 解析消息内容为字符串
+function parseMessageContent(content: MessageContent): string {
+  if (typeof content === 'string') {
+    return content
+  }
+  if (Array.isArray(content)) {
+    return content
+      .filter((block): block is MessageContentText => block.type === 'text')
+      .map(block => block.text)
+      .join('')
+  }
+  return ''
+}
+
+// 检查内容块是否包含图片
+function hasImageContent(content: MessageContent): boolean {
+  if (typeof content === 'string') return false
+  if (Array.isArray(content)) {
+    return content.some(block => block.type === 'image_url')
+  }
+  return false
+}
+
+// 提取图片 URL 列表
+function getImageUrls(content: MessageContent): string[] {
+  if (typeof content === 'string') return []
+  if (Array.isArray(content)) {
+    return content
+      .filter((block): block is MessageContentImageUrl => block.type === 'image_url')
+      .map(block => typeof block.image_url === 'string' ? block.image_url : block.image_url.url)
+  }
+  return []
+}
+
+// ========== UI 消息类型定义 ==========
+
 interface MessageVersion {
   id: string
   content: string
+  images?: string[]  // 图片 URL 列表
 }
 
 interface MessageAttachment {
@@ -106,6 +161,12 @@ interface MessageReasoning {
   duration: number
 }
 
+interface ToolCallDisplay {
+  id: string
+  name: string
+  args: string  // JSON 字符串形式展示
+}
+
 interface ChatMessage {
   key: string
   from: 'user' | 'assistant'
@@ -113,6 +174,7 @@ interface ChatMessage {
   attachments?: AttachmentData[]
   sources?: MessageSource[]
   reasoning?: MessageReasoning
+  toolCalls?: ToolCallDisplay[]  // AI 调用的工具列表
 }
 
 const messages = ref<ChatMessage[]>([])
@@ -156,7 +218,8 @@ async function handleSubmit(userMessage: string) {
       from: 'user',
       versions: [{
         id: userMessageId,
-        content: userMessage
+        content: userMessage,
+        images: []
       }]
     }
   ]
@@ -196,7 +259,9 @@ async function handleSubmit(userMessage: string) {
           user_id: 'user001',
           name: userMessage.slice(0, 50)
         },
-        streamMode: ['messages-tuple', 'values', 'custom'],
+        // 使用 messages-tuple 模式获取流式输出
+        // 参考文档: docs/chat-flow.md
+        streamMode: ['messages-tuple', 'custom'],
         stream_resumable: false,
         on_disconnect: 'cancel'
       } as any
@@ -211,47 +276,80 @@ async function handleSubmit(userMessage: string) {
         from: 'assistant',
         versions: [{
           id: assistantMessageId,
-          content: ''
+          content: '',
+          images: []
         }]
       }
     ]
 
     let assistantContent = ''
+    let assistantImages: string[] = []
+    let assistantToolCalls: ToolCallDisplay[] = []
+    let lastContentLength = 0
 
+    // 流式处理 LangGraph SDK 返回的消息
+    // 参考文档: docs/chat-flow.md
     for await (const chunk of streamResponse) {
       const chunkEvent = chunk.event as string
-      let content = ''
+      const data = chunk.data as any
 
+      // 处理 messages/partial 事件：流式输出的增量内容
+      // messages-tuple 模式返回的 data 是数组：[message, metadata]
       if (chunkEvent === 'messages' || chunkEvent === 'messages/partial') {
-        const data = chunk.data as any
-        if (data?.chunk?.text) {
-          content = data.chunk.text
-        } else if (data?.message?.content) {
-          const messageContent = data.message.content
-          content = typeof messageContent === 'string'
-            ? messageContent
-            : messageContent[0]?.text || ''
-        }
-      } else if (chunkEvent === 'values') {
-        const data = chunk.data as any
-        if (data?.messages) {
-          const msgs = data.messages
-          if (Array.isArray(msgs) && msgs.length > 0) {
-            const lastMsg = msgs[msgs.length - 1]
-            content = typeof lastMsg.content === 'string'
-              ? lastMsg.content
-              : lastMsg.content?.[0]?.text || ''
+        // data 是一个数组，data[0] 是消息内容
+        const messageArray = Array.isArray(data) ? data : [data]
+        const message = messageArray[0] as any
+
+        if (message) {
+          // 解析消息内容 - 支持字符串和数组格式
+          let content = ''
+          if (typeof message.content === 'string') {
+            content = message.content
+          } else if (Array.isArray(message.content)) {
+            content = message.content
+              .filter((block: any) => block.type === 'text')
+              .map((block: any) => block.text)
+              .join('')
           }
-        }
-      }
 
-      if (content) {
-        assistantContent += content
+          // 处理图片内容
+          let images: string[] = []
+          if (Array.isArray(message.content)) {
+            images = message.content
+              .filter((block: any) => block.type === 'image_url')
+              .map((block: any) =>
+                typeof block.image_url === 'string' ? block.image_url : block.image_url?.url
+              )
+          }
 
-        // 更新最后一条消息的版本内容
-        const lastIndex = messages.value.length - 1
-        if (messages.value[lastIndex]?.from === 'assistant') {
-          messages.value[lastIndex].versions[0].content = assistantContent
+          // 处理工具调用
+          let toolCalls: ToolCallDisplay[] = []
+          if (message.tool_calls && message.tool_calls.length > 0) {
+            toolCalls = message.tool_calls.map((tc: any) => ({
+              id: tc.id,
+              name: tc.name,
+              args: JSON.stringify(tc.args, null, 2)
+            }))
+          }
+
+          // 更新消息内容
+          if (content) {
+            // 增量累加，实现打字机效果
+            if (content.length > lastContentLength) {
+              assistantContent += content.slice(lastContentLength)
+              lastContentLength = content.length
+            }
+            assistantImages = images
+            assistantToolCalls = toolCalls
+
+            // 更新最后一条消息的版本内容
+            const lastIndex = messages.value.length - 1
+            if (messages.value[lastIndex]?.from === 'assistant') {
+              messages.value[lastIndex].versions[0].content = assistantContent
+              messages.value[lastIndex].versions[0].images = assistantImages
+              messages.value[lastIndex].toolCalls = assistantToolCalls
+            }
+          }
         }
       }
     }
@@ -268,7 +366,8 @@ async function handleSubmit(userMessage: string) {
         from: 'assistant',
         versions: [{
           id: errorMessageId,
-          content: '抱歉，发生了一些错误，请稍后重试。'
+          content: '抱歉，发生了一些错误，请稍后重试。',
+          images: []
         }]
       }
     ]
@@ -483,7 +582,7 @@ function toggleDislike(key: string) {
                   <MessageAction
                     label="Copy"
                     tooltip="复制"
-                    @click="handleCopy(message.content || '')"
+                    @click="handleCopy(message.versions?.[0]?.content || '')"
                   >
                     <CopyIcon class="size-4" />
                   </MessageAction>
