@@ -15,12 +15,14 @@ interface Props {
   assistantId?: string
   assistantName?: string
   defaultExpanded?: boolean
+  systemPrompt?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
   assistantId: 'research',
   assistantName: 'Chat',
-  defaultExpanded: false
+  defaultExpanded: false,
+  systemPrompt: ''
 })
 
 // LangGraph Client
@@ -102,11 +104,18 @@ async function handleSubmit(userMessage: string) {
       props.assistantId,
       {
         input: {
-          messages: [{
-            id: messageId,
-            type: 'human',
-            content: [{ type: 'text', text: userMessage }]
-          }]
+          messages: [
+            ...(props.systemPrompt ? [{
+              id: 'system',
+              type: 'system' as const,
+              content: [{ type: 'text', text: props.systemPrompt }]
+            }] : []),
+            {
+              id: messageId,
+              type: 'human' as const,
+              content: [{ type: 'text', text: userMessage }]
+            }
+          ]
         },
         config: {
           tags: ['serv'],
@@ -277,7 +286,7 @@ function toggleDislike(key: string) {
   <div class="ask-ai-bot">
     <!-- 聊天窗口 -->
     <Transition name="slide-up">
-      <div v-if="isExpanded" class="chat-window">
+      <div v-show="isExpanded" class="chat-window">
         <ChatHeader
           :title="assistantName"
           @close="toggleExpanded"
