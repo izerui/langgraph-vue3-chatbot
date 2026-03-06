@@ -22,7 +22,7 @@ const props = withDefaults(defineProps<Props>(), {
   assistantId: 'research',
   assistantName: 'Chat',
   defaultExpanded: false,
-  systemPrompt: ''
+  systemPrompt: '用中文回答'
 })
 
 // LangGraph Client
@@ -98,7 +98,6 @@ async function handleSubmit(userMessage: string) {
       threadId.value = thread.thread_id
     }
 
-    const messageId = crypto.randomUUID()
     const streamResponse = client.runs.stream(
       threadId.value!,
       props.assistantId,
@@ -106,12 +105,10 @@ async function handleSubmit(userMessage: string) {
         input: {
           messages: [
             ...(props.systemPrompt ? [{
-              id: 'system',
               type: 'system' as const,
               content: [{ type: 'text', text: props.systemPrompt }]
             }] : []),
             {
-              id: messageId,
               type: 'human' as const,
               content: [{ type: 'text', text: userMessage }]
             }
