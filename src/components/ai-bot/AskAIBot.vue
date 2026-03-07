@@ -142,7 +142,7 @@ async function handleSubmit(userMessage: string) {
           content: '',
           images: []
         }],
-        isComplete: false,
+        isChunkEnd: false,
         batchId: ''
       }
     ]
@@ -152,6 +152,7 @@ async function handleSubmit(userMessage: string) {
     let assistantToolCalls: { id: string; name: string; args: string }[] = []
     let isLastChunk = false
     let runId = ''
+    let needNewAssistantMessage = false // 是否需要创建新的 assistant 消息
 
     // 流式处理 LangGraph SDK 返回的消息
     for await (const chunk of streamResponse) {
@@ -161,54 +162,16 @@ async function handleSubmit(userMessage: string) {
       // 从 metadata 事件中获取 run_id
       if (chunkEvent === 'metadata' && data?.run_id) {
         runId = data.run_id
-        console.log('📥 metadata:', { runId })
       }
 
       if (chunkEvent === 'messages' || chunkEvent === 'messages/partial') {
         const messageArray = Array.isArray(data) ? data : [data]
         const message = messageArray[0] as any
 
-        console.log('📥 message:', {
-          type: message?.type,
-          chunk_position: message?.chunk_position,
-          content: message?.content?.slice(0, 50),
-          tool_calls: message?.tool_calls,
-          hasToolCallChunks: message?.tool_call_chunks?.length > 0
-        })
-
         // 从消息元数据中获取 run_id
         const messageMeta = messageArray[1] as any
         if (messageMeta?.run_id) {
           runId = messageMeta.run_id
-        }
-
-        // 检查 chunk_position 是否为 'last'（换行）
-        const isLastChunkMessage = message?.chunk_position === 'last'
-        if (isLastChunkMessage) {
-          isLastChunk = true
-
-          // 标记当前 assistant 消息完成
-          const lastAssistantIndex = messages.value.findLastIndex(m => m.from === 'assistant')
-          if (lastAssistantIndex >= 0) {
-            messages.value[lastAssistantIndex].isComplete = true
-          }
-
-          // 创建新的空 assistant 消息（为下一个消息准备）
-          const newAssistantMessageId = `assistant-${Date.now()}`
-          messages.value.push({
-            key: newAssistantMessageId,
-            from: 'assistant',
-            versions: [{
-              id: newAssistantMessageId,
-              content: '',
-              images: []
-            }],
-            isComplete: false,
-            batchId: runId
-          })
-          assistantContent = ''
-          assistantImages = []
-          console.log('📥 chunk_position=last, 创建新消息, messages count:', messages.value.length)
         }
 
         if (message) {
@@ -246,7 +209,7 @@ async function handleSubmit(userMessage: string) {
                 content: toolResult,
                 images: []
               }],
-              isComplete: true,
+              isChunkEnd: true,
               batchId: runId,
               toolUI: [{
                 id: toolCallId,
@@ -269,6 +232,9 @@ async function handleSubmit(userMessage: string) {
               status: toolStatus,
               messageCount: messages.value.length
             })
+
+            // 标记下一条 AI 消息需要创建新消息
+            needNewAssistantMessage = true
 
             continue // 跳过后续处理
           }
@@ -309,6 +275,48 @@ async function handleSubmit(userMessage: string) {
               )
           }
 
+          // 检查 chunk_position 是否为 'last'（换行）- 只标记完成，不创建新消息
+          const isLastChunkMessage = message.chunk_position === 'last'
+          if (isLastChunkMessage) {
+            isLastChunk = true
+
+            // 标记当前 assistant 消息完成
+            for (let i = messages.value.length - 1; i >= 0; i--) {
+              if (messages.value[i].from === 'assistant') {
+                messages.value[i].isChunkEnd = true
+                break
+              }
+            }
+          }
+
+          // 检查是否需要创建新消息（tool 消息后第一条 AI 消息）
+          if (needNewAssistantMessage) {
+            // 标记当前 assistant 消息完成
+            for (let i = messages.value.length - 1; i >= 0; i--) {
+              if (messages.value[i].from === 'assistant') {
+                messages.value[i].isChunkEnd = true
+                break
+              }
+            }
+
+            // 创建新的 assistant 消息
+            const newAssistantMessageId = `assistant-${Date.now()}`
+            messages.value.push({
+              key: newAssistantMessageId,
+              from: 'assistant',
+              versions: [{
+                id: newAssistantMessageId,
+                content: '',
+                images: []
+              }],
+              isChunkEnd: false,
+              batchId: runId
+            })
+            assistantContent = ''
+            assistantImages = []
+            needNewAssistantMessage = false
+          }
+
           // 更新消息内容 - 后端返回的是增量内容，需要累加
           // content 可能是空字符串，所以用 !== undefined 来判断
           if (content !== undefined) {
@@ -318,7 +326,13 @@ async function handleSubmit(userMessage: string) {
           }
 
           // 找到最后一条 assistant 消息并更新
-          const lastAssistantIndex = messages.value.findLastIndex(m => m.from === 'assistant')
+          let lastAssistantIndex = -1
+          for (let i = messages.value.length - 1; i >= 0; i--) {
+            if (messages.value[i].from === 'assistant') {
+              lastAssistantIndex = i
+              break
+            }
+          }
           if (lastAssistantIndex >= 0) {
             messages.value[lastAssistantIndex].versions[0].content = assistantContent
             messages.value[lastAssistantIndex].versions[0].images = assistantImages
@@ -332,7 +346,7 @@ async function handleSubmit(userMessage: string) {
     // 标记最后一条消息已完成
     const lastIndex = messages.value.length - 1
     if (lastIndex >= 0) {
-      messages.value[lastIndex].isComplete = isLastChunk
+      messages.value[lastIndex].isChunkEnd = isLastChunk
       messages.value[lastIndex].batchId = runId
     }
 
@@ -351,7 +365,7 @@ async function handleSubmit(userMessage: string) {
           content: '抱歉，发生了一些错误，请稍后重试。',
           images: []
         }],
-        isComplete: true,
+        isChunkEnd: true,
         batchId: errorMessageId
       }
     ]
