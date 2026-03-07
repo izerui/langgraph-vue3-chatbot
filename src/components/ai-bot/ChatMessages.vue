@@ -96,6 +96,14 @@ function getMessageClass(index: number) {
               <MarkdownRender
                 v-if="message.from === 'assistant'"
                 :content="message.versions[0]?.content || ''"
+                :typewriter="true"
+                :initial-render-batch-size="12"
+                :render-batch-size="24"
+                :render-batch-delay="20"
+                :max-live-nodes="220"
+                :live-node-buffer="40"
+                :defer-nodes-until-visible="true"
+                :viewport-priority="true"
               />
               <template v-else>
                 {{ message.versions[0]?.content }}
