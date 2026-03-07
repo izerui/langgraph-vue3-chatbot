@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { ChatStatus } from 'ai'
 import type { ModelInfo } from './types/chat'
-import PromptInputAttachmentsDisplay from './input-attachments-display.vue'
+import PromptInputAttachmentsDisplay from './InputAttachmentsDisplay.vue'
 import {
   PromptInput,
   PromptInputActionAddAttachments,
