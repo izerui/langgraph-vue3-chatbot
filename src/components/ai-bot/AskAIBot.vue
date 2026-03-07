@@ -55,7 +55,7 @@ const models: ModelInfo[] = [
 const suggestions = [
   '你好，请介绍一下自己',
   '你能做什么？',
-  '给我讲个笑话',
+  '演示几个工具调用',
   '今天天气怎么样？'
 ]
 
@@ -170,76 +170,69 @@ async function handleSubmit(userMessage: string) {
           // 获取消息类型
           const messageType = message.type
 
-          // 处理工具调用 - 只在 AI 消息中处理
-          if (messageType === 'AIMessageChunk' || messageType === 'ai') {
-            // 处理工具调用 - tool_calls 是完整的工具调用
-            if (message.tool_calls && message.tool_calls.length > 0) {
-              const newToolCalls = message.tool_calls.map((tc: any) => ({
-                id: tc.id,
-                name: tc.name,
-                args: JSON.stringify(tc.args, null, 2)
-              }))
-              // 合并工具调用，避免重复
-              const existingIds = new Set(assistantToolCalls.map(tc => tc.id))
-              const uniqueNewCalls = newToolCalls.filter(tc => !existingIds.has(tc.id))
-              assistantToolCalls = [...assistantToolCalls, ...uniqueNewCalls]
-            }
-
-            // 处理增量工具调用 - tool_call_chunks 是增量（用于流式显示）
-            if (message.tool_call_chunks && message.tool_call_chunks.length > 0) {
-              for (const chunk of message.tool_call_chunks) {
-                // 优先用 id 匹配，如果没有则用 index 匹配
-                let existingIndex = -1
-                if (chunk.id) {
-                  existingIndex = assistantToolCalls.findIndex(tc => tc.id === chunk.id)
-                } else if (chunk.index !== undefined) {
-                  // 根据 index 匹配（第几个工具调用）
-                  existingIndex = chunk.index
-                }
-
-                if (existingIndex >= 0 && existingIndex < assistantToolCalls.length) {
-                  // 累加参数
-                  assistantToolCalls[existingIndex].args += chunk.args || ''
-                } else {
-                  // 新增工具调用
-                  assistantToolCalls.push({
-                    id: chunk.id || `tool-${Date.now()}-${chunk.index}`,
-                    name: chunk.name || '未知工具',
-                    args: chunk.args || ''
-                  })
-                }
-              }
-            }
-          }
-
-          // 处理工具消息 - tool 类型消息，显示工具执行结果
+          // 处理工具消息 - tool 类型消息，只打印 console.log
           if (messageType === 'tool') {
             const toolCallId = message.tool_call_id
-            const toolName = message.name || assistantToolCalls.find(tc => tc.id === toolCallId)?.name || '未知工具'
+            const toolName = message.name || '未知工具'
             const toolResult = typeof message.content === 'string' ? message.content : JSON.stringify(message.content)
+            const toolStatus = message.status
 
-            // 添加工具结果作为新消息
-            const toolResultMessageId = `tool-result-${Date.now()}`
-            messages.value = [
-              ...messages.value,
-              {
-                key: toolResultMessageId,
-                from: 'tool' as const,
-                versions: [{
-                  id: toolResultMessageId,
-                  content: toolResult,
-                  images: []
-                }],
-                toolCalls: [{
-                  id: toolCallId || `tool-${Date.now()}`,
-                  name: toolName,
-                  args: assistantToolCalls.find(tc => tc.id === toolCallId)?.args || ''
-                }],
-                isComplete: true
-              }
-            ]
+            // 获取工具参数
+            const toolArgs = assistantToolCalls.find(tc => tc.id === toolCallId)?.args || ''
+
+            // 打印工具调用信息
+            console.log('🔧 工具调用:', {
+              name: toolName,
+              id: toolCallId,
+              args: toolArgs,
+              result: toolResult,
+              status: toolStatus
+            })
+
             continue
           }
+
+          // 处理工具调用 - 保存参数供 tool 消息使用
+          if (message.tool_calls && message.tool_calls.length > 0) {
+            for (const tc of message.tool_calls) {
+              const existing = assistantToolCalls.find(t => t.id === tc.id)
+              if (!existing) {
+                assistantToolCalls.push({
+                  id: tc.id,
+                  name: tc.name,
+                  args: JSON.stringify(tc.args, null, 2)
+                })
+              }
+            }
+          }
+          // // 处理工具消息 - tool 类型消息，显示工具执行结果
+          // if (messageType === 'tool') {
+          //   const toolCallId = message.tool_call_id
+          //   const toolName = message.name || assistantToolCalls.find(tc => tc.id === toolCallId)?.name || '未知工具'
+          //   const toolResult = typeof message.content === 'string' ? message.content : JSON.stringify(message.content)
+
+          //   // 添加工具结果作为新消息
+          //   const toolResultMessageId = `tool-result-${Date.now()}`
+          //   messages.value = [
+          //     ...messages.value,
+          //     {
+          //       key: toolResultMessageId,
+          //       from: 'tool' as const,
+          //       versions: [{
+          //         id: toolResultMessageId,
+          //         content: toolResult,
+          //         images: []
+          //       }],
+          //       toolCalls: [{
+          //         id: toolCallId || `tool-${Date.now()}`,
+          //         name: toolName,
+          //         args: assistantToolCalls.find(tc => tc.id === toolCallId)?.args || ''
+          //       }],
+          //       isComplete: true
+          //     }
+          //   ]
+          //   continue
+          // }
 
           // 解析消息内容
           let content = ''
@@ -270,21 +263,33 @@ async function handleSubmit(userMessage: string) {
             assistantImages = images
           }
 
-          // 始终更新消息（即使 content 为空，也可能是工具调用）
-          const lastIndex = messages.value.length - 1
-          if (messages.value[lastIndex]?.from === 'assistant') {
-            messages.value[lastIndex].versions[0].content = assistantContent
-            messages.value[lastIndex].versions[0].images = assistantImages
-            messages.value[lastIndex].toolCalls = assistantToolCalls
+          // 始终更新最后一个 assistant 消息（而不是最后一条消息，因为 tool 消息可能在后面）
+          let lastAssistantIndex = -1
+          for (let i = messages.value.length - 1; i >= 0; i--) {
+            if (messages.value[i].from === 'assistant') {
+              lastAssistantIndex = i
+              break
+            }
+          }
+          if (lastAssistantIndex >= 0) {
+            messages.value[lastAssistantIndex].versions[0].content = assistantContent
+            messages.value[lastAssistantIndex].versions[0].images = assistantImages
+            messages.value[lastAssistantIndex].toolCalls = assistantToolCalls
           }
         }
       }
     }
 
-    // 标记消息已完成
-    const lastIndex = messages.value.length - 1
-    if (messages.value[lastIndex]?.from === 'assistant') {
-      messages.value[lastIndex].isComplete = isLastChunk
+    // 标记最后一个 assistant 消息已完成
+    let lastAssistantIndex = -1
+    for (let i = messages.value.length - 1; i >= 0; i--) {
+      if (messages.value[i].from === 'assistant') {
+        lastAssistantIndex = i
+        break
+      }
+    }
+    if (lastAssistantIndex >= 0) {
+      messages.value[lastAssistantIndex].isComplete = isLastChunk
     }
 
     status.value = 'ready'
