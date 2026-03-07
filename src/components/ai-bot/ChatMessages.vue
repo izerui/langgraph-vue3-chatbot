@@ -8,8 +8,6 @@ import {
 } from '@/components/ai-elements/conversation'
 import {
   Message,
-  MessageAction,
-  MessageActions,
   MessageContent,
 } from '@/components/ai-elements/message'
 import {
@@ -117,22 +115,19 @@ function isLastMessage(index: number) {
                 {{ message.versions[0]?.content }}
               </template>
             </MessageContent>
+
+            <!-- 只有最后一条消息才显示操作按钮 -->
+            <MessageActions v-if="isLastMessage(index) && message.isCompleted">
+              <MessageAction
+                label="Copy"
+                tooltip="复制"
+                @click="handleCopy(message)"
+              >
+                <CopyIcon class="size-4" />
+              </MessageAction>
+            </MessageActions>
           </template>
         </Message>
-
-        <!-- 只有最后一条 assistant 消息完成时才显示操作按钮 -->
-        <MessageActions
-          v-if="isLastMessage(index) && message.from === 'assistant' && message.isCompleted"
-          class="mt-2"
-        >
-          <MessageAction
-            label="Copy"
-            tooltip="复制"
-            @click="handleCopy(message)"
-          >
-            <CopyIcon class="size-4" />
-          </MessageAction>
-        </MessageActions>
       </template>
     </ConversationContent>
     <ConversationScrollButton />
