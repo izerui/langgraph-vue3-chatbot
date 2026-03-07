@@ -38,7 +38,7 @@ export interface ToolCallDisplay {
 // 聊天消息
 export interface ChatMessage {
   key: string
-  from: 'user' | 'assistant'
+  from: 'user' | 'assistant' | 'tool'
   versions: MessageVersion[]
   attachments?: AttachmentData[]
   sources?: MessageSource[]

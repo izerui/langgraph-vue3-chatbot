@@ -213,6 +213,87 @@ for await (const chunk of streamResponse) {
 | 工具调用 | `tool_calls` 是完整的工具调用，`tool_call_chunks` 是增量 |
 | 完成标记 | `chunk_position === 'last'` 表示最后一块 |
 
+### 3.4 工具调用流程
+
+工具调用分为 **5 个阶段**：
+
+#### 阶段 1：工具调用开始
+
+当 AI 开始调用工具时，会发送 `AIMessageChunk` 消息，同时包含：
+- `tool_calls`: 完整的工具调用信息
+- `tool_call_chunks`: 工具参数的第一个增量块
+
+```json
+{
+  "type": "AIMessageChunk",
+  "tool_calls": [{"name": "ls", "args": {"path": "/"}, "id": "call_xxx_1"}],
+  "tool_call_chunks": [{"name": "ls", "args": "{\"path\": \"/\"}", "id": "call_xxx_1", "index": 0}]
+}
+```
+
+#### 阶段 2：args 流式
+
+工具参数在流式输出时，只发送 `tool_call_chunks` 增量：
+
+```json
+{
+  "type": "AIMessageChunk",
+  "tool_call_chunks": [{"name": null, "args": "\"path\": \"/\"}", "id": null, "index": 0}]
+}
+```
+
+#### 阶段 3：调用结束
+
+工具调用完成时，发送 `chunk_position: "last"`：
+
+```json
+{
+  "type": "AIMessageChunk",
+  "chunk_position": "last"
+}
+```
+
+#### 阶段 4：result 流式
+
+工具执行结果返回，发送 `type: "tool"` 消息（可能有多条，内容递增）：
+
+```json
+// tool 消息完整结构
+{
+  "type": "tool",
+  "content": "工具执行结果",
+  "tool_call_id": "call_xxx_1",
+  "name": "ls",
+  "status": "success"
+}
+```
+
+| 字段 | 说明 |
+|------|------|
+| `type` | 固定为 "tool" |
+| `content` | 工具执行结果内容 |
+| `tool_call_id` | 工具调用 ID |
+| `name` | 工具名称 |
+| `status` | 执行状态 (success/error) |
+
+#### 阶段 5：AI 继续回复
+
+工具结果返回后，AI 继续输出文本内容：
+
+```json
+{
+  "type": "AIMessageChunk",
+  "content": "根据工具返回的结果..."
+}
+```
+
+### 3.5 消息类型汇总
+
+| type 值 | 说明 | 关键字段 |
+|---------|------|----------|
+| `AIMessageChunk` | AI 消息块（包含工具调用） | `tool_calls`, `tool_call_chunks`, `content`, `chunk_position` |
+| `tool` | 工具执行结果 | `content`, `tool_call_id`, `name` |
+
 ---
 
 ## 4. API 端点

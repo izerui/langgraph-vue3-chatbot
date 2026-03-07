@@ -52,7 +52,7 @@ function handleCopy(message: ChatMessage) {
       <Message
         v-for="message in messages"
         :key="message.key"
-        :from="message.from"
+        :from="message.from === 'tool' ? 'assistant' : message.from"
       >
         <!-- 多版本消息显示（用于展示 AI 多次生成的结果） -->
         <MessageBranch

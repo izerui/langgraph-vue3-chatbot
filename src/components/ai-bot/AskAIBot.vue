@@ -167,6 +167,80 @@ async function handleSubmit(userMessage: string) {
         const message = messageArray[0] as any
 
         if (message) {
+          // 获取消息类型
+          const messageType = message.type
+
+          // 处理工具调用 - 只在 AI 消息中处理
+          if (messageType === 'AIMessageChunk' || messageType === 'ai') {
+            // 处理工具调用 - tool_calls 是完整的工具调用
+            if (message.tool_calls && message.tool_calls.length > 0) {
+              const newToolCalls = message.tool_calls.map((tc: any) => ({
+                id: tc.id,
+                name: tc.name,
+                args: JSON.stringify(tc.args, null, 2)
+              }))
+              // 合并工具调用，避免重复
+              const existingIds = new Set(assistantToolCalls.map(tc => tc.id))
+              const uniqueNewCalls = newToolCalls.filter(tc => !existingIds.has(tc.id))
+              assistantToolCalls = [...assistantToolCalls, ...uniqueNewCalls]
+            }
+
+            // 处理增量工具调用 - tool_call_chunks 是增量（用于流式显示）
+            if (message.tool_call_chunks && message.tool_call_chunks.length > 0) {
+              for (const chunk of message.tool_call_chunks) {
+                // 优先用 id 匹配，如果没有则用 index 匹配
+                let existingIndex = -1
+                if (chunk.id) {
+                  existingIndex = assistantToolCalls.findIndex(tc => tc.id === chunk.id)
+                } else if (chunk.index !== undefined) {
+                  // 根据 index 匹配（第几个工具调用）
+                  existingIndex = chunk.index
+                }
+
+                if (existingIndex >= 0 && existingIndex < assistantToolCalls.length) {
+                  // 累加参数
+                  assistantToolCalls[existingIndex].args += chunk.args || ''
+                } else {
+                  // 新增工具调用
+                  assistantToolCalls.push({
+                    id: chunk.id || `tool-${Date.now()}-${chunk.index}`,
+                    name: chunk.name || '未知工具',
+                    args: chunk.args || ''
+                  })
+                }
+              }
+            }
+          }
+
+          // 处理工具消息 - tool 类型消息，显示工具执行结果
+          if (messageType === 'tool') {
+            const toolCallId = message.tool_call_id
+            const toolName = message.name || assistantToolCalls.find(tc => tc.id === toolCallId)?.name || '未知工具'
+            const toolResult = typeof message.content === 'string' ? message.content : JSON.stringify(message.content)
+
+            // 添加工具结果作为新消息
+            const toolResultMessageId = `tool-result-${Date.now()}`
+            messages.value = [
+              ...messages.value,
+              {
+                key: toolResultMessageId,
+                from: 'tool' as const,
+                versions: [{
+                  id: toolResultMessageId,
+                  content: toolResult,
+                  images: []
+                }],
+                toolCalls: [{
+                  id: toolCallId || `tool-${Date.now()}`,
+                  name: toolName,
+                  args: assistantToolCalls.find(tc => tc.id === toolCallId)?.args || ''
+                }],
+                isComplete: true
+              }
+            ]
+            continue
+          }
+
           // 解析消息内容
           let content = ''
           if (typeof message.content === 'string') {
@@ -186,37 +260,6 @@ async function handleSubmit(userMessage: string) {
               .map((block: any) =>
                 typeof block.image_url === 'string' ? block.image_url : block.image_url?.url
               )
-          }
-
-          // 处理工具调用 - tool_calls 是完整的工具调用
-          if (message.tool_calls && message.tool_calls.length > 0) {
-            const newToolCalls = message.tool_calls.map((tc: any) => ({
-              id: tc.id,
-              name: tc.name,
-              args: JSON.stringify(tc.args, null, 2)
-            }))
-            // 合并工具调用，避免重复
-            const existingIds = new Set(assistantToolCalls.map(tc => tc.id))
-            const uniqueNewCalls = newToolCalls.filter(tc => !existingIds.has(tc.id))
-            assistantToolCalls = [...assistantToolCalls, ...uniqueNewCalls]
-          }
-
-          // 处理增量工具调用 - tool_call_chunks 是增量
-          if (message.tool_call_chunks && message.tool_call_chunks.length > 0) {
-            for (const chunk of message.tool_call_chunks) {
-              const existingIndex = assistantToolCalls.findIndex(tc => tc.id === chunk.id)
-              if (existingIndex >= 0) {
-                // 累加参数
-                assistantToolCalls[existingIndex].args += chunk.args
-              } else {
-                // 新增工具调用
-                assistantToolCalls.push({
-                  id: chunk.id,
-                  name: chunk.name,
-                  args: chunk.args
-                })
-              }
-            }
           }
 
           // 更新消息内容 - 后端返回的是增量内容，需要累加
