@@ -3,7 +3,7 @@ import { ref, computed } from 'vue'
 import { Client } from '@langchain/langgraph-sdk'
 import type { ChatStatus } from 'ai'
 import type { PromptInputMessage } from '@/components/ai-elements/prompt-input'
-import type { ChatMessage, ModelInfo } from '@/components/ai-bot/types/chat'
+import type { ChatMessage, ModelInfo, ToolUIInfo } from '@/components/ai-bot/types/chat'
 
 import ChatHeader from '@/components/ai-bot/ChatHeader.vue'
 import ChatMessages from '@/components/ai-bot/ChatMessages.vue'
@@ -143,13 +143,15 @@ async function handleSubmit(userMessage: string) {
           images: []
         }],
         isComplete: false,
-        batchId: ''
+        batchId: '',
+        toolUI: []
       }
     ]
 
     let assistantContent = ''
     let assistantImages: string[] = []
     let assistantToolCalls: { id: string; name: string; args: string }[] = []
+    let assistantToolUI: ToolUIInfo[] = []
     let isLastChunk = false
     let runId = ''
 
@@ -191,6 +193,26 @@ async function handleSubmit(userMessage: string) {
             // 获取工具参数
             const toolArgs = assistantToolCalls.find(tc => tc.id === toolCallId)?.args || ''
 
+            // 更新工具 UI 信息
+            const toolUIIndex = assistantToolUI.findIndex(t => t.id === toolCallId)
+            if (toolUIIndex >= 0) {
+              assistantToolUI[toolUIIndex].result = toolResult
+              assistantToolUI[toolUIIndex].state = toolStatus === 'error' ? 'output-error' : 'output-available'
+              if (toolStatus === 'error') {
+                assistantToolUI[toolUIIndex].error = toolResult
+              }
+            } else {
+              // 如果 UI 不存在则创建
+              assistantToolUI.push({
+                id: toolCallId,
+                name: toolName,
+                args: toolArgs,
+                result: toolResult,
+                state: toolStatus === 'error' ? 'output-error' : 'output-available',
+                error: toolStatus === 'error' ? toolResult : undefined
+              })
+            }
+
             // 打印工具调用信息
             console.log('🔧 工具调用:', {
               name: toolName,
@@ -200,7 +222,6 @@ async function handleSubmit(userMessage: string) {
               status: toolStatus
             })
 
-            continue
           }
 
           // 处理工具调用 - 保存参数供 tool 消息使用
@@ -252,6 +273,7 @@ async function handleSubmit(userMessage: string) {
             messages.value[lastIndex].versions[0].content = assistantContent
             messages.value[lastIndex].versions[0].images = assistantImages
             messages.value[lastIndex].toolCalls = assistantToolCalls
+            messages.value[lastIndex].toolUI = assistantToolUI
             messages.value[lastIndex].batchId = runId
           }
         }

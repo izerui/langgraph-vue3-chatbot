@@ -35,6 +35,19 @@ export interface ToolCallDisplay {
   args: string
 }
 
+// 工具 UI 状态
+export type ToolUIState = 'input-streaming' | 'input-available' | 'output-available' | 'output-error' | 'approval-requested' | 'approval-responded' | 'output-denied'
+
+// 工具 UI 信息
+export interface ToolUIInfo {
+  id: string
+  name: string
+  args: string
+  result?: string
+  state: ToolUIState
+  error?: string
+}
+
 // 聊天消息
 export interface ChatMessage {
   key: string
@@ -44,6 +57,7 @@ export interface ChatMessage {
   sources?: MessageSource[]
   reasoning?: MessageReasoning
   toolCalls?: ToolCallDisplay[]
+  toolUI?: ToolUIInfo[]  // 工具 UI 实时信息
   isComplete?: boolean  // 消息是否渲染完成
   batchId?: string      // 批次 ID，同一批次的消息没有间隔
 }
