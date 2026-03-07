@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ChatMessage, ToolUIInfo } from './types/chat'
+import type { ChatMessage } from './types/chat'
 import {
   Conversation,
   ConversationContent,
@@ -9,24 +9,25 @@ import {
   Message,
   MessageAction,
   MessageActions,
-  MessageBranch,
-  MessageBranchContent,
-  MessageBranchNext,
-  MessageBranchPage,
-  MessageBranchPrevious,
-  MessageBranchSelector,
   MessageContent,
-  MessageToolbar,
 } from '@/components/ai-elements/message'
 import {
-  Attachments,
   Attachment,
   AttachmentPreview,
   AttachmentRemove,
+  Attachments,
 } from '@/components/ai-elements/attachments'
-import { Reasoning, ReasoningContent, ReasoningTrigger } from '@/components/ai-elements/reasoning'
-import { Source, Sources, SourcesContent, SourcesTrigger } from '@/components/ai-elements/sources'
-import { ToolCalls } from '@/components/ai-elements/tool-calls'
+import {
+  Reasoning,
+  ReasoningContent,
+  ReasoningTrigger,
+} from '@/components/ai-elements/reasoning'
+import {
+  Source,
+  Sources,
+  SourcesContent,
+  SourcesTrigger,
+} from '@/components/ai-elements/sources'
 import {
   Sandbox,
   SandboxContent,
@@ -130,41 +131,6 @@ function getMessageClass(index: number) {
           :from="message.from"
           :class="getMessageClass(index)"
         >
-        <!-- 多版本消息显示（用于展示 AI 多次生成的结果） -->
-        <MessageBranch
-          v-if="message.versions.length > 1"
-          :default-branch="0"
-        >
-          <MessageBranchContent>
-            <MessageContent
-              v-for="version in message.versions"
-              :key="version.id"
-            >
-              <MarkdownRender :content="version.content" />
-            </MessageContent>
-          </MessageBranchContent>
-
-          <MessageToolbar v-if="message.from === 'assistant' && message.isCompleted">
-            <MessageBranchSelector :from="message.from">
-              <MessageBranchPrevious />
-              <MessageBranchPage />
-              <MessageBranchNext />
-            </MessageBranchSelector>
-
-            <MessageActions>
-              <MessageAction
-                label="Copy"
-                tooltip="复制"
-                @click="handleCopy(message)"
-              >
-                <CopyIcon class="size-4" />
-              </MessageAction>
-            </MessageActions>
-          </MessageToolbar>
-        </MessageBranch>
-
-        <!-- 单版本消息显示 -->
-        <div v-else>
           <!-- 附件显示 -->
           <Attachments
             v-if="message.attachments && message.attachments.length > 0"
@@ -222,8 +188,7 @@ function getMessageClass(index: number) {
               <CopyIcon class="size-4" />
             </MessageAction>
           </MessageActions>
-        </div>
-      </Message>
+        </Message>
       </template>
     </ConversationContent>
     <ConversationScrollButton />
