@@ -205,34 +205,6 @@ async function handleSubmit(userMessage: string) {
               }
             }
           }
-          // // 处理工具消息 - tool 类型消息，显示工具执行结果
-          // if (messageType === 'tool') {
-          //   const toolCallId = message.tool_call_id
-          //   const toolName = message.name || assistantToolCalls.find(tc => tc.id === toolCallId)?.name || '未知工具'
-          //   const toolResult = typeof message.content === 'string' ? message.content : JSON.stringify(message.content)
-
-          //   // 添加工具结果作为新消息
-          //   const toolResultMessageId = `tool-result-${Date.now()}`
-          //   messages.value = [
-          //     ...messages.value,
-          //     {
-          //       key: toolResultMessageId,
-          //       from: 'tool' as const,
-          //       versions: [{
-          //         id: toolResultMessageId,
-          //         content: toolResult,
-          //         images: []
-          //       }],
-          //       toolCalls: [{
-          //         id: toolCallId || `tool-${Date.now()}`,
-          //         name: toolName,
-          //         args: assistantToolCalls.find(tc => tc.id === toolCallId)?.args || ''
-          //       }],
-          //       isComplete: true
-          //     }
-          //   ]
-          //   continue
-          // }
 
           // 解析消息内容
           let content = ''
