@@ -16,7 +16,6 @@ import {
   MessageBranchPrevious,
   MessageBranchSelector,
   MessageContent,
-  MessageResponse,
   MessageToolbar,
 } from '@/components/ai-elements/message'
 import {
@@ -28,6 +27,8 @@ import {
 import { Reasoning, ReasoningContent, ReasoningTrigger } from '@/components/ai-elements/reasoning'
 import { Source, Sources, SourcesContent, SourcesTrigger } from '@/components/ai-elements/sources'
 import { CopyIcon } from 'lucide-vue-next'
+import MarkdownRender from 'markstream-vue'
+import 'markstream-vue/index.css'
 
 interface Props {
   messages: ChatMessage[]
@@ -62,7 +63,7 @@ function handleCopy(message: ChatMessage) {
               v-for="version in message.versions"
               :key="version.id"
             >
-              <MessageResponse :content="version.content" />
+              <MarkdownRender :content="version.content" />
             </MessageContent>
           </MessageBranchContent>
 
@@ -125,7 +126,7 @@ function handleCopy(message: ChatMessage) {
 
           <!-- 消息内容 -->
           <MessageContent>
-            <MessageResponse
+            <MarkdownRender
               v-if="message.from === 'assistant'"
               :content="message.versions[0]?.content || ''"
             />

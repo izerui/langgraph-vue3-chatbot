@@ -150,11 +150,17 @@ async function handleSubmit(userMessage: string) {
     let assistantImages: string[] = []
     let assistantToolCalls: { id: string; name: string; args: string }[] = []
     let lastContentLength = 0
+    let isLastChunk = false
 
     // 流式处理 LangGraph SDK 返回的消息
     for await (const chunk of streamResponse) {
       const chunkEvent = chunk.event as string
       const data = chunk.data as any
+
+      // 检查是否是最后一块
+      if (data?.chunk_position === 'last') {
+        isLastChunk = true
+      }
 
       if (chunkEvent === 'messages' || chunkEvent === 'messages/partial') {
         const messageArray = Array.isArray(data) ? data : [data]
@@ -192,12 +198,11 @@ async function handleSubmit(userMessage: string) {
             }))
           }
 
-          // 更新消息内容
-          if (content) {
-            if (content.length > lastContentLength) {
-              assistantContent += content.slice(lastContentLength)
-              lastContentLength = content.length
-            }
+          // 更新消息内容 - 后端返回的是增量内容，需要累加
+          // content 可能是空字符串，所以用 !== undefined 来判断
+          if (content !== undefined) {
+            // 直接累加内容
+            assistantContent += content
             assistantImages = images
             assistantToolCalls = toolCalls
 
@@ -215,7 +220,7 @@ async function handleSubmit(userMessage: string) {
     // 标记消息已完成
     const lastIndex = messages.value.length - 1
     if (messages.value[lastIndex]?.from === 'assistant') {
-      messages.value[lastIndex].isComplete = true
+      messages.value[lastIndex].isComplete = isLastChunk
     }
 
     status.value = 'ready'
