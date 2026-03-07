@@ -27,7 +27,6 @@ import {
   SourcesContent,
   SourcesTrigger,
 } from '@/components/ai-elements/sources'
-import { CopyIcon } from 'lucide-vue-next'
 import MarkdownRender from 'markstream-vue'
 import 'markstream-vue/index.css'
 
@@ -37,14 +36,6 @@ interface Props {
 
 const props = defineProps<Props>()
 
-const emit = defineEmits<{
-  copy: [content: string]
-}>()
-
-function handleCopy(message: ChatMessage) {
-  emit('copy', message.versions?.[0]?.content || '')
-}
-
 function getMessageClass(index: number) {
   if (index === 0) return ''
   const current = props.messages[index]
@@ -53,11 +44,6 @@ function getMessageClass(index: number) {
     return '-mt-8'
   }
   return ''
-}
-
-// 判断是否是最后一条消息
-function isLastMessage(index: number) {
-  return index === props.messages.length - 1
 }
 </script>
 
@@ -115,17 +101,6 @@ function isLastMessage(index: number) {
                 {{ message.versions[0]?.content }}
               </template>
             </MessageContent>
-
-            <!-- 只有最后一条消息才显示操作按钮 -->
-            <MessageActions v-if="isLastMessage(index) && message.isCompleted">
-              <MessageAction
-                label="Copy"
-                tooltip="复制"
-                @click="handleCopy(message)"
-              >
-                <CopyIcon class="size-4" />
-              </MessageAction>
-            </MessageActions>
           </template>
         </Message>
       </template>
