@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ChatMessage } from './types/chat'
+import type { ChatMessage, ToolUIInfo } from './types/chat'
 import {
   Conversation,
   ConversationContent,
@@ -27,6 +27,17 @@ import {
 import { Reasoning, ReasoningContent, ReasoningTrigger } from '@/components/ai-elements/reasoning'
 import { Source, Sources, SourcesContent, SourcesTrigger } from '@/components/ai-elements/sources'
 import { ToolCalls } from '@/components/ai-elements/tool-calls'
+import {
+  Sandbox,
+  SandboxContent,
+  SandboxHeader,
+  SandboxTabContent,
+  SandboxTabs,
+  SandboxTabsBar,
+  SandboxTabsList,
+  SandboxTabsTrigger,
+} from '@/components/ai-elements/sandbox'
+import { CodeBlock, CodeBlockCopyButton } from '@/components/ai-elements/code-block'
 import { CopyIcon } from 'lucide-vue-next'
 import MarkdownRender from 'markstream-vue'
 import 'markstream-vue/index.css'
@@ -61,12 +72,64 @@ function getMessageClass(index: number) {
 <template>
   <Conversation>
     <ConversationContent>
-      <Message
-        v-for="(message, index) in messages"
-        :key="message.key"
-        :from="message.from === 'tool' ? 'assistant' : message.from"
-        :class="getMessageClass(index)"
-      >
+      <!-- tool 消息渲染 -->
+      <template v-for="(message, index) in messages" :key="message.key">
+        <div v-if="message.from === 'tool'" class="mt-2">
+          <Sandbox
+            v-for="toolUI in message.toolUI"
+            :key="toolUI.id"
+          >
+            <SandboxHeader :state="toolUI.state" :title="toolUI.name" />
+            <SandboxContent>
+              <SandboxTabs default-value="code">
+                <SandboxTabsBar>
+                  <SandboxTabsList>
+                    <SandboxTabsTrigger value="code">
+                      Code
+                    </SandboxTabsTrigger>
+                    <SandboxTabsTrigger value="output">
+                      Output
+                    </SandboxTabsTrigger>
+                  </SandboxTabsList>
+                </SandboxTabsBar>
+                <SandboxTabContent value="code">
+                  <CodeBlock
+                    class="border-0"
+                    :code="toolUI.args"
+                    language="python"
+                  >
+                    <CodeBlockCopyButton class="absolute top-2 right-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+                  </CodeBlock>
+                </SandboxTabContent>
+                <SandboxTabContent value="output">
+                  <CodeBlock
+                    v-if="toolUI.state === 'output-error'"
+                    class="border-0 text-red-500"
+                    :code="toolUI.error || ''"
+                    language="javascript"
+                  >
+                    <CodeBlockCopyButton class="absolute top-2 right-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+                  </CodeBlock>
+                  <CodeBlock
+                    v-else
+                    class="border-0"
+                    :code="toolUI.result || ''"
+                    language="log"
+                  >
+                    <CodeBlockCopyButton class="absolute top-2 right-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+                  </CodeBlock>
+                </SandboxTabContent>
+              </SandboxTabs>
+            </SandboxContent>
+          </Sandbox>
+        </div>
+
+        <!-- assistant/user 消息渲染 -->
+        <Message
+          v-else
+          :from="message.from"
+          :class="getMessageClass(index)"
+        >
         <!-- 多版本消息显示（用于展示 AI 多次生成的结果） -->
         <MessageBranch
           v-if="message.versions.length > 1"
@@ -80,9 +143,6 @@ function getMessageClass(index: number) {
               <MarkdownRender :content="version.content" />
             </MessageContent>
           </MessageBranchContent>
-
-          <!-- 工具调用 -->
-          <ToolCalls :tool-calls="message.toolCalls" />
 
           <MessageToolbar v-if="message.from === 'assistant' && message.isComplete">
             <MessageBranchSelector :from="message.from">
@@ -152,9 +212,6 @@ function getMessageClass(index: number) {
             </template>
           </MessageContent>
 
-          <!-- 工具调用 -->
-          <ToolCalls :tool-calls="message.toolCalls" />
-
           <!-- 消息操作按钮 -->
           <MessageActions v-if="message.from === 'assistant' && message.isComplete">
             <MessageAction
@@ -167,6 +224,7 @@ function getMessageClass(index: number) {
           </MessageActions>
         </div>
       </Message>
+      </template>
     </ConversationContent>
     <ConversationScrollButton />
   </Conversation>

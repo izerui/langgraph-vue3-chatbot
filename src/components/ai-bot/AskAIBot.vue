@@ -3,7 +3,7 @@ import { ref, computed } from 'vue'
 import { Client } from '@langchain/langgraph-sdk'
 import type { ChatStatus } from 'ai'
 import type { PromptInputMessage } from '@/components/ai-elements/prompt-input'
-import type { ChatMessage, ModelInfo, ToolUIInfo } from '@/components/ai-bot/types/chat'
+import type { ChatMessage, ModelInfo, ToolUIInfo, ToolUIState } from '@/components/ai-bot/types/chat'
 
 import ChatHeader from '@/components/ai-bot/ChatHeader.vue'
 import ChatMessages from '@/components/ai-bot/ChatMessages.vue'
@@ -55,7 +55,7 @@ const models: ModelInfo[] = [
 const suggestions = [
   '你好，请介绍一下自己',
   '你能做什么？',
-  '演示几个工具调用',
+  '演示几个工具调用,针对每个工具演示要进行说明.',
   '今天天气怎么样？'
 ]
 
@@ -143,15 +143,13 @@ async function handleSubmit(userMessage: string) {
           images: []
         }],
         isComplete: false,
-        batchId: '',
-        toolUI: []
+        batchId: ''
       }
     ]
 
     let assistantContent = ''
     let assistantImages: string[] = []
     let assistantToolCalls: { id: string; name: string; args: string }[] = []
-    let assistantToolUI: ToolUIInfo[] = []
     let isLastChunk = false
     let runId = ''
 
@@ -163,27 +161,61 @@ async function handleSubmit(userMessage: string) {
       // 从 metadata 事件中获取 run_id
       if (chunkEvent === 'metadata' && data?.run_id) {
         runId = data.run_id
-      }
-
-      // 检查是否是最后一块
-      if (data?.chunk_position === 'last') {
-        isLastChunk = true
+        console.log('📥 metadata:', { runId })
       }
 
       if (chunkEvent === 'messages' || chunkEvent === 'messages/partial') {
         const messageArray = Array.isArray(data) ? data : [data]
         const message = messageArray[0] as any
+
+        console.log('📥 message:', {
+          type: message?.type,
+          chunk_position: message?.chunk_position,
+          content: message?.content?.slice(0, 50),
+          tool_calls: message?.tool_calls,
+          hasToolCallChunks: message?.tool_call_chunks?.length > 0
+        })
+
         // 从消息元数据中获取 run_id
         const messageMeta = messageArray[1] as any
         if (messageMeta?.run_id) {
           runId = messageMeta.run_id
         }
 
+        // 检查 chunk_position 是否为 'last'（换行）
+        const isLastChunkMessage = message?.chunk_position === 'last'
+        if (isLastChunkMessage) {
+          isLastChunk = true
+
+          // 标记当前 assistant 消息完成
+          const lastAssistantIndex = messages.value.findLastIndex(m => m.from === 'assistant')
+          if (lastAssistantIndex >= 0) {
+            messages.value[lastAssistantIndex].isComplete = true
+          }
+
+          // 创建新的空 assistant 消息（为下一个消息准备）
+          const newAssistantMessageId = `assistant-${Date.now()}`
+          messages.value.push({
+            key: newAssistantMessageId,
+            from: 'assistant',
+            versions: [{
+              id: newAssistantMessageId,
+              content: '',
+              images: []
+            }],
+            isComplete: false,
+            batchId: runId
+          })
+          assistantContent = ''
+          assistantImages = []
+          console.log('📥 chunk_position=last, 创建新消息, messages count:', messages.value.length)
+        }
+
         if (message) {
           // 获取消息类型
           const messageType = message.type
 
-          // 处理工具消息 - tool 类型消息，只打印 console.log
+          // 处理工具消息 - tool 类型
           if (messageType === 'tool') {
             const toolCallId = message.tool_call_id
             const toolName = message.name || '未知工具'
@@ -193,35 +225,52 @@ async function handleSubmit(userMessage: string) {
             // 获取工具参数
             const toolArgs = assistantToolCalls.find(tc => tc.id === toolCallId)?.args || ''
 
-            // 更新工具 UI 信息
-            const toolUIIndex = assistantToolUI.findIndex(t => t.id === toolCallId)
-            if (toolUIIndex >= 0) {
-              assistantToolUI[toolUIIndex].result = toolResult
-              assistantToolUI[toolUIIndex].state = toolStatus === 'error' ? 'output-error' : 'output-available'
-              if (toolStatus === 'error') {
-                assistantToolUI[toolUIIndex].error = toolResult
+            // 映射后端状态到 UI 状态
+            const mapToolStatus = (status: string): ToolUIState => {
+              switch (status) {
+                case 'success': return 'output-available'
+                case 'error': return 'output-error'
+                case 'running': return 'input-available'
+                default: return 'output-available'
               }
-            } else {
-              // 如果 UI 不存在则创建
-              assistantToolUI.push({
+            }
+            const uiState = mapToolStatus(toolStatus)
+
+            // 创建独立的 tool 消息
+            const toolMessageId = `tool-${toolCallId}-${Date.now()}`
+            const toolMessage: ChatMessage = {
+              key: toolMessageId,
+              from: 'tool',
+              versions: [{
+                id: toolMessageId,
+                content: toolResult,
+                images: []
+              }],
+              isComplete: true,
+              batchId: runId,
+              toolUI: [{
                 id: toolCallId,
                 name: toolName,
                 args: toolArgs,
                 result: toolResult,
-                state: toolStatus === 'error' ? 'output-error' : 'output-available',
+                state: uiState,
                 error: toolStatus === 'error' ? toolResult : undefined
-              })
+              }]
             }
 
-            // 打印工具调用信息
-            console.log('🔧 工具调用:', {
+            // 直接 push tool 消息到数组（按后端返回顺序）
+            messages.value.push(toolMessage)
+
+            console.log('🔧 工具结果:', {
               name: toolName,
               id: toolCallId,
               args: toolArgs,
               result: toolResult,
-              status: toolStatus
+              status: toolStatus,
+              messageCount: messages.value.length
             })
 
+            continue // 跳过后续处理
           }
 
           // 处理工具调用 - 保存参数供 tool 消息使用
@@ -238,6 +287,7 @@ async function handleSubmit(userMessage: string) {
             }
           }
 
+          // 处理 AI 消息 - AIMessageChunk 类型，流式累加 content
           // 解析消息内容
           let content = ''
           if (typeof message.content === 'string') {
@@ -267,14 +317,13 @@ async function handleSubmit(userMessage: string) {
             assistantImages = images
           }
 
-          // 更新最后一条消息（因为 tool 消息已经插入到正确位置了）
-          const lastIndex = messages.value.length - 1
-          if (lastIndex >= 0) {
-            messages.value[lastIndex].versions[0].content = assistantContent
-            messages.value[lastIndex].versions[0].images = assistantImages
-            messages.value[lastIndex].toolCalls = assistantToolCalls
-            messages.value[lastIndex].toolUI = assistantToolUI
-            messages.value[lastIndex].batchId = runId
+          // 找到最后一条 assistant 消息并更新
+          const lastAssistantIndex = messages.value.findLastIndex(m => m.from === 'assistant')
+          if (lastAssistantIndex >= 0) {
+            messages.value[lastAssistantIndex].versions[0].content = assistantContent
+            messages.value[lastAssistantIndex].versions[0].images = assistantImages
+            messages.value[lastAssistantIndex].toolCalls = assistantToolCalls
+            messages.value[lastAssistantIndex].batchId = runId
           }
         }
       }
