@@ -188,14 +188,35 @@ async function handleSubmit(userMessage: string) {
               )
           }
 
-          // 处理工具调用
-          let toolCalls: { id: string; name: string; args: string }[] = []
+          // 处理工具调用 - tool_calls 是完整的工具调用
           if (message.tool_calls && message.tool_calls.length > 0) {
-            toolCalls = message.tool_calls.map((tc: any) => ({
+            const newToolCalls = message.tool_calls.map((tc: any) => ({
               id: tc.id,
               name: tc.name,
               args: JSON.stringify(tc.args, null, 2)
             }))
+            // 合并工具调用，避免重复
+            const existingIds = new Set(assistantToolCalls.map(tc => tc.id))
+            const uniqueNewCalls = newToolCalls.filter(tc => !existingIds.has(tc.id))
+            assistantToolCalls = [...assistantToolCalls, ...uniqueNewCalls]
+          }
+
+          // 处理增量工具调用 - tool_call_chunks 是增量
+          if (message.tool_call_chunks && message.tool_call_chunks.length > 0) {
+            for (const chunk of message.tool_call_chunks) {
+              const existingIndex = assistantToolCalls.findIndex(tc => tc.id === chunk.id)
+              if (existingIndex >= 0) {
+                // 累加参数
+                assistantToolCalls[existingIndex].args += chunk.args
+              } else {
+                // 新增工具调用
+                assistantToolCalls.push({
+                  id: chunk.id,
+                  name: chunk.name,
+                  args: chunk.args
+                })
+              }
+            }
           }
 
           // 更新消息内容 - 后端返回的是增量内容，需要累加
@@ -204,14 +225,14 @@ async function handleSubmit(userMessage: string) {
             // 直接累加内容
             assistantContent += content
             assistantImages = images
-            assistantToolCalls = toolCalls
+          }
 
-            const lastIndex = messages.value.length - 1
-            if (messages.value[lastIndex]?.from === 'assistant') {
-              messages.value[lastIndex].versions[0].content = assistantContent
-              messages.value[lastIndex].versions[0].images = assistantImages
-              messages.value[lastIndex].toolCalls = assistantToolCalls
-            }
+          // 始终更新消息（即使 content 为空，也可能是工具调用）
+          const lastIndex = messages.value.length - 1
+          if (messages.value[lastIndex]?.from === 'assistant') {
+            messages.value[lastIndex].versions[0].content = assistantContent
+            messages.value[lastIndex].versions[0].images = assistantImages
+            messages.value[lastIndex].toolCalls = assistantToolCalls
           }
         }
       }

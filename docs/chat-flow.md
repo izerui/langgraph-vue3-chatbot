@@ -59,7 +59,34 @@ interface ToolCall {
 }
 ```
 
-### 1.4 消息类型说明
+### 1.4 ToolCallChunk 增量工具调用结构
+
+流式响应中，工具调用可能分多次返回，使用 `tool_call_chunks` 存储增量内容：
+
+```typescript
+interface ToolCallChunk {
+  name: string;           // 工具名称
+  args: string;          // 参数字符串（可能是部分 JSON）
+  id: string;            // 工具调用 ID
+  index: number;         // 工具调用索引
+  type: "tool_call_chunk";
+}
+```
+
+### 1.5 chunk_position 块位置标记
+
+用于标识流式响应中的块位置：
+
+```typescript
+type ChunkPosition = "last" | null;
+```
+
+| 值 | 说明 |
+|-----|------|
+| `"last"` | 最后一块，表示流式响应完成 |
+| `null` | 中间的增量块 |
+
+### 1.6 消息类型说明
 
 来自 `@langchain/langgraph-sdk` 的实际类型定义：
 
@@ -144,13 +171,47 @@ for await (const chunk of streamResponse) {
   const event = chunk.event;
   const data = chunk.data;
 
+  // 检查是否是最后一块
+  const isLastChunk = data?.chunk_position === 'last';
+
   // messages/partial: 流式输出中的增量内容
   if (event === 'messages' || event === 'messages/partial') {
-    const content = data?.chunk?.text || data?.message?.content;
+    // data 是一个数组，第一个元素是消息
+    const messageArray = Array.isArray(data) ? data : [data];
+    const message = messageArray[0];
+
+    // 获取文本内容
+    let content = '';
+    if (typeof message.content === 'string') {
+      content = message.content;
+    } else if (Array.isArray(message.content)) {
+      content = message.content
+        .filter((block) => block.type === 'text')
+        .map((block) => block.text)
+        .join('');
+    }
+
+    // 获取工具调用（完整形式）
+    const toolCalls = message.tool_calls || [];
+
+    // 获取增量工具调用
+    const toolCallChunks = message.tool_call_chunks || [];
   }
 
+  // 流式响应完成
+  if (isLastChunk) {
+    console.log('流式响应完成');
+  }
 }
 ```
+
+### 3.3 流式数据特点
+
+| 特点 | 说明 |
+|------|------|
+| 增量内容 | `content` 是累积的增量，需要累加而不是覆盖 |
+| 工具调用 | `tool_calls` 是完整的工具调用，`tool_call_chunks` 是增量 |
+| 完成标记 | `chunk_position === 'last'` 表示最后一块 |
 
 ---
 

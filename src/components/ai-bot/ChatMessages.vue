@@ -26,6 +26,7 @@ import {
 } from '@/components/ai-elements/attachments'
 import { Reasoning, ReasoningContent, ReasoningTrigger } from '@/components/ai-elements/reasoning'
 import { Source, Sources, SourcesContent, SourcesTrigger } from '@/components/ai-elements/sources'
+import { ToolCalls } from '@/components/ai-elements/tool-calls'
 import { CopyIcon } from 'lucide-vue-next'
 import MarkdownRender from 'markstream-vue'
 import 'markstream-vue/index.css'
@@ -66,6 +67,9 @@ function handleCopy(message: ChatMessage) {
               <MarkdownRender :content="version.content" />
             </MessageContent>
           </MessageBranchContent>
+
+          <!-- 工具调用 -->
+          <ToolCalls :tool-calls="message.toolCalls" />
 
           <MessageToolbar v-if="message.from === 'assistant' && message.isComplete">
             <MessageBranchSelector :from="message.from">
@@ -134,6 +138,9 @@ function handleCopy(message: ChatMessage) {
               {{ message.versions[0]?.content }}
             </template>
           </MessageContent>
+
+          <!-- 工具调用 -->
+          <ToolCalls :tool-calls="message.toolCalls" />
 
           <!-- 消息操作按钮 -->
           <MessageActions v-if="message.from === 'assistant' && message.isComplete">
