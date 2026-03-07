@@ -142,20 +142,26 @@ async function handleSubmit(userMessage: string) {
           content: '',
           images: []
         }],
-        isComplete: false
+        isComplete: false,
+        batchId: ''
       }
     ]
 
     let assistantContent = ''
     let assistantImages: string[] = []
     let assistantToolCalls: { id: string; name: string; args: string }[] = []
-    let lastContentLength = 0
     let isLastChunk = false
+    let runId = ''
 
     // 流式处理 LangGraph SDK 返回的消息
     for await (const chunk of streamResponse) {
       const chunkEvent = chunk.event as string
       const data = chunk.data as any
+
+      // 从 metadata 事件中获取 run_id
+      if (chunkEvent === 'metadata' && data?.run_id) {
+        runId = data.run_id
+      }
 
       // 检查是否是最后一块
       if (data?.chunk_position === 'last') {
@@ -165,6 +171,11 @@ async function handleSubmit(userMessage: string) {
       if (chunkEvent === 'messages' || chunkEvent === 'messages/partial') {
         const messageArray = Array.isArray(data) ? data : [data]
         const message = messageArray[0] as any
+        // 从消息元数据中获取 run_id
+        const messageMeta = messageArray[1] as any
+        if (messageMeta?.run_id) {
+          runId = messageMeta.run_id
+        }
 
         if (message) {
           // 获取消息类型
@@ -241,6 +252,7 @@ async function handleSubmit(userMessage: string) {
             messages.value[lastIndex].versions[0].content = assistantContent
             messages.value[lastIndex].versions[0].images = assistantImages
             messages.value[lastIndex].toolCalls = assistantToolCalls
+            messages.value[lastIndex].batchId = runId
           }
         }
       }
@@ -250,6 +262,7 @@ async function handleSubmit(userMessage: string) {
     const lastIndex = messages.value.length - 1
     if (lastIndex >= 0) {
       messages.value[lastIndex].isComplete = isLastChunk
+      messages.value[lastIndex].batchId = runId
     }
 
     status.value = 'ready'
@@ -267,7 +280,8 @@ async function handleSubmit(userMessage: string) {
           content: '抱歉，发生了一些错误，请稍后重试。',
           images: []
         }],
-        isComplete: true
+        isComplete: true,
+        batchId: errorMessageId
       }
     ]
     status.value = 'ready'

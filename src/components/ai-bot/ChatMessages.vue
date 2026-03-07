@@ -35,7 +35,7 @@ interface Props {
   messages: ChatMessage[]
 }
 
-defineProps<Props>()
+const props = defineProps<Props>()
 
 const emit = defineEmits<{
   copy: [content: string]
@@ -44,15 +44,28 @@ const emit = defineEmits<{
 function handleCopy(message: ChatMessage) {
   emit('copy', message.versions?.[0]?.content || '')
 }
+
+// 计算每个消息的 class，根据是否与前一个消息同批次来调整间距
+function getMessageClass(index: number) {
+  if (index === 0) return ''
+  const current = props.messages[index]
+  const previous = props.messages[index - 1]
+  // 如果两个消息来自同一个 batch（同一批次回复），则合并显示，无间隔
+  if (current.batchId !== undefined && current.batchId === previous.batchId) {
+    return '-mt-8'
+  }
+  return ''
+}
 </script>
 
 <template>
   <Conversation>
     <ConversationContent>
       <Message
-        v-for="message in messages"
+        v-for="(message, index) in messages"
         :key="message.key"
         :from="message.from === 'tool' ? 'assistant' : message.from"
+        :class="getMessageClass(index)"
       >
         <!-- 多版本消息显示（用于展示 AI 多次生成的结果） -->
         <MessageBranch

@@ -45,6 +45,7 @@ export interface ChatMessage {
   reasoning?: MessageReasoning
   toolCalls?: ToolCallDisplay[]
   isComplete?: boolean  // 消息是否渲染完成
+  batchId?: string      // 批次 ID，同一批次的消息没有间隔
 }
 
 // 模型信息
