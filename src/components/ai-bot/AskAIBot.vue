@@ -235,33 +235,21 @@ async function handleSubmit(userMessage: string) {
             assistantImages = images
           }
 
-          // 始终更新最后一个 assistant 消息（而不是最后一条消息，因为 tool 消息可能在后面）
-          let lastAssistantIndex = -1
-          for (let i = messages.value.length - 1; i >= 0; i--) {
-            if (messages.value[i].from === 'assistant') {
-              lastAssistantIndex = i
-              break
-            }
-          }
-          if (lastAssistantIndex >= 0) {
-            messages.value[lastAssistantIndex].versions[0].content = assistantContent
-            messages.value[lastAssistantIndex].versions[0].images = assistantImages
-            messages.value[lastAssistantIndex].toolCalls = assistantToolCalls
+          // 更新最后一条消息（因为 tool 消息已经插入到正确位置了）
+          const lastIndex = messages.value.length - 1
+          if (lastIndex >= 0) {
+            messages.value[lastIndex].versions[0].content = assistantContent
+            messages.value[lastIndex].versions[0].images = assistantImages
+            messages.value[lastIndex].toolCalls = assistantToolCalls
           }
         }
       }
     }
 
-    // 标记最后一个 assistant 消息已完成
-    let lastAssistantIndex = -1
-    for (let i = messages.value.length - 1; i >= 0; i--) {
-      if (messages.value[i].from === 'assistant') {
-        lastAssistantIndex = i
-        break
-      }
-    }
-    if (lastAssistantIndex >= 0) {
-      messages.value[lastAssistantIndex].isComplete = isLastChunk
+    // 标记最后一条消息已完成
+    const lastIndex = messages.value.length - 1
+    if (lastIndex >= 0) {
+      messages.value[lastIndex].isComplete = isLastChunk
     }
 
     status.value = 'ready'
