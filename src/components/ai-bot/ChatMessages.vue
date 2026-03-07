@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ChatMessage } from './types/chat'
+import ToolCall from './ToolCall.vue'
 import {
   Conversation,
   ConversationContent,
@@ -28,17 +29,6 @@ import {
   SourcesContent,
   SourcesTrigger,
 } from '@/components/ai-elements/sources'
-import {
-  Sandbox,
-  SandboxContent,
-  SandboxHeader,
-  SandboxTabContent,
-  SandboxTabs,
-  SandboxTabsBar,
-  SandboxTabsList,
-  SandboxTabsTrigger,
-} from '@/components/ai-elements/sandbox'
-import { CodeBlock, CodeBlockCopyButton } from '@/components/ai-elements/code-block'
 import { CopyIcon } from 'lucide-vue-next'
 import MarkdownRender from 'markstream-vue'
 import 'markstream-vue/index.css'
@@ -57,138 +47,92 @@ function handleCopy(message: ChatMessage) {
   emit('copy', message.versions?.[0]?.content || '')
 }
 
-// 计算每个消息的 class，根据是否与前一个消息同批次来调整间距
 function getMessageClass(index: number) {
   if (index === 0) return ''
   const current = props.messages[index]
   const previous = props.messages[index - 1]
-  // 如果两个消息来自同一个 batch（同一批次回复），则合并显示，无间隔
   if (current.batchId !== undefined && current.batchId === previous.batchId) {
     return '-mt-8'
   }
   return ''
+}
+
+// 判断是否是最后一条消息
+function isLastMessage(index: number) {
+  return index === props.messages.length - 1
 }
 </script>
 
 <template>
   <Conversation>
     <ConversationContent>
-      <!-- tool 消息渲染 -->
       <template v-for="(message, index) in messages" :key="message.key">
-        <div v-if="message.from === 'tool'" class="mt-2">
-          <Sandbox
-            v-for="toolUI in message.toolUI"
-            :key="toolUI.id"
-          >
-            <SandboxHeader :state="toolUI.state" :title="toolUI.name" />
-            <SandboxContent>
-              <SandboxTabs default-value="code">
-                <SandboxTabsBar>
-                  <SandboxTabsList>
-                    <SandboxTabsTrigger value="code">
-                      Code
-                    </SandboxTabsTrigger>
-                    <SandboxTabsTrigger value="output">
-                      Output
-                    </SandboxTabsTrigger>
-                  </SandboxTabsList>
-                </SandboxTabsBar>
-                <SandboxTabContent value="code">
-                  <CodeBlock
-                    class="border-0"
-                    :code="toolUI.args"
-                    language="python"
-                  >
-                    <CodeBlockCopyButton class="absolute top-2 right-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-                  </CodeBlock>
-                </SandboxTabContent>
-                <SandboxTabContent value="output">
-                  <CodeBlock
-                    v-if="toolUI.state === 'output-error'"
-                    class="border-0 text-red-500"
-                    :code="toolUI.error || ''"
-                    language="javascript"
-                  >
-                    <CodeBlockCopyButton class="absolute top-2 right-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-                  </CodeBlock>
-                  <CodeBlock
-                    v-else
-                    class="border-0"
-                    :code="toolUI.result || ''"
-                    language="log"
-                  >
-                    <CodeBlockCopyButton class="absolute top-2 right-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-                  </CodeBlock>
-                </SandboxTabContent>
-              </SandboxTabs>
-            </SandboxContent>
-          </Sandbox>
-        </div>
+        <Message :from="message.from === 'tool' ? 'assistant' : message.from" :class="getMessageClass(index)">
+          <!-- tool 消息：显示 ToolCall -->
+          <template v-if="message.from === 'tool'">
+            <ToolCall :tool-ui="message.toolUI" />
+          </template>
 
-        <!-- assistant/user 消息渲染 -->
-        <Message
-          v-else
-          :from="message.from"
-          :class="getMessageClass(index)"
-        >
-          <!-- 附件显示 -->
-          <Attachments
-            v-if="message.attachments && message.attachments.length > 0"
-          >
-            <Attachment
-              v-for="attachment in message.attachments"
-              :key="attachment.id"
-              :data="attachment"
+          <!-- assistant/user 消息 -->
+          <template v-else>
+            <Attachments
+              v-if="message.attachments && message.attachments.length > 0"
             >
-              <AttachmentPreview />
-              <AttachmentRemove />
-            </Attachment>
-          </Attachments>
+              <Attachment
+                v-for="attachment in message.attachments"
+                :key="attachment.id"
+                :data="attachment"
+              >
+                <AttachmentPreview />
+                <AttachmentRemove />
+              </Attachment>
+            </Attachments>
 
-          <!-- 来源引用 -->
-          <Sources v-if="message.sources && message.sources.length > 0">
-            <SourcesTrigger :count="message.sources.length" />
-            <SourcesContent>
-              <Source
-                v-for="source in message.sources"
-                :key="source.href"
-                :href="source.href"
-                :title="source.title"
+            <Sources v-if="message.sources && message.sources.length > 0">
+              <SourcesTrigger :count="message.sources.length" />
+              <SourcesContent>
+                <Source
+                  v-for="source in message.sources"
+                  :key="source.href"
+                  :href="source.href"
+                  :title="source.title"
+                />
+              </SourcesContent>
+            </Sources>
+
+            <Reasoning
+              v-if="message.reasoning"
+              :duration="message.reasoning.duration"
+            >
+              <ReasoningTrigger />
+              <ReasoningContent :content="message.reasoning.content" />
+            </Reasoning>
+
+            <MessageContent>
+              <MarkdownRender
+                v-if="message.from === 'assistant'"
+                :content="message.versions[0]?.content || ''"
               />
-            </SourcesContent>
-          </Sources>
-
-          <!-- 推理过程 -->
-          <Reasoning
-            v-if="message.reasoning"
-            :duration="message.reasoning.duration"
-          >
-            <ReasoningTrigger />
-            <ReasoningContent :content="message.reasoning.content" />
-          </Reasoning>
-
-          <!-- 消息内容 -->
-          <MessageContent>
-            <MarkdownRender
-              v-if="message.from === 'assistant'"
-              :content="message.versions[0]?.content || ''"
-            />
-            <template v-else>
-              {{ message.versions[0]?.content }}
-            </template>
-          </MessageContent>
-
-          <!-- 消息操作按钮 -->
-          <MessageActions v-if="message.from === 'assistant' && message.isCompleted">
-            <MessageAction
-              label="Copy"
-              tooltip="复制"
-              @click="handleCopy(message)"
-            >
-              <CopyIcon class="size-4" />
-            </MessageAction>
-          </MessageActions>
+              <template v-else>
+                {{ message.versions[0]?.content }}
+              </template>
+            </MessageContent>
+          </template>
         </Message>
+
+        <!-- 只有最后一条 assistant 消息完成时才显示操作按钮 -->
+        <MessageActions
+          v-if="isLastMessage(index) && message.from === 'assistant' && message.isCompleted"
+          class="mt-2"
+        >
+          <MessageAction
+            label="Copy"
+            tooltip="复制"
+            @click="handleCopy(message)"
+          >
+            <CopyIcon class="size-4" />
+          </MessageAction>
+        </MessageActions>
       </template>
     </ConversationContent>
     <ConversationScrollButton />
