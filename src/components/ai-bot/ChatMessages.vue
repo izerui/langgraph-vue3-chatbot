@@ -27,21 +27,16 @@ import {
 } from '@/components/ai-elements/attachments'
 import { Reasoning, ReasoningContent, ReasoningTrigger } from '@/components/ai-elements/reasoning'
 import { Source, Sources, SourcesContent, SourcesTrigger } from '@/components/ai-elements/sources'
-import { RefreshCcwIcon, CopyIcon, ThumbsUpIcon, ThumbsDownIcon } from 'lucide-vue-next'
+import { CopyIcon } from 'lucide-vue-next'
 
 interface Props {
   messages: ChatMessage[]
-  liked: Record<string, boolean>
-  disliked: Record<string, boolean>
 }
 
 defineProps<Props>()
 
 const emit = defineEmits<{
   copy: [content: string]
-  retry: []
-  like: [key: string]
-  dislike: [key: string]
 }>()
 
 function handleCopy(message: ChatMessage) {
@@ -71,7 +66,7 @@ function handleCopy(message: ChatMessage) {
             </MessageContent>
           </MessageBranchContent>
 
-          <MessageToolbar v-if="message.from === 'assistant'">
+          <MessageToolbar v-if="message.from === 'assistant' && message.isComplete">
             <MessageBranchSelector :from="message.from">
               <MessageBranchPrevious />
               <MessageBranchPage />
@@ -79,36 +74,6 @@ function handleCopy(message: ChatMessage) {
             </MessageBranchSelector>
 
             <MessageActions>
-              <MessageAction
-                label="Retry"
-                tooltip="重新生成"
-                @click="emit('retry')"
-              >
-                <RefreshCcwIcon class="size-4" />
-              </MessageAction>
-
-              <MessageAction
-                label="Like"
-                tooltip="喜欢"
-                @click="emit('like', message.key)"
-              >
-                <ThumbsUpIcon
-                  class="size-4"
-                  :fill="liked[message.key] ? 'currentColor' : 'none'"
-                />
-              </MessageAction>
-
-              <MessageAction
-                label="Dislike"
-                tooltip="不喜欢"
-                @click="emit('dislike', message.key)"
-              >
-                <ThumbsDownIcon
-                  class="size-4"
-                  :fill="disliked[message.key] ? 'currentColor' : 'none'"
-                />
-              </MessageAction>
-
               <MessageAction
                 label="Copy"
                 tooltip="复制"
@@ -170,15 +135,7 @@ function handleCopy(message: ChatMessage) {
           </MessageContent>
 
           <!-- 消息操作按钮 -->
-          <MessageActions v-if="message.from === 'assistant'">
-            <MessageAction
-              label="Retry"
-              tooltip="重新生成"
-              @click="emit('retry')"
-            >
-              <RefreshCcwIcon class="size-4" />
-            </MessageAction>
-
+          <MessageActions v-if="message.from === 'assistant' && message.isComplete">
             <MessageAction
               label="Copy"
               tooltip="复制"

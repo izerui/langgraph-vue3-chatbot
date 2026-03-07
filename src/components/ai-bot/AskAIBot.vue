@@ -43,8 +43,6 @@ const modelSelectorOpen = ref(false)
 
 // 消息
 const messages = ref<ChatMessage[]>([])
-const liked = ref<Record<string, boolean>>({})
-const disliked = ref<Record<string, boolean>>({})
 
 // 模型列表
 const models: ModelInfo[] = [
@@ -143,7 +141,8 @@ async function handleSubmit(userMessage: string) {
           id: assistantMessageId,
           content: '',
           images: []
-        }]
+        }],
+        isComplete: false
       }
     ]
 
@@ -213,6 +212,12 @@ async function handleSubmit(userMessage: string) {
       }
     }
 
+    // 标记消息已完成
+    const lastIndex = messages.value.length - 1
+    if (messages.value[lastIndex]?.from === 'assistant') {
+      messages.value[lastIndex].isComplete = true
+    }
+
     status.value = 'ready'
   } catch (error) {
     console.error('Error sending message:', error)
@@ -227,7 +232,8 @@ async function handleSubmit(userMessage: string) {
           id: errorMessageId,
           content: '抱歉，发生了一些错误，请稍后重试。',
           images: []
-        }]
+        }],
+        isComplete: true
       }
     ]
     status.value = 'ready'
@@ -259,24 +265,6 @@ function handleSuggestionClick(suggestion: string) {
 function handleCopy(content: string) {
   navigator.clipboard.writeText(content)
 }
-
-function handleRetry() {
-  console.log('Retrying...')
-}
-
-function toggleLike(key: string) {
-  liked.value = {
-    ...liked.value,
-    [key]: !liked.value[key],
-  }
-}
-
-function toggleDislike(key: string) {
-  disliked.value = {
-    ...disliked.value,
-    [key]: !disliked.value[key],
-  }
-}
 </script>
 
 <template>
@@ -291,12 +279,7 @@ function toggleDislike(key: string) {
 
         <ChatMessages
           :messages="messages"
-          :liked="liked"
-          :disliked="disliked"
           @copy="handleCopy"
-          @retry="handleRetry"
-          @like="toggleLike"
-          @dislike="toggleDislike"
         />
 
         <ChatSuggestions
@@ -341,7 +324,6 @@ function toggleDislike(key: string) {
   max-height: 80vh;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
   background: var(--background);
   border-radius: 12px;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);

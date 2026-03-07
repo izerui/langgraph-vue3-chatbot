@@ -44,6 +44,7 @@ export interface ChatMessage {
   sources?: MessageSource[]
   reasoning?: MessageReasoning
   toolCalls?: ToolCallDisplay[]
+  isComplete?: boolean  // 消息是否渲染完成
 }
 
 // 模型信息
