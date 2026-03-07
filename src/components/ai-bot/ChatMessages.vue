@@ -144,7 +144,7 @@ function getMessageClass(index: number) {
             </MessageContent>
           </MessageBranchContent>
 
-          <MessageToolbar v-if="message.from === 'assistant' && message.isChunkEnd">
+          <MessageToolbar v-if="message.from === 'assistant' && message.isCompleted">
             <MessageBranchSelector :from="message.from">
               <MessageBranchPrevious />
               <MessageBranchPage />
@@ -213,7 +213,7 @@ function getMessageClass(index: number) {
           </MessageContent>
 
           <!-- 消息操作按钮 -->
-          <MessageActions v-if="message.from === 'assistant' && message.isChunkEnd">
+          <MessageActions v-if="message.from === 'assistant' && message.isCompleted">
             <MessageAction
               label="Copy"
               tooltip="复制"

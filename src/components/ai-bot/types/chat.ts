@@ -58,7 +58,7 @@ export interface ChatMessage {
   reasoning?: MessageReasoning
   toolCalls?: ToolCallDisplay[]
   toolUI?: ToolUIInfo[]  // 工具 UI 实时信息
-  isChunkEnd?: boolean  // chunk 片段是否结束
+  isCompleted?: boolean  // 消息是否完成
   batchId?: string      // 批次 ID，同一批次的消息没有间隔
 }
 

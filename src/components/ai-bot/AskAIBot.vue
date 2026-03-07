@@ -142,7 +142,7 @@ async function handleSubmit(userMessage: string) {
           content: '',
           images: []
         }],
-        isChunkEnd: false,
+        isCompleted: false,
         batchId: ''
       }
     ]
@@ -150,7 +150,6 @@ async function handleSubmit(userMessage: string) {
     let assistantContent = ''
     let assistantImages: string[] = []
     let assistantToolCalls: { id: string; name: string; args: string }[] = []
-    let isLastChunk = false
     let runId = ''
     let needNewAssistantMessage = false // 是否需要创建新的 assistant 消息
 
@@ -209,7 +208,7 @@ async function handleSubmit(userMessage: string) {
                 content: toolResult,
                 images: []
               }],
-              isChunkEnd: true,
+              isCompleted: true,
               batchId: runId,
               toolUI: [{
                 id: toolCallId,
@@ -275,26 +274,12 @@ async function handleSubmit(userMessage: string) {
               )
           }
 
-          // 检查 chunk_position 是否为 'last'（换行）- 只标记完成，不创建新消息
-          const isLastChunkMessage = message.chunk_position === 'last'
-          if (isLastChunkMessage) {
-            isLastChunk = true
-
-            // 标记当前 assistant 消息完成
-            for (let i = messages.value.length - 1; i >= 0; i--) {
-              if (messages.value[i].from === 'assistant') {
-                messages.value[i].isChunkEnd = true
-                break
-              }
-            }
-          }
-
           // 检查是否需要创建新消息（tool 消息后第一条 AI 消息）
           if (needNewAssistantMessage) {
             // 标记当前 assistant 消息完成
             for (let i = messages.value.length - 1; i >= 0; i--) {
               if (messages.value[i].from === 'assistant') {
-                messages.value[i].isChunkEnd = true
+                messages.value[i].isCompleted = true
                 break
               }
             }
@@ -309,7 +294,7 @@ async function handleSubmit(userMessage: string) {
                 content: '',
                 images: []
               }],
-              isChunkEnd: false,
+              isCompleted: false,
               batchId: runId
             })
             assistantContent = ''
@@ -346,7 +331,7 @@ async function handleSubmit(userMessage: string) {
     // 标记最后一条消息已完成
     const lastIndex = messages.value.length - 1
     if (lastIndex >= 0) {
-      messages.value[lastIndex].isChunkEnd = isLastChunk
+      messages.value[lastIndex].isCompleted = true
       messages.value[lastIndex].batchId = runId
     }
 
@@ -365,7 +350,7 @@ async function handleSubmit(userMessage: string) {
           content: '抱歉，发生了一些错误，请稍后重试。',
           images: []
         }],
-        isChunkEnd: true,
+        isCompleted: true,
         batchId: errorMessageId
       }
     ]
