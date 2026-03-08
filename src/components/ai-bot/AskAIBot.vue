@@ -437,12 +437,11 @@ function handleCopy(content: string) {
 }
 
 .chat-window {
-  position: absolute;
-  bottom: 70px;
-  right: 0;
+  position: fixed;
+  top: 20px;
+  right: 20px;
   width: max(300px, min(500px, calc(100vw - 40px)));
-  height: 80vh;
-  max-height: 80vh;
+  height: calc(100vh - 90px);
   display: flex;
   flex-direction: column;
   background: var(--background);
@@ -452,12 +451,12 @@ function handleCopy(content: string) {
 }
 
 .chat-window.maximized {
-  bottom: 0;
-  right: 0;
-  width: 100vw;
-  height: 100vh;
-  max-height: 100vh;
-  border-radius: 0;
+  top: 20px;
+  right: 20px;
+  left: 20px;
+  width: auto;
+  height: calc(100vh - 40px);
+  border-radius: 12px;
 }
 
 .slide-up-enter-active,
