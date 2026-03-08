@@ -46,21 +46,101 @@ const modelSelectorOpen = ref(false)
 // 消息
 const messages = ref<ChatMessage[]>([])
 
-// 初始化线程（如果传递了 threadId）
+// 创建线程
+async function createThread() {
+  try {
+    const thread = await client.threads.create({
+      ...(props.threadId ? { threadId: props.threadId, ifExists: 'do_nothing' } : {}),
+      metadata: {
+        user_id: 'user001',
+      }
+    })
+    threadId.value = thread.thread_id || props.threadId || ''
+  } catch (error) {
+    console.error('Failed to create thread:', error)
+  }
+}
+
+// 获取对话历史
+async function loadThreadHistory() {
+  if (!threadId.value) return
+
+  try {
+    const state = await client.threads.getState(threadId.value)
+    const values = state.values as any
+
+    if (!values?.messages || !Array.isArray(values.messages)) {
+      return
+    }
+
+    const loadedMessages: ChatMessage[] = []
+    const allMessages = values.messages
+
+    for (const msg of allMessages) {
+      const msgType = msg.type
+      const msgContent = msg.content as any
+
+      if (msgType === 'human' || msgType === 'user') {
+        const content = typeof msgContent === 'string' ? msgContent : Array.isArray(msgContent)
+          ? msgContent.filter((b: any) => b.type === 'text').map((b: any) => b.text).join('')
+          : ''
+        loadedMessages.push({
+          key: msg.id || `user-${Date.now()}-${Math.random()}`,
+          from: 'user',
+          versions: [{ id: msg.id || '', content, images: [] }]
+        })
+      } else if (msgType === 'ai') {
+        const content = typeof msgContent === 'string' ? msgContent : Array.isArray(msgContent)
+          ? msgContent.filter((b: any) => b.type === 'text').map((b: any) => b.text).join('')
+          : ''
+
+        const toolCalls = msg.tool_calls?.map((tc: any) => ({
+          id: tc.id,
+          name: tc.name,
+          args: JSON.stringify(tc.args, null, 2),
+          state: 'output-available' as ToolUIState,
+          result: ''
+        })) || []
+
+        loadedMessages.push({
+          key: msg.id || `assistant-${Date.now()}-${Math.random()}`,
+          from: 'assistant',
+          versions: [{ id: msg.id || '', content, images: [] }],
+          toolCalls: toolCalls.length > 0 ? toolCalls : undefined
+        })
+      } else if (msgType === 'tool') {
+        const content = typeof msgContent === 'string' ? msgContent : JSON.stringify(msgContent)
+        const toolCallId = msg.tool_call_id
+
+        // 查找对应的 AI 消息并添加工具结果
+        let lastAssistantMsg: ChatMessage | undefined
+        for (let i = loadedMessages.length - 1; i >= 0; i--) {
+          if (loadedMessages[i].from === 'assistant') {
+            lastAssistantMsg = loadedMessages[i]
+            break
+          }
+        }
+        if (lastAssistantMsg && lastAssistantMsg.toolCalls) {
+          const toolCall = lastAssistantMsg.toolCalls.find(tc => tc.id === toolCallId)
+          if (toolCall) {
+            toolCall.result = content
+            toolCall.state = 'output-available'
+          }
+        }
+      }
+    }
+
+    messages.value = loadedMessages
+  } catch (error) {
+    console.error('Failed to load thread history:', error)
+  }
+}
+
+// 初始化
 onMounted(async () => {
   if (props.threadId) {
-    try {
-      const thread = await client.threads.create({
-        threadId: props.threadId,
-        ifExists: 'do_nothing',
-        metadata: {
-          user_id: 'user001',
-        }
-      })
-      threadId.value = thread.thread_id
-    } catch (error) {
-      console.error('Failed to create thread:', error)
-    }
+    await createThread()
+    await loadThreadHistory()
   }
 })
 
