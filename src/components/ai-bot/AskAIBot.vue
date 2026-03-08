@@ -387,7 +387,7 @@ function handleCopy(content: string) {
 </script>
 
 <template>
-  <div class="ask-ai-bot">
+  <div class="ask-ai-bot" @wheel.prevent>
     <!-- 聊天窗口 -->
     <Transition name="slide-up">
       <div v-show="isExpanded" class="chat-window" :class="{ maximized: isMaximized }">
