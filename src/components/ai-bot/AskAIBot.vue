@@ -127,9 +127,16 @@ async function loadThreadHistory() {
           result: ''
         })) || []
 
-        // 检查是否有工具调用
+        // 先添加 AI 消息
+        loadedMessages.push({
+          key: msg.id || `ai-${Date.now()}-${Math.random()}`,
+          type: 'ai',
+          content,
+          toolCalls: toolCalls.length > 0 ? toolCalls : undefined
+        })
+
+        // 检查是否有工具调用，从紧跟着的 tool 消息中获取结果
         if (toolCalls.length > 0) {
-          // 从紧跟着的 tool 消息中获取结果
           let j = i + 1
           while (j < langgraphMessages.length) {
             const nextMsg = langgraphMessages[j]
@@ -152,7 +159,7 @@ async function loadThreadHistory() {
                   toolCalls: [{
                     id: toolCallId,
                     name: toolCall.name,
-                                        args: toolCall.args,
+                    args: toolCall.args,
                     result: toolMsgContent,
                     state: 'output-available'
                   }]
@@ -164,14 +171,6 @@ async function loadThreadHistory() {
             }
           }
         }
-
-        // 添加 AI 消息
-        loadedMessages.push({
-          key: msg.id || `ai-${Date.now()}-${Math.random()}`,
-          type: 'ai',
-          content,
-          toolCalls: toolCalls.length > 0 ? toolCalls : undefined
-        })
         i++
         continue
       }
