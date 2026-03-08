@@ -55,8 +55,7 @@ function getMessageClass(index: number) {
                 :initial-render-batch-size="12"
                 :render-batch-size="24"
                 :render-batch-delay="20"
-                :max-live-nodes="220"
-                :live-node-buffer="40"
+                :max-live-nodes="0"
                 :defer-nodes-until-visible="true"
                 :viewport-priority="true"
               />
