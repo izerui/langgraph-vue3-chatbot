@@ -76,7 +76,9 @@ async function loadThreadHistory() {
     const loadedMessages: ChatMessage[] = []
     const langgraphMessages = values.messages
 
-    for (const msg of langgraphMessages) {
+    let i = 0
+    while (i < langgraphMessages.length) {
+      const msg = langgraphMessages[i]
       const msgType = msg.type
       const msgContent = msg.content as any
 
@@ -92,7 +94,12 @@ async function loadThreadHistory() {
             content
           })
         }
-      } else if (msgType === 'human' || msgType === 'user') {
+        i++
+        continue
+      }
+
+      // 处理 human/user 消息
+      if (msgType === 'human' || msgType === 'user') {
         const content = typeof msgContent === 'string' ? msgContent : Array.isArray(msgContent)
           ? msgContent.filter((b: any) => b.type === 'text').map((b: any) => b.text).join('')
           : ''
@@ -101,11 +108,17 @@ async function loadThreadHistory() {
           type: 'human',
           content
         })
-      } else if (msgType === 'ai') {
+        i++
+        continue
+      }
+
+      // 处理 ai 消息
+      if (msgType === 'ai') {
         const content = typeof msgContent === 'string' ? msgContent : Array.isArray(msgContent)
           ? msgContent.filter((b: any) => b.type === 'text').map((b: any) => b.text).join('')
           : ''
 
+        // 获取 tool_calls
         const toolCalls = msg.tool_calls?.map((tc: any) => ({
           id: tc.id,
           name: tc.name,
@@ -114,32 +127,77 @@ async function loadThreadHistory() {
           result: ''
         })) || []
 
+        // 检查是否有工具调用
+        if (toolCalls.length > 0) {
+          // 从紧跟着的 tool 消息中获取结果
+          let j = i + 1
+          while (j < langgraphMessages.length) {
+            const nextMsg = langgraphMessages[j]
+            if (nextMsg.type === 'tool') {
+              const toolMsgContent = typeof nextMsg.content === 'string' ? nextMsg.content : JSON.stringify(nextMsg.content)
+              const toolCallId = nextMsg.tool_call_id
+
+              // 找到对应的 tool_call 并填充结果
+              const toolCall = toolCalls.find(tc => tc.id === toolCallId)
+              if (toolCall) {
+                toolCall.result = toolMsgContent
+                toolCall.state = 'output-available'
+
+                // 创建独立的工具消息
+                const toolMessageId = `tool-${toolCallId}-${Date.now()}`
+                loadedMessages.push({
+                  key: toolMessageId,
+                  type: 'tool',
+                  content: toolMsgContent,
+                  toolCalls: [{
+                    id: toolCallId,
+                    name: toolCall.name,
+                                        args: toolCall.args,
+                    result: toolMsgContent,
+                    state: 'output-available'
+                  }]
+                })
+              }
+              j++
+            } else {
+              break
+            }
+          }
+        }
+
+        // 添加 AI 消息
         loadedMessages.push({
           key: msg.id || `ai-${Date.now()}-${Math.random()}`,
           type: 'ai',
           content,
           toolCalls: toolCalls.length > 0 ? toolCalls : undefined
         })
-      } else if (msgType === 'tool') {
+        i++
+        continue
+      }
+
+      // 处理独立的 tool 消息（没有对应的 ai 消息的情况）
+      if (msgType === 'tool') {
         const content = typeof msgContent === 'string' ? msgContent : JSON.stringify(msgContent)
         const toolCallId = msg.tool_call_id
-
-        // 查找对应的 AI 消息并添加工具结果
-        let lastAiMsg: ChatMessage | undefined
-        for (let i = loadedMessages.length - 1; i >= 0; i--) {
-          if (loadedMessages[i].type === 'ai') {
-            lastAiMsg = loadedMessages[i]
-            break
-          }
-        }
-        if (lastAiMsg && lastAiMsg.toolCalls) {
-          const toolCall = lastAiMsg.toolCalls.find(tc => tc.id === toolCallId)
-          if (toolCall) {
-            toolCall.result = content
-            toolCall.state = 'output-available'
-          }
-        }
+        const toolMessageId = `tool-${toolCallId}-${Date.now()}`
+        loadedMessages.push({
+          key: toolMessageId,
+          type: 'tool',
+          content,
+          toolCalls: [{
+            id: toolCallId,
+            name: msg.name || '未知工具',
+                        args: '',
+            result: content,
+            state: 'output-available'
+          }]
+        })
+        i++
+        continue
       }
+
+      i++
     }
 
     messages.value = loadedMessages
