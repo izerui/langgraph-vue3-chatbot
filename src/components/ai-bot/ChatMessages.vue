@@ -10,23 +10,6 @@ import {
   Message,
   MessageContent,
 } from '@/components/ai-elements/message'
-import {
-  Attachment,
-  AttachmentPreview,
-  AttachmentRemove,
-  Attachments,
-} from '@/components/ai-elements/attachments'
-import {
-  Reasoning,
-  ReasoningContent,
-  ReasoningTrigger,
-} from '@/components/ai-elements/reasoning'
-import {
-  Source,
-  Sources,
-  SourcesContent,
-  SourcesTrigger,
-} from '@/components/ai-elements/sources'
 import MarkdownRender from 'markstream-vue'
 import 'markstream-vue/index.css'
 
@@ -51,51 +34,23 @@ function getMessageClass(index: number) {
   <Conversation>
     <ConversationContent>
       <template v-for="(message, index) in messages" :key="message.key">
-        <Message :from="message.from === 'tool' ? 'assistant' : message.from" :class="getMessageClass(index)">
+        <!-- system 消息按照 assistant 方式渲染 -->
+        <Message
+          :from="message.type === 'tool' || message.type === 'system' ? 'assistant' : message.type === 'human' ? 'user' : 'assistant'"
+          :class="getMessageClass(index)"
+        >
           <!-- tool 消息：显示 ToolCall -->
-          <template v-if="message.from === 'tool'">
+          <template v-if="message.type === 'tool'">
             <ToolCall :tool-calls="message.toolCalls" />
           </template>
 
-          <!-- assistant/user 消息 -->
+          <!-- assistant/system/human 消息 -->
           <template v-else>
-            <Attachments
-              v-if="message.attachments && message.attachments.length > 0"
-            >
-              <Attachment
-                v-for="attachment in message.attachments"
-                :key="attachment.id"
-                :data="attachment"
-              >
-                <AttachmentPreview />
-                <AttachmentRemove />
-              </Attachment>
-            </Attachments>
-
-            <Sources v-if="message.sources && message.sources.length > 0">
-              <SourcesTrigger :count="message.sources.length" />
-              <SourcesContent>
-                <Source
-                  v-for="source in message.sources"
-                  :key="source.href"
-                  :href="source.href"
-                  :title="source.title"
-                />
-              </SourcesContent>
-            </Sources>
-
-            <Reasoning
-              v-if="message.reasoning"
-              :duration="message.reasoning.duration"
-            >
-              <ReasoningTrigger />
-              <ReasoningContent :content="message.reasoning.content" />
-            </Reasoning>
-
             <MessageContent>
+              <!-- assistant 和 system 消息使用 MarkdownRender -->
               <MarkdownRender
-                v-if="message.from === 'assistant'"
-                :content="message.versions[0]?.content || ''"
+                v-if="message.type === 'ai' || message.type === 'system'"
+                :content="message.content || ''"
                 :typewriter="true"
                 :initial-render-batch-size="12"
                 :render-batch-size="24"
@@ -105,8 +60,9 @@ function getMessageClass(index: number) {
                 :defer-nodes-until-visible="true"
                 :viewport-priority="true"
               />
+              <!-- human 消息使用普通文本 -->
               <template v-else>
-                {{ message.versions[0]?.content }}
+                {{ message.content }}
               </template>
             </MessageContent>
           </template>

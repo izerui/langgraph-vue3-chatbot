@@ -80,14 +80,26 @@ async function loadThreadHistory() {
       const msgType = msg.type
       const msgContent = msg.content as any
 
-      if (msgType === 'human' || msgType === 'user') {
+      // system 消息
+      if (msgType === 'system') {
+        const content = typeof msgContent === 'string' ? msgContent : Array.isArray(msgContent)
+          ? msgContent.filter((b: any) => b.type === 'text').map((b: any) => b.text).join('')
+          : ''
+        if (content) {
+          loadedMessages.push({
+            key: msg.id || `system-${Date.now()}-${Math.random()}`,
+            type: 'system',
+            content
+          })
+        }
+      } else if (msgType === 'human' || msgType === 'user') {
         const content = typeof msgContent === 'string' ? msgContent : Array.isArray(msgContent)
           ? msgContent.filter((b: any) => b.type === 'text').map((b: any) => b.text).join('')
           : ''
         loadedMessages.push({
-          key: msg.id || `user-${Date.now()}-${Math.random()}`,
-          from: 'user',
-          versions: [{ id: msg.id || '', content, images: [] }]
+          key: msg.id || `human-${Date.now()}-${Math.random()}`,
+          type: 'human',
+          content
         })
       } else if (msgType === 'ai') {
         const content = typeof msgContent === 'string' ? msgContent : Array.isArray(msgContent)
@@ -103,9 +115,9 @@ async function loadThreadHistory() {
         })) || []
 
         loadedMessages.push({
-          key: msg.id || `assistant-${Date.now()}-${Math.random()}`,
-          from: 'assistant',
-          versions: [{ id: msg.id || '', content, images: [] }],
+          key: msg.id || `ai-${Date.now()}-${Math.random()}`,
+          type: 'ai',
+          content,
           toolCalls: toolCalls.length > 0 ? toolCalls : undefined
         })
       } else if (msgType === 'tool') {
@@ -113,15 +125,15 @@ async function loadThreadHistory() {
         const toolCallId = msg.tool_call_id
 
         // 查找对应的 AI 消息并添加工具结果
-        let lastAssistantMsg: ChatMessage | undefined
+        let lastAiMsg: ChatMessage | undefined
         for (let i = loadedMessages.length - 1; i >= 0; i--) {
-          if (loadedMessages[i].from === 'assistant') {
-            lastAssistantMsg = loadedMessages[i]
+          if (loadedMessages[i].type === 'ai') {
+            lastAiMsg = loadedMessages[i]
             break
           }
         }
-        if (lastAssistantMsg && lastAssistantMsg.toolCalls) {
-          const toolCall = lastAssistantMsg.toolCalls.find(tc => tc.id === toolCallId)
+        if (lastAiMsg && lastAiMsg.toolCalls) {
+          const toolCall = lastAiMsg.toolCalls.find(tc => tc.id === toolCallId)
           if (toolCall) {
             toolCall.result = content
             toolCall.state = 'output-available'
@@ -179,17 +191,13 @@ async function handleSubmit(userMessage: string) {
   status.value = 'streaming'
 
   // 添加用户消息
-  const userMessageId = `user-${Date.now()}`
+  const userMessageId = `human-${Date.now()}`
   messages.value = [
     ...messages.value,
     {
       key: userMessageId,
-      from: 'user',
-      versions: [{
-        id: userMessageId,
-        content: userMessage,
-        images: []
-      }]
+      type: 'human',
+      content: userMessage
     }
   ]
 
@@ -239,23 +247,18 @@ async function handleSubmit(userMessage: string) {
     )
 
     // 添加空的助手消息
-    const assistantMessageId = `assistant-${Date.now()}`
+    const assistantMessageId = `ai-${Date.now()}`
     messages.value = [
       ...messages.value,
       {
         key: assistantMessageId,
-        from: 'assistant',
-        versions: [{
-          id: assistantMessageId,
-          content: '',
-          images: []
-        }],
+        type: 'ai',
+        content: '',
         batchId: ''
       }
     ]
 
     let assistantContent = ''
-    let assistantImages: string[] = []
     const assistantToolCalls: { id: string; name: string; args: string }[] = []
     let runId = ''
     let needNewAssistantMessage = false // 是否需要创建新的 assistant 消息
@@ -309,12 +312,8 @@ async function handleSubmit(userMessage: string) {
             const toolMessageId = `tool-${toolCallId}-${Date.now()}`
             const toolMessage: ChatMessage = {
               key: toolMessageId,
-              from: 'tool',
-              versions: [{
-                id: toolMessageId,
-                content: toolResult,
-                images: []
-              }],
+              type: 'tool',
+              content: toolResult,
               batchId: runId,
               toolCalls: [{
                 id: toolCallId,
@@ -382,27 +381,22 @@ async function handleSubmit(userMessage: string) {
 
           // 检查是否需要创建新消息（tool 消息后第一条 AI 消息）
           if (needNewAssistantMessage) {
-            // 标记当前 assistant 消息完成
+            // 标记当前 ai 消息完成
             for (let i = messages.value.length - 1; i >= 0; i--) {
-              if (messages.value[i].from === 'assistant') {
+              if (messages.value[i].type === 'ai') {
                 break
               }
             }
 
-            // 创建新的 assistant 消息
-            const newAssistantMessageId = `assistant-${Date.now()}`
+            // 创建新的 ai 消息
+            const newAssistantMessageId = `ai-${Date.now()}`
             messages.value.push({
               key: newAssistantMessageId,
-              from: 'assistant',
-              versions: [{
-                id: newAssistantMessageId,
-                content: '',
-                images: []
-              }],
+              type: 'ai',
+              content: '',
               batchId: runId
             })
             assistantContent = ''
-            assistantImages = []
             needNewAssistantMessage = false
           }
 
@@ -411,20 +405,18 @@ async function handleSubmit(userMessage: string) {
           if (content !== undefined) {
             // 直接累加内容
             assistantContent += content
-            assistantImages = images
           }
 
-          // 找到最后一条 assistant 消息并更新
+          // 找到最后一条 ai 消息并更新
           let lastAssistantIndex = -1
           for (let i = messages.value.length - 1; i >= 0; i--) {
-            if (messages.value[i].from === 'assistant') {
+            if (messages.value[i].type === 'ai') {
               lastAssistantIndex = i
               break
             }
           }
           if (lastAssistantIndex >= 0) {
-            messages.value[lastAssistantIndex].versions[0].content = assistantContent
-            messages.value[lastAssistantIndex].versions[0].images = assistantImages
+            messages.value[lastAssistantIndex].content = assistantContent
             messages.value[lastAssistantIndex].batchId = runId
           }
         }
@@ -445,12 +437,8 @@ async function handleSubmit(userMessage: string) {
       ...messages.value,
       {
         key: errorMessageId,
-        from: 'assistant',
-        versions: [{
-          id: errorMessageId,
-          content: '抱歉，发生了一些错误，请稍后重试。',
-          images: []
-        }],
+        type: 'ai',
+        content: '抱歉，发生了一些错误，请稍后重试。',
         batchId: errorMessageId
       }
     ]
