@@ -175,27 +175,6 @@ async function loadThreadHistory() {
         continue
       }
 
-      // 处理独立的 tool 消息（没有对应的 ai 消息的情况）
-      if (msgType === 'tool') {
-        const content = typeof msgContent === 'string' ? msgContent : JSON.stringify(msgContent)
-        const toolCallId = msg.tool_call_id
-        const toolMessageId = `tool-${toolCallId}-${Date.now()}`
-        loadedMessages.push({
-          key: toolMessageId,
-          type: 'tool',
-          content,
-          toolCalls: [{
-            id: toolCallId,
-            name: msg.name || '未知工具',
-                        args: '',
-            result: content,
-            state: 'output-available'
-          }]
-        })
-        i++
-        continue
-      }
-
       i++
     }
 
