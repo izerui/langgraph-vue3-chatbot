@@ -35,6 +35,7 @@ const client = new Client({
 
 // 状态
 const isExpanded = ref(props.defaultExpanded)
+const isMaximized = ref(false)
 const threadId = ref<string | null>(null)
 const status = ref<ChatStatus>('ready')
 const useWebSearch = ref(false)
@@ -62,6 +63,14 @@ const suggestions = [
 // 切换展开状态
 function toggleExpanded() {
   isExpanded.value = !isExpanded.value
+  if (!isExpanded.value) {
+    isMaximized.value = false
+  }
+}
+
+// 切换最大化状态
+function toggleMaximize() {
+  isMaximized.value = !isMaximized.value
 }
 
 // 发送消息
@@ -381,10 +390,12 @@ function handleCopy(content: string) {
   <div class="ask-ai-bot">
     <!-- 聊天窗口 -->
     <Transition name="slide-up">
-      <div v-show="isExpanded" class="chat-window">
+      <div v-show="isExpanded" class="chat-window" :class="{ maximized: isMaximized }">
         <ChatHeader
           :title="assistantName"
+          :is-maximized="isMaximized"
           @close="toggleExpanded"
+          @toggle-maximize="toggleMaximize"
         />
 
         <ChatMessages
@@ -437,6 +448,16 @@ function handleCopy(content: string) {
   background: var(--background);
   border-radius: 12px;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  transition: all 0.3s ease;
+}
+
+.chat-window.maximized {
+  bottom: 0;
+  right: 0;
+  width: 100vw;
+  height: 100vh;
+  max-height: 100vh;
+  border-radius: 0;
 }
 
 .slide-up-enter-active,
