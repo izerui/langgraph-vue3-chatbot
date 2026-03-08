@@ -465,7 +465,7 @@ function handleCopy(content: string) {
   flex-direction: column;
   background: var(--background);
   border-radius: 12px;
-  border: 2px solid #d1d5db;
+  border: 1px solid var(--border);
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
   transition: all 0.3s ease;
   overflow: hidden;
@@ -478,7 +478,7 @@ function handleCopy(content: string) {
   width: auto;
   height: calc(100vh - 40px);
   border-radius: 12px;
-  border: 2px solid #d1d5db;
+  border: 1px solid var(--border);
 }
 
 .slide-up-enter-active,
