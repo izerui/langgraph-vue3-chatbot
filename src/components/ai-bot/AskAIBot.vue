@@ -10,6 +10,7 @@ import ChatMessages from '@/components/ai-bot/ChatMessages.vue'
 import ChatSuggestions from '@/components/ai-bot/ChatSuggestions.vue'
 import ChatInput from '@/components/ai-bot/ChatInput.vue'
 import FloatButton from '@/components/ai-bot/FloatButton.vue'
+import { Loader } from '@/components/ai-elements/loader'
 
 interface Props {
   assistantId?: string
@@ -42,6 +43,7 @@ const status = ref<ChatStatus>('ready')
 const useWebSearch = ref(false)
 const modelId = ref('gpt-4o')
 const modelSelectorOpen = ref(false)
+const isLoading = ref(true)
 
 // 消息
 const messages = ref<ChatMessage[]>([])
@@ -186,10 +188,12 @@ async function loadThreadHistory() {
 
 // 初始化
 onMounted(async () => {
+  isLoading.value = true
   if (props.threadId) {
     await createThread()
     await loadThreadHistory()
   }
+  isLoading.value = false
 })
 
 // 模型列表
@@ -541,6 +545,11 @@ function handleCopy(content: string) {
           @update:model-id="modelId = $event"
           @update:use-web-search="useWebSearch = $event"
         />
+
+        <!-- 加载遮罩 -->
+        <div v-if="isLoading" class="loading-mask">
+          <Loader :size="24" />
+        </div>
       </div>
     </Transition>
 
@@ -602,5 +611,19 @@ function handleCopy(content: string) {
     height: 80vh;
     right: -10px;
   }
+}
+
+.loading-mask {
+  position: absolute;
+  inset: 0;
+  background: rgba(var(--background-rgb), 0.85);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  z-index: 10;
+  color: var(--muted-foreground);
+  font-size: 14px;
 }
 </style>
