@@ -149,7 +149,7 @@ async function handleSubmit(userMessage: string) {
 
     let assistantContent = ''
     let assistantImages: string[] = []
-    let assistantToolCalls: { id: string; name: string; args: string }[] = []
+    const assistantToolCalls: { id: string; name: string; args: string }[] = []
     let runId = ''
     let needNewAssistantMessage = false // 是否需要创建新的 assistant 消息
 
@@ -210,7 +210,7 @@ async function handleSubmit(userMessage: string) {
               }],
               isCompleted: true,
               batchId: runId,
-              toolUI: [{
+              toolCalls: [{
                 id: toolCallId,
                 name: toolName,
                 args: toolArgs,
@@ -321,7 +321,6 @@ async function handleSubmit(userMessage: string) {
           if (lastAssistantIndex >= 0) {
             messages.value[lastAssistantIndex].versions[0].content = assistantContent
             messages.value[lastAssistantIndex].versions[0].images = assistantImages
-            messages.value[lastAssistantIndex].toolCalls = assistantToolCalls
             messages.value[lastAssistantIndex].batchId = runId
           }
         }

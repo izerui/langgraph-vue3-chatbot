@@ -54,7 +54,7 @@ function getMessageClass(index: number) {
         <Message :from="message.from === 'tool' ? 'assistant' : message.from" :class="getMessageClass(index)">
           <!-- tool 消息：显示 ToolCall -->
           <template v-if="message.from === 'tool'">
-            <ToolCall :tool-ui="message.toolUI" />
+            <ToolCall :tool-calls="message.toolCalls" />
           </template>
 
           <!-- assistant/user 消息 -->

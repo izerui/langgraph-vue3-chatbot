@@ -28,13 +28,6 @@ export interface MessageReasoning {
   duration: number
 }
 
-// 工具调用展示
-export interface ToolCallDisplay {
-  id: string
-  name: string
-  args: string
-}
-
 // 工具 UI 状态
 export type ToolUIState = 'input-streaming' | 'input-available' | 'output-available' | 'output-error' | 'approval-requested' | 'approval-responded' | 'output-denied'
 
@@ -56,8 +49,7 @@ export interface ChatMessage {
   attachments?: AttachmentData[]
   sources?: MessageSource[]
   reasoning?: MessageReasoning
-  toolCalls?: ToolCallDisplay[]
-  toolUI?: ToolUIInfo[]  // 工具 UI 实时信息
+  toolCalls?: ToolUIInfo[]
   isCompleted?: boolean  // 消息是否完成
   batchId?: string      // 批次 ID，同一批次的消息没有间隔
 }

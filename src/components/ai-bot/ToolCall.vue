@@ -13,13 +13,13 @@ import {
 import { CodeBlock, CodeBlockCopyButton } from '@/components/ai-elements/code-block'
 
 defineProps<{
-  toolUi: ToolUIInfo[]
+  toolCalls: ToolUIInfo[]
 }>()
 </script>
 
 <template>
   <Sandbox
-    v-for="tool in toolUi"
+    v-for="tool in toolCalls"
     :key="tool.id"
   >
     <SandboxHeader :state="tool.state" :title="tool.name" />
