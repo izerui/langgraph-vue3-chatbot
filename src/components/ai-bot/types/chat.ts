@@ -50,7 +50,6 @@ export interface ChatMessage {
   sources?: MessageSource[]
   reasoning?: MessageReasoning
   toolCalls?: ToolUIInfo[]
-  isCompleted?: boolean  // 消息是否完成
   batchId?: string      // 批次 ID，同一批次的消息没有间隔
 }
 

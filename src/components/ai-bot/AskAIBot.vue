@@ -142,7 +142,6 @@ async function handleSubmit(userMessage: string) {
           content: '',
           images: []
         }],
-        isCompleted: false,
         batchId: ''
       }
     ]
@@ -208,7 +207,6 @@ async function handleSubmit(userMessage: string) {
                 content: toolResult,
                 images: []
               }],
-              isCompleted: true,
               batchId: runId,
               toolCalls: [{
                 id: toolCallId,
@@ -279,7 +277,6 @@ async function handleSubmit(userMessage: string) {
             // 标记当前 assistant 消息完成
             for (let i = messages.value.length - 1; i >= 0; i--) {
               if (messages.value[i].from === 'assistant') {
-                messages.value[i].isCompleted = true
                 break
               }
             }
@@ -294,7 +291,6 @@ async function handleSubmit(userMessage: string) {
                 content: '',
                 images: []
               }],
-              isCompleted: false,
               batchId: runId
             })
             assistantContent = ''
@@ -327,10 +323,8 @@ async function handleSubmit(userMessage: string) {
       }
     }
 
-    // 标记最后一条消息已完成
     const lastIndex = messages.value.length - 1
     if (lastIndex >= 0) {
-      messages.value[lastIndex].isCompleted = true
       messages.value[lastIndex].batchId = runId
     }
 
@@ -349,7 +343,6 @@ async function handleSubmit(userMessage: string) {
           content: '抱歉，发生了一些错误，请稍后重试。',
           images: []
         }],
-        isCompleted: true,
         batchId: errorMessageId
       }
     ]
