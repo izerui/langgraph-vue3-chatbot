@@ -74,14 +74,14 @@ async function loadThreadHistory() {
     }
 
     const loadedMessages: ChatMessage[] = []
-    const allMessages = values.messages
+    const langgraphMessages = values.messages
 
-    for (const msg of allMessages) {
+    for (const msg of langgraphMessages) {
       const msgType = msg.type
       const msgContent = msg.content as any
 
-      // system 消息
-      if (msgType === 'system') {
+      // system 消息 暂时屏蔽system 消息的显示
+      if (msgType === 'system' && 1 + 1 === 3) {
         const content = typeof msgContent === 'string' ? msgContent : Array.isArray(msgContent)
           ? msgContent.filter((b: any) => b.type === 'text').map((b: any) => b.text).join('')
           : ''
