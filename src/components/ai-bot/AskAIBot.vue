@@ -125,7 +125,7 @@ async function handleSubmit(userMessage: string) {
           tags: ['serv'],
           configurable: {
             model_provider: 'openai',
-            model: 'MiniMax/MiniMax-M2.5',
+            model: 'qwen3.5-plus',
             base_url: 'https://dashscope.aliyuncs.com/compatible-mode/v1'
           }
         },
