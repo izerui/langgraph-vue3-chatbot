@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { Client } from '@langchain/langgraph-sdk'
 import type { ChatStatus } from 'ai'
 import type { PromptInputMessage } from '@/components/ai-elements/prompt-input'
@@ -16,6 +16,7 @@ interface Props {
   assistantName?: string
   defaultExpanded?: boolean
   systemPrompt?: string
+  threadId?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -44,6 +45,24 @@ const modelSelectorOpen = ref(false)
 
 // 消息
 const messages = ref<ChatMessage[]>([])
+
+// 初始化线程（如果传递了 threadId）
+onMounted(async () => {
+  if (props.threadId) {
+    try {
+      const thread = await client.threads.create({
+        threadId: props.threadId,
+        ifExists: 'do_nothing',
+        metadata: {
+          user_id: 'user001',
+        }
+      })
+      threadId.value = thread.thread_id
+    } catch (error) {
+      console.error('Failed to create thread:', error)
+    }
+  }
+})
 
 // 模型列表
 const models: ModelInfo[] = [
@@ -387,7 +406,7 @@ function handleCopy(content: string) {
 </script>
 
 <template>
-  <div class="ask-ai-bot" @wheel.prevent>
+  <div class="ask-ai-bot">
     <!-- 聊天窗口 -->
     <Transition name="slide-up">
       <div v-show="isExpanded" class="chat-window" :class="{ maximized: isMaximized }">

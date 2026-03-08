@@ -31,10 +31,10 @@ import ChatBotExample from './components/ai-elements/examples/chatbot.vue'
     </main>
 
     <AskAIBot
-      :assistant-id="'research'"
-      :assistant-name="'我的助手'"
-      :default-expanded="false"
-      :system-prompt="'你是一个专业的技术顾问，擅长回答编程问题。'"
+      assistant-id="research"
+      assistant-name="我的助手"
+      :default-expanded=false
+      system-prompt="你是一个专业的技术顾问，擅长回答编程问题。"
     />
   </div>
 </template>
