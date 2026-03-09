@@ -169,8 +169,42 @@ async function handleSubmit(userMessage: string) {
     // 使用 Map：通过 message.id + index 来跟踪工具调用
     // message.id 表示消息块，index 表示该消息块中的第几个工具
     // 格式：messageId_index
-    const assistantToolCalls = new Map<string, { id: string; name: string; args: string }>()
+    // 包含 id, name, args, messageKey（对应 messages 数组中的索引）
+    const assistantToolCalls = new Map<string, { id: string; name: string; args: string; messageKey?: string }>()
     let needNewAssistantMessage = false // 是否需要创建新的 assistant 消息
+
+    // 辅助函数：创建工具消息
+    function createToolMessage(toolCallId: string, name: string, args: string, state: string): ChatMessage {
+      return {
+        key: `tool-${toolCallId}-${Date.now()}`,
+        type: 'tool',
+        content: '',
+        batchId: runId.value,
+        toolCalls: [{
+          id: toolCallId,
+          name: name,
+          args: args,
+          result: '',
+          state: state
+        }]
+      }
+    }
+
+    // 辅助函数：更新工具消息
+    function updateToolMessage(messageKey: string, updates: { args?: string; result?: string; state?: string }) {
+      const msg = messages.value[messageKey]
+      if (msg && msg.toolCalls && msg.toolCalls.length > 0) {
+        if (updates.args !== undefined) {
+          msg.toolCalls[0].args = updates.args
+        }
+        if (updates.result !== undefined) {
+          msg.toolCalls[0].result = updates.result
+        }
+        if (updates.state !== undefined) {
+          msg.toolCalls[0].state = updates.state
+        }
+      }
+    }
 
     // 流式处理 LangGraph SDK 返回的消息
     for await (const chunk of streamResponse) {
@@ -197,6 +231,7 @@ async function handleSubmit(userMessage: string) {
           const messageType = message.type
 
           // 处理工具消息 - tool 类型（阶段4：结果返回）
+          // 更新已有的工具消息，而不是创建新的
           if (messageType === 'tool') {
             const toolCallId = message.tool_call_id
             const toolName = message.name || '未知工具'
@@ -204,12 +239,11 @@ async function handleSubmit(userMessage: string) {
             const toolStatus = message.status
 
             // 从累加的 tool_call_chunks 中获取完整的工具参数
-            // 通过 messageId_index 格式查找对应的工具调用
-            // 由于 tool_call_id 可能为空，需要遍历查找匹配的 tool call
-            let toolArgs = ''
+            // 查找匹配的 tool call 并更新工具消息
+            let foundToolCall: { id: string; name: string; args: string; messageKey?: string } | undefined
             for (const [key, tc] of assistantToolCalls) {
               if (tc.id === toolCallId) {
-                toolArgs = tc.args
+                foundToolCall = tc
                 // 找到后删除，释放内存
                 assistantToolCalls.delete(key)
                 break
@@ -227,30 +261,38 @@ async function handleSubmit(userMessage: string) {
             }
             const uiState = mapToolStatus(toolStatus)
 
-            // 创建独立的 tool 消息
-            const toolMessageId = `tool-${toolCallId}-${Date.now()}`
-            const toolMessage: ChatMessage = {
-              key: toolMessageId,
-              type: 'tool',
-              content: toolResult,
-              batchId: runId.value,
-              toolCalls: [{
-                id: toolCallId,
-                name: toolName,
-                args: toolArgs,
+            // 如果已有对应的工具消息，则更新；否则创建新的
+            if (foundToolCall && foundToolCall.messageKey !== undefined) {
+              // 更新已有的工具消息
+              updateToolMessage(foundToolCall.messageKey, {
+                args: foundToolCall.args,
                 result: toolResult,
-                state: uiState,
-                error: toolStatus === 'error' ? toolResult : undefined
-              }]
+                state: uiState
+              })
+            } else {
+              // 没有找到对应的工具消息，创建新的（兼容情况）
+              const toolMessageId = `tool-${toolCallId}-${Date.now()}`
+              const toolMessage: ChatMessage = {
+                key: toolMessageId,
+                type: 'tool',
+                content: toolResult,
+                batchId: runId.value,
+                toolCalls: [{
+                  id: toolCallId,
+                  name: toolName,
+                  args: foundToolCall?.args || '',
+                  result: toolResult,
+                  state: uiState,
+                  error: toolStatus === 'error' ? toolResult : undefined
+                }]
+              }
+              messages.value.push(toolMessage)
             }
-
-            // 直接 push tool 消息到数组（按后端返回顺序）
-            messages.value.push(toolMessage)
 
             console.log('🔧 阶段4 - 工具结果返回:', {
               name: toolName,
               id: toolCallId,
-              args: toolArgs,
+              args: foundToolCall?.args || '',
               result: toolResult,
               status: toolStatus,
               messageCount: messages.value.length
@@ -263,7 +305,13 @@ async function handleSubmit(userMessage: string) {
           }
 
           // 阶段3：调用结束 - chunk_position 为 "last" 表示工具调用完成
+          // 更新所有工具消息状态为等待结果
           if (message.chunk_position === 'last') {
+            for (const [key, tc] of assistantToolCalls) {
+              if (tc.messageKey !== undefined) {
+                updateToolMessage(tc.messageKey, { state: 'output-available' })
+              }
+            }
             console.log('🛑 阶段3 - 工具调用结束', {
               chunk_position: message.chunk_position,
               toolCallsCount: assistantToolCalls.size,
@@ -280,7 +328,7 @@ async function handleSubmit(userMessage: string) {
           const hasChunks = message.tool_call_chunks && message.tool_call_chunks.length > 0
 
           if (hasToolCalls || hasChunks) {
-            // 阶段1：tool_calls 到达，补充 id 和 name
+            // 阶段1：tool_calls 到达，创建工具消息并显示
             if (hasToolCalls) {
               for (const tc of message.tool_calls) {
                 const index = message.tool_calls.indexOf(tc)
@@ -288,28 +336,36 @@ async function handleSubmit(userMessage: string) {
 
                 const existing = assistantToolCalls.get(messageKey)
                 if (!existing) {
-                  // 新建 - 只设置 id 和 name，args 交给阶段2生成
+                  // 新建 - 创建工具消息并添加到 messages
+                  const toolMsg = createToolMessage(tc.id, tc.name, '', 'input-streaming')
+                  messages.value.push(toolMsg)
+                  // 记录消息在数组中的索引
+                  const msgIndex = messages.value.length - 1
+
                   assistantToolCalls.set(messageKey, {
                     id: tc.id,
                     name: tc.name,
-                    args: ''
+                    args: '',
+                    messageKey: msgIndex.toString()
                   })
                   console.log('📝 阶段1 - 工具调用开始:', {
                     messageId,
                     index,
                     toolCallId: tc.id,
-                    name: tc.name
+                    name: tc.name,
+                    msgIndex
                   })
                 } else {
-                  // 更新 - 只更新 id 和 name，不覆盖已累加的 args
+                  // 更新 - 只更新 id 和 name
                   if (tc.id) existing.id = tc.id
+                  if (tc.name) existing.name = tc.name
                   if (tc.name) existing.name = tc.name
                   // 不覆盖 args，保留 tool_call_chunks 累加的结果
                 }
               }
             }
 
-            // 阶段2：tool_call_chunks 累加参数
+            // 阶段2：tool_call_chunks 累加参数，同时更新工具消息
             if (hasChunks) {
               for (const tcChunk of message.tool_call_chunks) {
                 const index = tcChunk.index
@@ -321,21 +377,31 @@ async function handleSubmit(userMessage: string) {
 
                 if (!existing) {
                   // 如果还没有工具调用记录，用 chunks 创建
+                  const toolMsg = createToolMessage(tcChunk.id || '', tcChunk.name || '', tcChunk.args || '', 'input-streaming')
+                  messages.value.push(toolMsg)
+                  const msgIndex = messages.value.length - 1
+
                   assistantToolCalls.set(messageKey, {
                     id: tcChunk.id || '',
                     name: tcChunk.name || '',
-                    args: tcChunk.args || ''
+                    args: tcChunk.args || '',
+                    messageKey: msgIndex.toString()
                   })
                   console.log('📝 阶段1 - 工具调用开始:', {
                     messageId,
                     index,
                     toolCallId: tcChunk.id || '(暂无)',
-                    name: tcChunk.name || '(暂无)'
+                    name: tcChunk.name || '(暂无)',
+                    msgIndex
                   })
                 } else {
-                  // 已有记录 - 只累加有实际内容的 args
+                  // 已有记录 - 累加有实际内容的 args 并更新工具消息
                   if (tcChunk.args && tcChunk.args.trim()) {
                     existing.args = (existing.args || '') + tcChunk.args
+                    // 实时更新工具消息的参数
+                    if (existing.messageKey) {
+                      updateToolMessage(existing.messageKey, { args: existing.args })
+                    }
                   }
                   // 补充 id 和 name
                   if (tcChunk.id && !existing.id) existing.id = tcChunk.id
