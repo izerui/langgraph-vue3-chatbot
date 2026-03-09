@@ -14,11 +14,23 @@ interface Props extends /* @vue-ignore */ InputGroupButtonProps {
   status?: ChatStatus
   variant?: InputGroupButtonProps['variant']
   size?: InputGroupButtonProps['size']
+  disabled?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  variant: 'submit',
+  variant: 'default',
   size: 'icon-sm',
+})
+
+// 根据状态动态计算 variant
+// 可发送时: 橙红色 (#c96442)
+// 不可发送时: 灰色
+const buttonVariant = computed(() => {
+  // 不可发送: disabled 或 忙碌中 (streaming/submitted)
+  if (props.disabled || props.status === 'streaming' || props.status === 'submitted') {
+    return 'default'
+  }
+  return 'submit'
 })
 
 const icon = computed(() => {
@@ -41,7 +53,12 @@ const iconClass = computed(() => {
   return 'size-4'
 })
 
-const { status, size, variant, class: _, ...restProps } = props
+// 动态计算 disabled 状态
+const isDisabled = computed(() => {
+  return props.disabled || props.status === 'streaming' || props.status === 'submitted'
+})
+
+const { status, size, variant, disabled, class: _, ...restProps } = props
 </script>
 
 <template>
@@ -49,7 +66,8 @@ const { status, size, variant, class: _, ...restProps } = props
     aria-label="Submit"
     :class="cn(props.class)"
     :size="size"
-    :variant="variant"
+    :variant="buttonVariant"
+    :disabled="isDisabled"
     type="submit"
     v-bind="restProps"
   >
