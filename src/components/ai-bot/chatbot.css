@@ -59,4 +59,17 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* markstream-vue 分隔线样式覆盖 */
+  .hr-node {
+    margin-top: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  /* 覆盖 markstream-vue 默认的 hr 样式 */
+  [data-custom-id] .hr-node,
+  .hr-node {
+    margin-top: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
+  }
 }
