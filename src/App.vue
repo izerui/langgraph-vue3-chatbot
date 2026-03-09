@@ -25,9 +25,9 @@ import ChatBotExample from './components/ai-elements/examples/chatbot.vue'
         <span class="divider-text">组件示例</span>
       </div>
 
-      <div class="demo-container">
-        <ChatBotExample />
-      </div>
+<!--      <div class="demo-container">-->
+<!--        <ChatBotExample />-->
+<!--      </div>-->
     </main>
 
     <AskAIBot

@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { Dialog } from '@/components/ui/dialog'
+import { DropdownMenu } from '@/components/ui/dropdown-menu'
 </script>
 
 <template>
-  <Dialog v-bind="$attrs">
+  <DropdownMenu v-bind="$attrs">
     <slot />
-  </Dialog>
+  </DropdownMenu>
 </template>

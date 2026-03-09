@@ -111,16 +111,16 @@ function toggleWebSearch() {
           </PromptInputActionMenu>
 
           <!-- 语音输入按钮 -->
-          <PromptInputSpeechButton />
+<!--          <PromptInputSpeechButton />-->
 
           <!-- 网页搜索开关 -->
-          <PromptInputButton
-            :variant="useWebSearch ? 'default' : 'ghost'"
-            @click="toggleWebSearch"
-          >
-            <GlobeIcon :size="16" />
-            <span>Search</span>
-          </PromptInputButton>
+<!--          <PromptInputButton-->
+<!--            :variant="useWebSearch ? 'default' : 'ghost'"-->
+<!--            @click="toggleWebSearch"-->
+<!--          >-->
+<!--            <GlobeIcon :size="16" />-->
+<!--            <span>Search</span>-->
+<!--          </PromptInputButton>-->
 
           <!-- 模型选择器 -->
           <ModelSelector v-model:open="modelSelectorOpen">

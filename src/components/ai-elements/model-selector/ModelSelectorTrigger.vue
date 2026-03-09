@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { DialogTrigger } from '@/components/ui/dialog'
+import { DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 </script>
 
 <template>
-  <DialogTrigger v-bind="$attrs">
+  <DropdownMenuTrigger v-bind="$attrs">
     <slot />
-  </DialogTrigger>
+  </DropdownMenuTrigger>
 </template>

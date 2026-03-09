@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { HTMLAttributes } from 'vue'
 import { Command } from '@/components/ui/command'
-import { DialogContent, DialogTitle } from '@/components/ui/dialog'
+import { DropdownMenuContent } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
 
 interface Props {
@@ -15,15 +15,12 @@ const props = withDefaults(defineProps<Props>(), {
 </script>
 
 <template>
-  <DialogContent
-    :class="cn('p-0', props.class)"
+  <DropdownMenuContent
+    :class="cn('p-0 z-[10000]', props.class)"
     v-bind="$attrs"
   >
-    <DialogTitle class="sr-only">
-      {{ props.title }}
-    </DialogTitle>
     <Command class="**:data-[slot=command-input-wrapper]:h-auto">
       <slot />
     </Command>
-  </DialogContent>
+  </DropdownMenuContent>
 </template>
