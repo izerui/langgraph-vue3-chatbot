@@ -288,18 +288,17 @@ async function handleSubmit(userMessage: string) {
 
                 const existing = assistantToolCalls.get(messageKey)
                 if (!existing) {
-                  // 新建 - 设置 id, name, args
+                  // 新建 - 只设置 id 和 name，args 交给阶段2生成
                   assistantToolCalls.set(messageKey, {
                     id: tc.id,
                     name: tc.name,
-                    args: JSON.stringify(tc.args, null, 2)
+                    args: ''
                   })
                   console.log('📝 阶段1 - 工具调用开始:', {
                     messageId,
                     index,
                     toolCallId: tc.id,
-                    name: tc.name,
-                    args: tc.args
+                    name: tc.name
                   })
                 } else {
                   // 更新 - 只更新 id 和 name，不覆盖已累加的 args
