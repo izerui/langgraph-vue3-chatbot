@@ -288,7 +288,7 @@ function onFileChange(e: Event) {
       class="w-full"
       @submit.prevent="submitForm"
     >
-      <InputGroup class="overflow-hidden">
+      <InputGroup class="overflow-hidden" style="background-color: white;">
         <!-- 附件显示区域 (PromptInputHeader) -->
         <InputGroupAddon
           align="block-end"
