@@ -272,13 +272,15 @@ async function handleSubmit(userMessage: string) {
           }
 
           // 统一处理 tool_calls 和 tool_call_chunks（阶段1-2）
+          // 阶段1：tool_calls 到达，补充 id 和 name
+          // 阶段2：tool_call_chunks 累加参数
           // 使用 message.id（消息块 id） + index（工具索引）作为 key
           const messageId = message.id
           const hasToolCalls = message.tool_calls && message.tool_calls.length > 0
           const hasChunks = message.tool_call_chunks && message.tool_call_chunks.length > 0
 
           if (hasToolCalls || hasChunks) {
-            // 阶段1：tool_calls 到达（第一个有完整信息的）
+            // 阶段1：tool_calls 到达，补充 id 和 name
             if (hasToolCalls) {
               for (const tc of message.tool_calls) {
                 const index = message.tool_calls.indexOf(tc)
@@ -286,7 +288,7 @@ async function handleSubmit(userMessage: string) {
 
                 const existing = assistantToolCalls.get(messageKey)
                 if (!existing) {
-                  // 新建
+                  // 新建 - 设置 id, name, args
                   assistantToolCalls.set(messageKey, {
                     id: tc.id,
                     name: tc.name,
@@ -300,10 +302,10 @@ async function handleSubmit(userMessage: string) {
                     args: tc.args
                   })
                 } else {
-                  // 更新
+                  // 更新 - 只更新 id 和 name，不覆盖已累加的 args
                   if (tc.id) existing.id = tc.id
                   if (tc.name) existing.name = tc.name
-                  existing.args = JSON.stringify(tc.args, null, 2)
+                  // 不覆盖 args，保留 tool_call_chunks 累加的结果
                 }
               }
             }
@@ -317,10 +319,9 @@ async function handleSubmit(userMessage: string) {
                 const messageKey = `${messageId}_${index}`
 
                 let existing = assistantToolCalls.get(messageKey)
-                const isNew = !existing
 
-                if (isNew) {
-                  // 如果还没有，先用 chunks 创建
+                if (!existing) {
+                  // 如果还没有工具调用记录，用 chunks 创建
                   assistantToolCalls.set(messageKey, {
                     id: tcChunk.id || '',
                     name: tcChunk.name || '',
@@ -333,10 +334,11 @@ async function handleSubmit(userMessage: string) {
                     name: tcChunk.name || '(暂无)'
                   })
                 } else {
-                  // 累加参数 - 从 tool_call_chunks 的 args 获取
-                  if (tcChunk.args) {
+                  // 已有记录 - 只累加有实际内容的 args
+                  if (tcChunk.args && tcChunk.args.trim()) {
                     existing.args = (existing.args || '') + tcChunk.args
                   }
+                  // 补充 id 和 name
                   if (tcChunk.id && !existing.id) existing.id = tcChunk.id
                   if (tcChunk.name) existing.name = tcChunk.name
 
