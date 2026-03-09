@@ -19,7 +19,6 @@
     "markstream-vue": "0.0.8-beta.2",
     "mermaid": "^11.12.3",
     "motion-v": "^2.0.0",
-    "nanoid": "^5.1.6",
     "reka-ui": "^2.9.0",
     "shiki": "^3.23.0",
     "tailwind-merge": "^3.5.0",
