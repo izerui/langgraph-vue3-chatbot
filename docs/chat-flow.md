@@ -217,7 +217,7 @@ for await (const chunk of streamResponse) {
 
 工具调用分为 **4 个阶段**：
 
-  - 阶段1：处理 tool_calls，只补充 id 和 name（如果 args 是空对象 {} 就不覆盖）                                                                                                                              
+  - 阶段1：处理 tool_calls，只补充 id 和 name（该阶段不处理 args）                                                                                                                              
   - 阶段2：处理 tool_call_chunks，只累加有实际内容的 args
   - 阶段3：chunk_position = "last" 表示结束                                                                                                                                                                  
   - 阶段4：tool 消息返回结果 
