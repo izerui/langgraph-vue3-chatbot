@@ -13,7 +13,7 @@ const props = defineProps<Props>()
   <div
     :class="
       cn(
-        'mt-4 flex w-full items-center justify-between gap-4',
+        'flex w-full items-center justify-between gap-4',
         props.class,
       )
     "

@@ -11,7 +11,7 @@ const props = defineProps<Props>()
 
 <template>
   <div
-    :class="cn('flex items-center gap-1', props.class)"
+    :class="cn('flex items-center', props.class)"
     v-bind="$attrs"
   >
     <slot />

@@ -36,7 +36,7 @@ const sync = () => setBranches(branchVNodes.value.length)
 onMounted(sync)
 watch(branchVNodes, sync)
 
-const baseClasses = computed(() => cn('grid gap-2 overflow-hidden [&>div]:pb-0', props.class))
+const baseClasses = computed(() => cn('grid overflow-hidden', props.class))
 </script>
 
 <template>

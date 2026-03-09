@@ -22,9 +22,9 @@ const props = defineProps<Props>()
 function getMessageClass(index: number) {
   if (index === 0) return ''
   const current = props.messages[index]
-  const previous = props.messages[index - 1]
-  if (current.batchId !== undefined && current.batchId === previous.batchId) {
-    return '-mt-8'
+  // 只有 human 消息需要间隔
+  if (current.type === 'human') {
+    return 'mt-4'
   }
   return ''
 }
@@ -32,7 +32,7 @@ function getMessageClass(index: number) {
 
 <template>
   <Conversation>
-    <ConversationContent class="bg-[#faf9f5]">
+    <ConversationContent>
       <template v-for="(message, index) in messages" :key="message.key">
         <!-- system 消息按照 assistant 方式渲染 -->
         <Message
