@@ -9,8 +9,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@ai-sdk/vue": "^1.1.1",
-    "@langchain/core": "^1.1.30",
     "@langchain/langgraph-sdk": "^1.6.5",
     "@vueuse/core": "^14.2.1",
     "ai": "^6.0.116",
@@ -26,8 +24,7 @@
     "shiki": "^3.23.0",
     "tailwind-merge": "^3.5.0",
     "vue": "^3.4.21",
-    "vue-stick-to-bottom": "^1.0.0",
-    "vue-stream-markdown": "^0.6.1"
+    "vue-stick-to-bottom": "^1.0.0"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.2.1",

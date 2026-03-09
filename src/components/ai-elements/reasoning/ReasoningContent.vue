@@ -3,8 +3,8 @@ import type { HTMLAttributes } from 'vue'
 import { CollapsibleContent } from '@/components/ui/collapsible'
 import { cn } from '@/lib/utils'
 import { computed, useSlots } from 'vue'
-import { Markdown } from 'vue-stream-markdown'
-import 'vue-stream-markdown/index.css'
+import { MarkdownRender } from 'markstream-vue'
+import 'markstream-vue/index.css'
 
 interface Props {
   class?: HTMLAttributes['class']
@@ -40,6 +40,6 @@ const md = computed(() => (slotContent.value ?? props.content ?? '') as string)
       props.class,
     )"
   >
-    <Markdown :content="md" />
+    <MarkdownRender :content="md" />
   </CollapsibleContent>
 </template>
