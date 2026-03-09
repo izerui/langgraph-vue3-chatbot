@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { ChatStatus } from 'ai'
-import type { ModelInfo } from './types/chat'
+import { getProviderByModelName, type ModelInfo } from './lib/models'
 import PromptInputAttachmentsDisplay from './InputAttachmentsDisplay.vue'
 import {
   PromptInput,
@@ -25,17 +26,15 @@ import {
   ModelSelectorInput,
   ModelSelectorItem,
   ModelSelectorList,
-  ModelSelectorLogo,
-  ModelSelectorLogoGroup,
   ModelSelectorName,
   ModelSelectorTrigger,
 } from '@/components/ai-elements/model-selector'
-import { CheckIcon, GlobeIcon } from 'lucide-vue-next'
+import { CheckIcon, ChevronDownIcon, GlobeIcon, Loader2Icon } from 'lucide-vue-next'
 import type { PromptInputMessage } from '@/components/ai-elements/prompt-input'
 
 interface Props {
   status: ChatStatus
-  modelId: string
+  currentModel: ModelInfo | null
   models: ModelInfo[]
   useWebSearch: boolean
 }
@@ -44,16 +43,36 @@ const props = defineProps<Props>()
 
 const emit = defineEmits<{
   submit: [message: PromptInputMessage]
-  'update:modelId': [id: string]
+  'update:currentModel': [model: ModelInfo]
   'update:useWebSearch': [value: boolean]
 }>()
 
 const modelSelectorOpen = defineModel<boolean>('modelSelectorOpen', { default: false })
 
-const selectedModelData = props.models.find(m => m.id === props.modelId)
+const selectedModelData = computed(() => {
+  return props.currentModel || props.models.find(m => m.is_default) || props.models[0]
+})
 
-function handleModelSelect(id: string) {
-  emit('update:modelId', id)
+// 按提供商分组模型
+const groupedModels = computed(() => {
+  const groups: Record<string, ModelInfo[]> = {}
+  props.models.forEach((model) => {
+    const provider = model.provider || 'Other'
+    if (!groups[provider]) {
+      groups[provider] = []
+    }
+    groups[provider].push(model)
+  })
+  return groups
+})
+
+const providers = computed(() => Object.keys(groupedModels.value))
+
+function handleModelSelect(name: string) {
+  const model = props.models.find(m => m.name === name)
+  if (model) {
+    emit('update:currentModel', model)
+  }
   modelSelectorOpen.value = false
 }
 
@@ -106,49 +125,53 @@ function toggleWebSearch() {
           <!-- 模型选择器 -->
           <ModelSelector v-model:open="modelSelectorOpen">
             <ModelSelectorTrigger as-child>
-              <PromptInputButton>
-                <ModelSelectorLogo
-                  v-if="selectedModelData?.chefSlug"
-                  :provider="selectedModelData.chefSlug"
-                />
-                <ModelSelectorName v-if="selectedModelData?.name">
-                  {{ selectedModelData.name }}
-                </ModelSelectorName>
+              <PromptInputButton class="flex items-center gap-1">
+                <img
+                  v-if="selectedModelData"
+                  :src="`https://models.dev/logos/${getProviderByModelName(selectedModelData.name)}.svg`"
+                  class="size-4 rounded-sm object-contain"
+                  :alt="selectedModelData.name"
+                  @error="(e) => { (e.target as HTMLImageElement).src = 'https://models.dev/logos/openai.svg' }"
+                >
+                <span v-if="selectedModelData" class="whitespace-nowrap">{{ selectedModelData.name }}</span>
+                <span v-else class="text-muted-foreground">选择模型</span>
+                <ChevronDownIcon class="size-4 opacity-50 shrink-0" />
               </PromptInputButton>
             </ModelSelectorTrigger>
 
             <ModelSelectorContent>
-              <ModelSelectorInput placeholder="Search models..." />
+              <ModelSelectorInput placeholder="搜索模型..." />
               <ModelSelectorList>
-                <ModelSelectorEmpty>No models found.</ModelSelectorEmpty>
+                <ModelSelectorEmpty>未找到模型</ModelSelectorEmpty>
 
-                <ModelSelectorGroup
-                  v-for="chef in ['OpenAI', 'Anthropic']"
-                  :key="chef"
-                  :heading="chef"
-                >
-                  <ModelSelectorItem
-                    v-for="m in models.filter(model => model.chef === chef)"
-                    :key="m.id"
-                    :value="m.id"
-                    @select="() => handleModelSelect(m.id)"
-                  >
-                    <ModelSelectorLogo :provider="m.chefSlug" />
-                    <ModelSelectorName>{{ m.name }}</ModelSelectorName>
-                    <ModelSelectorLogoGroup>
-                      <ModelSelectorLogo
-                        v-for="provider in m.providers"
-                        :key="provider"
-                        :provider="provider"
+                <template v-for="provider in providers" :key="provider">
+                  <ModelSelectorGroup :heading="provider">
+                    <ModelSelectorItem
+                      v-for="model in groupedModels[provider]"
+                      :key="model.name"
+                      :value="model.name"
+                      @select="() => handleModelSelect(model.name)"
+                      class="cursor-pointer gap-1"
+                    >
+                      <img
+                        :src="`https://models.dev/logos/${getProviderByModelName(model.name)}.svg`"
+                        class="size-4 rounded-sm object-contain"
+                        :alt="model.name"
+                        @error="(e) => { (e.target as HTMLImageElement).src = 'https://models.dev/logos/openai.svg' }"
+                      >
+                      <span class="flex-1 truncate">
+                        {{ model.name }}
+                        <span v-if="model.is_default" class="ml-1.5 text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                          默认
+                        </span>
+                      </span>
+                      <CheckIcon
+                        v-if="selectedModelData?.name === model.name"
+                        class="size-4"
                       />
-                    </ModelSelectorLogoGroup>
-                    <CheckIcon
-                      v-if="modelId === m.id"
-                      class="ml-auto size-4"
-                    />
-                    <div v-else class="ml-auto size-4" />
-                  </ModelSelectorItem>
-                </ModelSelectorGroup>
+                    </ModelSelectorItem>
+                  </ModelSelectorGroup>
+                </template>
               </ModelSelectorList>
             </ModelSelectorContent>
           </ModelSelector>

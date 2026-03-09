@@ -7,7 +7,7 @@ export interface ToolCall {
   name: string
   args: string
   result?: string
-  state?: 'input-streaming' | 'input-available' | 'output-available' | 'output-error'
+  state?: string
   error?: string
 }
 

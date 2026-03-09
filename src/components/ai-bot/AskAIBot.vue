@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { Client } from '@langchain/langgraph-sdk'
 import type { ChatStatus } from 'ai'
 import type { PromptInputMessage } from '@/components/ai-elements/prompt-input'
-import type { ChatMessage, ModelInfo, ToolUIInfo, ToolUIState } from '@/components/ai-bot/types/chat'
+import type { ChatMessage } from '@/components/ai-bot/types/chat'
+import { fetchModels, getDefaultModel, type ModelInfo } from '@/components/ai-bot/lib/models'
 
 import ChatHeader from '@/components/ai-bot/ChatHeader.vue'
 import ChatMessages from '@/components/ai-bot/ChatMessages.vue'
@@ -41,12 +42,15 @@ const isMaximized = ref(false)
 const threadId = ref<string | null>(null)
 const status = ref<ChatStatus>('ready')
 const useWebSearch = ref(false)
-const modelId = ref('gpt-4o')
 const modelSelectorOpen = ref(false)
 const isLoading = ref(true)
 
 // 消息
 const messages = ref<ChatMessage[]>([])
+
+// 模型列表
+const models = ref<ModelInfo[]>([])
+const currentModel = ref<ModelInfo | null>(null)
 
 // 创建线程
 async function createThread() {
@@ -125,7 +129,7 @@ async function loadThreadHistory() {
           id: tc.id,
           name: tc.name,
           args: JSON.stringify(tc.args, null, 2),
-          state: 'output-available' as ToolUIState,
+          state: 'output-available' as const,
           result: ''
         })) || []
 
@@ -189,19 +193,17 @@ async function loadThreadHistory() {
 // 初始化
 onMounted(async () => {
   isLoading.value = true
-  if (props.threadId) {
-    await createThread()
-    await loadThreadHistory()
-  }
+  // 并行获取模型列表和加载历史
+  await Promise.all([
+    (async () => {
+      const data = await fetchModels(apiUrl)
+      models.value = data
+      currentModel.value = getDefaultModel(data) || null
+    })(),
+    props.threadId ? createThread().then(() => loadThreadHistory()) : Promise.resolve()
+  ])
   isLoading.value = false
 })
-
-// 模型列表
-const models: ModelInfo[] = [
-  { id: 'gpt-4o', name: 'GPT-4o', chef: 'OpenAI', chefSlug: 'openai', providers: ['openai', 'azure'] },
-  { id: 'gpt-4o-mini', name: 'GPT-4o Mini', chef: 'OpenAI', chefSlug: 'openai', providers: ['openai', 'azure'] },
-  { id: 'claude-sonnet', name: 'Claude 4 Sonnet', chef: 'Anthropic', chefSlug: 'anthropic', providers: ['anthropic', 'azure', 'google'] },
-]
 
 // 建议列表
 const suggestions = [
@@ -271,9 +273,9 @@ async function handleSubmit(userMessage: string) {
         config: {
           tags: ['serv'],
           configurable: {
-            model_provider: 'openai',
-            model: 'qwen3.5-plus',
-            base_url: 'https://dashscope.aliyuncs.com/compatible-mode/v1'
+            model_provider: currentModel.value?.provider || 'openai',
+            model: currentModel.value?.name || '',
+            base_url: currentModel.value?.base_url || ''
           }
         },
         metadata: {
@@ -338,7 +340,7 @@ async function handleSubmit(userMessage: string) {
             const toolArgs = assistantToolCalls.find(tc => tc.id === toolCallId)?.args || ''
 
             // 映射后端状态到 UI 状态
-            const mapToolStatus = (status: string): ToolUIState => {
+            const mapToolStatus = (status: string): string => {
               switch (status) {
                 case 'success': return 'output-available'
                 case 'error': return 'output-error'
@@ -537,12 +539,12 @@ function handleCopy(content: string) {
 
         <ChatInput
           :status="status"
-          :model-id="modelId"
+          :current-model="currentModel"
           :models="models"
           :use-web-search="useWebSearch"
           v-model:modelSelectorOpen="modelSelectorOpen"
           @submit="handleFormSubmit"
-          @update:model-id="modelId = $event"
+          @update:current-model="currentModel = $event"
           @update:use-web-search="useWebSearch = $event"
         />
 
@@ -616,7 +618,8 @@ function handleCopy(content: string) {
 .loading-mask {
   position: absolute;
   inset: 0;
-  background: rgba(var(--background-rgb), 0.85);
+  background: var(--background);
+  opacity: 0.9;
   display: flex;
   flex-direction: column;
   align-items: center;

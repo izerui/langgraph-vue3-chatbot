@@ -62,7 +62,7 @@ const modelValue = computed({
 <template>
   <InputGroupTextarea
     v-model="modelValue"
-    placeholder="What would you like to know?"
+    placeholder="有什么我能帮您的?"
     name="message"
     :class="cn('field-sizing-content max-h-48 min-h-16', props.class)"
     v-bind="props"
