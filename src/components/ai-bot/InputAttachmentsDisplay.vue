@@ -5,7 +5,7 @@ import {
   AttachmentRemove,
   Attachments,
 } from '@/components/ai-bot/ai-elements/attachments'
-import { usePromptInput } from '@/components/ai-bot/ai-elements/usePromptInput'
+import { usePromptInput } from '@/components/ai-bot/lib/prompt-input'
 
 const { files, removeFile } = usePromptInput()
 </script>

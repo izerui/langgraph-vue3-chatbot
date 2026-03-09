@@ -3,7 +3,7 @@ import { computed, ref, provide, onBeforeUnmount } from 'vue'
 import type { ChatStatus } from 'ai'
 import type { FileUIPart } from 'ai'
 import { nanoid } from 'nanoid'
-import { PROMPT_INPUT_KEY, type AttachmentFile, type PromptInputContext } from './ai-elements/usePromptInput'
+import { PROMPT_INPUT_KEY, type AttachmentFile, type PromptInputContext } from './lib/prompt-input'
 import { getProviderByModelName, type ModelInfo } from './lib/models'
 import PromptInputAttachmentsDisplay from './InputAttachmentsDisplay.vue'
 import { CheckIcon, ChevronDownIcon, Loader2Icon, CornerDownLeftIcon, SquareIcon, XIcon, PlusIcon, ImageIcon } from 'lucide-vue-next'
@@ -363,7 +363,6 @@ function onFileChange(e: Event) {
               </DropdownMenuTrigger>
 
               <DropdownMenuContent align="start">
-                <!-- 这里可以使用 ModelSelector 的内容，或者简化为直接显示 -->
                 <template v-for="provider in providers" :key="provider">
                   <div class="px-2 py-1.5 text-sm font-semibold text-muted-foreground">
                     {{ provider }}

@@ -2,7 +2,7 @@
 import './chatbot.css'
 import { ref, onMounted } from 'vue'
 import type { ChatStatus } from 'ai'
-import type { PromptInputMessage } from './ai-elements/usePromptInput'
+import type { PromptInputMessage } from './lib/prompt-input'
 import type { ChatMessage } from './types/chat'
 import { fetchModels, getDefaultModel, type ModelInfo } from './lib/models'
 import { Client } from '@langchain/langgraph-sdk'
