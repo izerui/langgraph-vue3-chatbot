@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import './chatbot.css'
 import { ref, onMounted } from 'vue'
 import type { ChatStatus } from 'ai'
 import type { PromptInputMessage } from './ai-elements/prompt-input'

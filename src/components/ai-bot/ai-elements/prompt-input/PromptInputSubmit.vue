@@ -17,7 +17,7 @@ interface Props extends /* @vue-ignore */ InputGroupButtonProps {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  variant: 'default',
+  variant: 'submit',
   size: 'icon-sm',
 })
 
