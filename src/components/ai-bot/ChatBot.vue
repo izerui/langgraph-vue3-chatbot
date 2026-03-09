@@ -20,6 +20,7 @@ interface Props {
   systemPrompt?: string
   threadId?: string
   userId?: string
+  showHeaderActions?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -27,7 +28,8 @@ const props = withDefaults(defineProps<Props>(), {
   assistantName: 'Chat',
   defaultExpanded: false,
   systemPrompt: '用中文回答',
-  userId: 'user001'
+  userId: 'user001',
+  showHeaderActions: true
 })
 
 // LangGraph Client
@@ -392,6 +394,7 @@ function handleClose() {
       <ChatHeader
         :title="assistantName"
         :is-maximized="isMaximized"
+        :show-header-actions="showHeaderActions"
         @close="handleClose"
         @toggle-maximize="toggleMaximize"
       />

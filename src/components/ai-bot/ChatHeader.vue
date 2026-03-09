@@ -4,9 +4,12 @@ import { Maximize2Icon, Minimize2Icon } from 'lucide-vue-next'
 interface Props {
   title: string
   isMaximized: boolean
+  showHeaderActions?: boolean
 }
 
-defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  showHeaderActions: true
+})
 
 const emit = defineEmits<{
   close: []
@@ -19,7 +22,7 @@ const emit = defineEmits<{
     <div class="chat-title">
       <span class="title-text">{{ title }}</span>
     </div>
-    <div class="header-actions">
+    <div v-if="props.showHeaderActions" class="header-actions">
       <button class="action-btn" @click="emit('toggleMaximize')" type="button" :title="isMaximized ? '还原' : '最大化'">
         <Minimize2Icon v-if="isMaximized" class="h-4 w-4" />
         <Maximize2Icon v-else class="h-4 w-4" />
