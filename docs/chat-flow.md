@@ -300,34 +300,47 @@ for await (const chunk of streamResponse) {
 
 ### 3.5 工具调用参数获取实现
 
-由于流式过程中 `tool_call_chunks` 的 `id` 可能为空，需要使用 `index` 作为主 key 来累加参数。
+由于流式过程中 `tool_call_chunks` 的 `id` 可能为空，且同一个消息块中可能有多个工具调用，需要使用 `message.id + index` 复合键来匹配同一个工具调用。
 
 #### 数据结构
 
 ```typescript
-// 使用 Map 存储，key 为 index
-const assistantToolCalls = new Map<number, { id: string; name: string; args: string }>()
-// 记录 id 到 index 的映射，用于在 tool 消息中查找参数
-const toolIdToIndex = new Map<string, number>()
+// 使用单个 Map 存储，key 为 messageId_index 格式
+// messageId: 消息块 ID，index: 工具在消息块中的索引
+const assistantToolCalls = new Map<string, { id: string; name: string; args: string }>()
 ```
 
 #### 处理逻辑
 
 ```typescript
-// 1. 处理 tool_call_chunks - 累加参数
+// 1. 处理 tool_calls - 工具调用开始（阶段1）
+if (message.tool_calls) {
+  const messageId = message.id
+  for (const tc of message.tool_calls) {
+    const index = message.tool_calls.indexOf(tc)
+    const messageKey = `${messageId}_${index}`
+
+    // 存储工具调用信息
+    assistantToolCalls.set(messageKey, {
+      id: tc.id,
+      name: tc.name,
+      args: JSON.stringify(tc.args, null, 2)
+    })
+  }
+}
+
+// 2. 处理 tool_call_chunks - 参数流式累加（阶段2）
 if (message.tool_call_chunks) {
+  const messageId = message.id
   for (const chunk of message.tool_call_chunks) {
     if (chunk.index === undefined) continue
 
-    // 记录 id 到 index 的映射
-    if (chunk.id) {
-      toolIdToIndex.set(chunk.id, chunk.index)
-    }
+    const messageKey = `${messageId}_${chunk.index}`
 
-    let existing = assistantToolCalls.get(chunk.index)
+    let existing = assistantToolCalls.get(messageKey)
     if (!existing) {
       // 新建工具调用记录
-      assistantToolCalls.set(chunk.index, {
+      assistantToolCalls.set(messageKey, {
         id: chunk.id || '',
         name: chunk.name || '',
         args: chunk.args || ''
@@ -344,37 +357,31 @@ if (message.tool_call_chunks) {
   }
 }
 
-// 2. 处理 tool_calls - 获取完整信息
-if (message.tool_calls) {
-  for (const tc of message.tool_calls) {
-    const index = message.tool_calls.indexOf(tc)
-    toolIdToIndex.set(tc.id, index)
-
-    if (!assistantToolCalls.has(index)) {
-      assistantToolCalls.set(index, {
-        id: tc.id,
-        name: tc.name,
-        args: JSON.stringify(tc.args)
-      })
-    }
-  }
-}
-
-// 3. 收到 tool 消息时，通过 tool_call_id 查找对应参数
+// 3. 收到 tool 消息时，查找对应参数并释放内存（阶段4）
 if (message.type === 'tool') {
   const toolCallId = message.tool_call_id
-  const toolIndex = toolIdToIndex.get(toolCallId)
-  const toolCall = toolIndex !== undefined ? assistantToolCalls.get(toolIndex) : null
 
-  console.log('工具参数:', toolCall?.args)
+  // 遍历查找匹配的 tool call（通过 id 匹配）
+  let toolArgs = ''
+  for (const [key, tc] of assistantToolCalls) {
+    if (tc.id === toolCallId) {
+      toolArgs = tc.args
+      // 找到后删除，释放内存
+      assistantToolCalls.delete(key)
+      break
+    }
+  }
+
+  console.log('工具参数:', toolArgs)
   console.log('工具结果:', message.content)
 }
 ```
 
 #### 关键点
 
-1. **使用 index 作为主 key**：`tool_call_chunks` 的 `id` 可能为空，必须用 `index` 来匹配同一个工具调用
-2. **记录 id 到 index 的映射**：在收到 `tool` 消息时，通过 `tool_call_id` 查找对应的累加参数
+1. **使用 messageId_index 复合键**：`tool_call_chunks` 的 `id` 可能为空，必须用 `message.id`（消息块ID）+ `index`（工具索引）复合键来匹配同一个工具调用
+2. **单一 Map 设计**：只用一个 Map 存储所有工具调用信息，简化逻辑
+3. **内存释放**：在 tool 消息处理完成后，删除对应的 Map 条目，释放内存避免长时间占用
 3. **直接追加字符串**：`args` 是 JSON 字符串的片段，直接累加即可
 
 ### 3.5 消息类型汇总

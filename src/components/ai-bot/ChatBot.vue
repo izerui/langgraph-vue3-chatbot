@@ -166,10 +166,10 @@ async function handleSubmit(userMessage: string) {
     ]
 
     let assistantContent = ''
-    // 使用 Map 通过 index 跟踪工具调用，因为流式过程中 id 可能为空
-    const assistantToolCalls = new Map<number, { id: string; name: string; args: string }>()
-    // id 到 index 的映射，用于在 tool 消息中查找对应的参数
-    const toolIdToIndex = new Map<string, number>()
+    // 使用 Map：通过 message.id + index 来跟踪工具调用
+    // message.id 表示消息块，index 表示该消息块中的第几个工具
+    // 格式：messageId_index
+    const assistantToolCalls = new Map<string, { id: string; name: string; args: string }>()
     let needNewAssistantMessage = false // 是否需要创建新的 assistant 消息
 
     // 流式处理 LangGraph SDK 返回的消息
@@ -204,10 +204,17 @@ async function handleSubmit(userMessage: string) {
             const toolStatus = message.status
 
             // 从累加的 tool_call_chunks 中获取完整的工具参数
-            // 通过 id 查找对应的 index，再获取 args
-            const toolIndex = toolIdToIndex.get(toolCallId)
-            const toolCallInfo = toolIndex !== undefined ? assistantToolCalls.get(toolIndex) : undefined
-            const toolArgs = toolCallInfo?.args || ''
+            // 通过 messageId_index 格式查找对应的工具调用
+            // 由于 tool_call_id 可能为空，需要遍历查找匹配的 tool call
+            let toolArgs = ''
+            for (const [key, tc] of assistantToolCalls) {
+              if (tc.id === toolCallId) {
+                toolArgs = tc.args
+                // 找到后删除，释放内存
+                assistantToolCalls.delete(key)
+                break
+              }
+            }
 
             // 映射后端状态到 UI 状态
             const mapToolStatus = (status: string): string => {
@@ -240,7 +247,7 @@ async function handleSubmit(userMessage: string) {
             // 直接 push tool 消息到数组（按后端返回顺序）
             messages.value.push(toolMessage)
 
-            console.log('🔧 工具结果:', {
+            console.log('🔧 阶段4 - 工具结果返回:', {
               name: toolName,
               id: toolCallId,
               args: toolArgs,
@@ -255,64 +262,91 @@ async function handleSubmit(userMessage: string) {
             continue // 跳过后续处理
           }
 
-          // 处理 tool_call_chunks - 流式累加工具参数（阶段1-3）
-          // 工具参数是通过 tool_call_chunks 逐步流式发送的
-          // 使用 index 来匹配同一个工具调用
-          if (message.tool_call_chunks && message.tool_call_chunks.length > 0) {
-            for (const tcChunk of message.tool_call_chunks) {
-              const index = tcChunk.index
-              if (index === undefined) continue
+          // 阶段3：调用结束 - chunk_position 为 "last" 表示工具调用完成
+          if (message.chunk_position === 'last') {
+            console.log('🛑 阶段3 - 工具调用结束', {
+              chunk_position: message.chunk_position,
+              toolCallsCount: assistantToolCalls.size,
+              allToolCalls: Array.from(assistantToolCalls.values()).map(t => ({ id: t.id, name: t.name, args: t.args }))
+            })
+          }
 
-              // 记录 id 到 index 的映射
-              if (tcChunk.id) {
-                toolIdToIndex.set(tcChunk.id, index)
-              }
+          // 统一处理 tool_calls 和 tool_call_chunks（阶段1-2）
+          // 使用 message.id（消息块 id） + index（工具索引）作为 key
+          const messageId = message.id
+          const hasToolCalls = message.tool_calls && message.tool_calls.length > 0
+          const hasChunks = message.tool_call_chunks && message.tool_call_chunks.length > 0
 
-              let existing = assistantToolCalls.get(index)
-              if (!existing) {
-                // 新工具调用 - 保存 id（可能为空）和 name（name 可能为空，后续会更新）
-                assistantToolCalls.set(index, {
-                  id: tcChunk.id || '',
-                  name: tcChunk.name || '',
-                  args: tcChunk.args || ''
-                })
-              } else {
-                // 累加参数 - 直接追加字符串
-                if (tcChunk.args) {
-                  existing.args = (existing.args || '') + tcChunk.args
-                }
-                // 更新 id（如果新 chunk 有 id）
-                if (tcChunk.id && !existing.id) {
-                  existing.id = tcChunk.id
-                }
-                // 更新名称（如果新 chunk 有名称）
-                if (tcChunk.name) {
-                  existing.name = tcChunk.name
+          if (hasToolCalls || hasChunks) {
+            // 阶段1：tool_calls 到达（第一个有完整信息的）
+            if (hasToolCalls) {
+              for (const tc of message.tool_calls) {
+                const index = message.tool_calls.indexOf(tc)
+                const messageKey = `${messageId}_${index}`
+
+                const existing = assistantToolCalls.get(messageKey)
+                if (!existing) {
+                  // 新建
+                  assistantToolCalls.set(messageKey, {
+                    id: tc.id,
+                    name: tc.name,
+                    args: JSON.stringify(tc.args, null, 2)
+                  })
+                  console.log('📝 阶段1 - 工具调用开始:', {
+                    messageId,
+                    index,
+                    toolCallId: tc.id,
+                    name: tc.name,
+                    args: tc.args
+                  })
+                } else {
+                  // 更新
+                  if (tc.id) existing.id = tc.id
+                  if (tc.name) existing.name = tc.name
+                  existing.args = JSON.stringify(tc.args, null, 2)
                 }
               }
             }
 
-            console.log('📝 工具参数累加:', Array.from(assistantToolCalls.entries()).map(([k, v]) => ({ index: k, ...v })))
-          }
+            // 阶段2：tool_call_chunks 累加参数
+            if (hasChunks) {
+              for (const tcChunk of message.tool_call_chunks) {
+                const index = tcChunk.index
+                if (index === undefined) continue
 
-          // 处理 tool_calls - 获取完整的工具调用信息（阶段1：首次出现）
-          if (message.tool_calls && message.tool_calls.length > 0) {
-            for (const tc of message.tool_calls) {
-              const index = message.tool_calls?.indexOf(tc) ?? 0
-              // 记录 id 到 index 的映射
-              toolIdToIndex.set(tc.id, index)
+                const messageKey = `${messageId}_${index}`
 
-              // 更新或创建工具调用信息
-              if (!assistantToolCalls.has(index)) {
-                assistantToolCalls.set(index, {
-                  id: tc.id,
-                  name: tc.name,
-                  args: JSON.stringify(tc.args, null, 2)
-                })
-              } else {
-                const existing = assistantToolCalls.get(index)!
-                if (tc.id) existing.id = tc.id
-                if (tc.name) existing.name = tc.name
+                let existing = assistantToolCalls.get(messageKey)
+                const isNew = !existing
+
+                if (isNew) {
+                  // 如果还没有，先用 chunks 创建
+                  assistantToolCalls.set(messageKey, {
+                    id: tcChunk.id || '',
+                    name: tcChunk.name || '',
+                    args: tcChunk.args || ''
+                  })
+                  console.log('📝 阶段1 - 工具调用开始:', {
+                    messageId,
+                    index,
+                    toolCallId: tcChunk.id || '(暂无)',
+                    name: tcChunk.name || '(暂无)'
+                  })
+                } else {
+                  // 累加参数 - 从 tool_call_chunks 的 args 获取
+                  if (tcChunk.args) {
+                    existing.args = (existing.args || '') + tcChunk.args
+                  }
+                  if (tcChunk.id && !existing.id) existing.id = tcChunk.id
+                  if (tcChunk.name) existing.name = tcChunk.name
+
+                  console.log('📝 阶段2 - args 流式累加:', {
+                    messageId,
+                    index,
+                    newArgs: tcChunk.args,
+                    accumulatedArgs: existing.args
+                  })
+                }
               }
             }
           }
