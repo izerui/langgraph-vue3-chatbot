@@ -32,7 +32,7 @@ function getMessageClass(index: number) {
 
 <template>
   <Conversation>
-    <ConversationContent class="bg-[#fafaf9]">
+    <ConversationContent class="bg-[#faf9f5]">
       <template v-for="(message, index) in messages" :key="message.key">
         <!-- system 消息按照 assistant 方式渲染 -->
         <Message

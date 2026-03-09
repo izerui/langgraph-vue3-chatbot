@@ -86,7 +86,7 @@ function toggleWebSearch() {
     <PromptInput
       multiple
       global-drop
-      class="w-full"
+      class="w-full bg-card"
       @submit="emit('submit', $event)"
     >
       <!-- 附件显示区域 -->
