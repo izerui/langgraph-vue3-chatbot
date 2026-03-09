@@ -1,36 +1,34 @@
 <script setup lang="ts">
-import AskAIBot from './components/ai-bot/AskAIBot.vue'
+import AskAiBtn from './components/ai-bot/AskAiBtn.vue'
 import ChatBotExample from './components/ai-elements/examples/chatbot.vue'
+import ChatBot from "@/components/ai-bot/ChatBot.vue";
 </script>
 
 <template>
   <div class="app-container">
     <header>
-      <h1>AI Chat</h1>
-      <p>Vue 3 + LangGraph 聊天组件示例</p>
+      <h1>AI ChatBot</h1>
+      <p>Vue 3 + LangGraph 聊天组件示例 基于 `@langchain/langgraph-sdk` 流式响应、模块化组件设计、支持工具调用、推理过程</p>
     </header>
 
     <main>
-      <section class="intro">
-        <h2>组件介绍</h2>
-        <p>本项目展示如何使用 <strong>AI 元素组件库</strong> 构建 AI 聊天应用：</p>
-        <ul>
-          <li>基于 <code>@langchain/langgraph-sdk</code> 流式响应</li>
-          <li>模块化组件设计</li>
-          <li>支持工具调用、推理过程、来源引用</li>
-        </ul>
-      </section>
 
       <div class="divider">
         <span class="divider-text">组件示例</span>
       </div>
 
-<!--      <div class="demo-container">-->
-<!--        <ChatBotExample />-->
-<!--      </div>-->
+      <div class="demo-container">
+        <ChatBot
+          assistant-id="research"
+          thread-id="9f31354d-b2f8-4472-8ab7-fd49cd52e32a"
+          assistant-name="我的助手"
+          :default-expanded=false
+          system-prompt="你是一个专业的技术顾问，擅长回答编程问题。"
+        />
+      </div>
     </main>
 
-    <AskAIBot
+    <AskAiBtn
       assistant-id="research"
       thread-id="9f31354d-b2f8-4472-8ab7-fd49cd52e32a"
       assistant-name="我的助手"
@@ -55,17 +53,44 @@ body {
 header {
   background: #333;
   color: white;
-  padding: 24px;
+  padding: 16px 24px;
   text-align: center;
 }
 
 header h1 {
-  margin: 0 0 8px;
+  margin: 0;
+  font-size: 20px;
 }
 
-header p {
-  margin: 0;
+header > p {
+  margin: 4px 0 0;
+  font-size: 14px;
   opacity: 0.8;
+}
+
+.header-intro {
+  margin-top: 12px;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 12px;
+  border-radius: 6px;
+}
+
+.header-intro p {
+  margin: 0 0 4px;
+  font-size: 13px;
+}
+
+.header-intro ul {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.header-intro code {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
 }
 
 main {

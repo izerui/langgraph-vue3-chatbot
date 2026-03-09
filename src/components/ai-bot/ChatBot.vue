@@ -1,18 +1,17 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import type { ChatStatus } from 'ai'
-import type { PromptInputMessage } from '@/components/ai-bot/ai-elements/prompt-input'
-import type { ChatMessage } from '@/components/ai-bot/types/chat'
-import { fetchModels, getDefaultModel, type ModelInfo } from '@/components/ai-bot/lib/models'
+import type { PromptInputMessage } from './ai-elements/prompt-input'
+import type { ChatMessage } from './types/chat'
+import { fetchModels, getDefaultModel, type ModelInfo } from './lib/models'
 import { Client } from '@langchain/langgraph-sdk'
-import { createThread, loadThreadHistory } from '@/components/ai-bot/lib/thread'
+import { createThread, loadThreadHistory } from './lib/thread'
 
-import ChatHeader from '@/components/ai-bot/ChatHeader.vue'
-import ChatMessages from '@/components/ai-bot/ChatMessages.vue'
-import ChatSuggestions from '@/components/ai-bot/ChatSuggestions.vue'
-import ChatInput from '@/components/ai-bot/ChatInput.vue'
-import FloatButton from '@/components/ai-bot/FloatButton.vue'
-import { Loader } from '@/components/ai-bot/ai-elements/loader'
+import ChatHeader from './ChatHeader.vue'
+import ChatMessages from './ChatMessages.vue'
+import ChatSuggestions from './ChatSuggestions.vue'
+import ChatInput from './ChatInput.vue'
+import { Loader } from './ai-elements/loader'
 
 interface Props {
   assistantId?: string
@@ -40,7 +39,6 @@ const client = new Client({
 })
 
 // 状态
-const isExpanded = ref(props.defaultExpanded)
 const isMaximized = ref(false)
 const threadId = ref<string | null>(null)
 const status = ref<ChatStatus>('ready')
@@ -83,17 +81,10 @@ const suggestions = [
   '今天天气怎么样？'
 ]
 
-// 切换展开状态
-function toggleExpanded() {
-  isExpanded.value = !isExpanded.value
-  if (!isExpanded.value) {
-    isMaximized.value = false
-  }
-}
-
 // 切换最大化状态
 function toggleMaximize() {
   isMaximized.value = !isMaximized.value
+  emit('update:isMaximized', isMaximized.value)
 }
 
 // 发送消息
@@ -383,106 +374,79 @@ function handleSuggestionClick(suggestion: string) {
 function handleCopy(content: string) {
   navigator.clipboard.writeText(content)
 }
+
+const emit = defineEmits<{
+  close: []
+  'update:isMaximized': [value: boolean]
+}>()
+
+// 关闭聊天窗口
+function handleClose() {
+  emit('close')
+}
 </script>
 
 <template>
-  <div class="ask-ai-bot">
-    <!-- 聊天窗口 -->
-    <Transition name="slide-up">
-      <div v-show="isExpanded" class="chat-window" :class="{ maximized: isMaximized }">
-        <ChatHeader
-          :title="assistantName"
-          :is-maximized="isMaximized"
-          @close="toggleExpanded"
-          @toggle-maximize="toggleMaximize"
-        />
+  <div class="chat-bot">
+    <div class="chat-window" :class="{ maximized: isMaximized }">
+      <ChatHeader
+        :title="assistantName"
+        :is-maximized="isMaximized"
+        @close="handleClose"
+        @toggle-maximize="toggleMaximize"
+      />
 
-        <ChatMessages
-          :messages="messages"
-          @copy="handleCopy"
-        />
+      <ChatMessages
+        :messages="messages"
+        @copy="handleCopy"
+      />
 
-        <ChatSuggestions
-          :suggestions="suggestions"
-          @select="handleSuggestionClick"
-        />
+      <ChatSuggestions
+        :suggestions="suggestions"
+        @select="handleSuggestionClick"
+      />
 
-        <ChatInput
-          :status="status"
-          :current-model="currentModel"
-          :models="models"
-          :use-web-search="useWebSearch"
-          v-model:modelSelectorOpen="modelSelectorOpen"
-          @submit="handleFormSubmit"
-          @update:current-model="currentModel = $event"
-          @update:use-web-search="useWebSearch = $event"
-        />
+      <ChatInput
+        :status="status"
+        :current-model="currentModel"
+        :models="models"
+        :use-web-search="useWebSearch"
+        v-model:modelSelectorOpen="modelSelectorOpen"
+        @submit="handleFormSubmit"
+        @update:current-model="currentModel = $event"
+        @update:use-web-search="useWebSearch = $event"
+      />
 
-        <!-- 加载遮罩 -->
-        <div v-if="isLoading" class="loading-mask">
-          <Loader :size="24" />
-        </div>
+      <!-- 加载遮罩 -->
+      <div v-if="isLoading" class="loading-mask">
+        <Loader :size="24" />
       </div>
-    </Transition>
-
-    <FloatButton
-      :is-expanded="isExpanded"
-      @toggle="toggleExpanded"
-    />
+    </div>
   </div>
 </template>
 
 <style scoped>
-.ask-ai-bot {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  z-index: 9999;
+.chat-bot {
+  width: 100%;
+  height: 100%;
 }
 
 .chat-window {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  width: max(300px, min(500px, calc(100vw - 40px)));
-  height: calc(100vh - 90px);
+  width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
   background: var(--background);
   border-radius: 12px;
   border: 1px solid var(--border);
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
-  transition: all 0.3s ease;
   overflow: hidden;
+  position: relative;
 }
 
 .chat-window.maximized {
-  top: 20px;
-  right: 20px;
-  left: 20px;
-  width: auto;
-  height: calc(100vh - 40px);
   border-radius: 12px;
   border: 1px solid var(--border);
-}
-
-.slide-up-enter-active,
-.slide-up-leave-active {
-  transition: all 0.3s ease;
-}
-
-.slide-up-enter-from,
-.slide-up-leave-to {
-  opacity: 0;
-  transform: translateY(20px) scale(0.95);
-}
-
-@media (max-width: 480px) {
-  .chat-window {
-    width: calc(100vw - 40px);
-    height: 80vh;
-    right: -10px;
-  }
 }
 
 .loading-mask {
