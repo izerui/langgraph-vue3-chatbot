@@ -166,7 +166,10 @@ async function handleSubmit(userMessage: string) {
     ]
 
     let assistantContent = ''
-    const assistantToolCalls: { id: string; name: string; args: string }[] = []
+    // 使用 Map 通过 index 跟踪工具调用，因为流式过程中 id 可能为空
+    const assistantToolCalls = new Map<number, { id: string; name: string; args: string }>()
+    // id 到 index 的映射，用于在 tool 消息中查找对应的参数
+    const toolIdToIndex = new Map<string, number>()
     let needNewAssistantMessage = false // 是否需要创建新的 assistant 消息
 
     // 流式处理 LangGraph SDK 返回的消息
@@ -193,15 +196,18 @@ async function handleSubmit(userMessage: string) {
           // 获取消息类型
           const messageType = message.type
 
-          // 处理工具消息 - tool 类型
+          // 处理工具消息 - tool 类型（阶段4：结果返回）
           if (messageType === 'tool') {
             const toolCallId = message.tool_call_id
             const toolName = message.name || '未知工具'
             const toolResult = typeof message.content === 'string' ? message.content : JSON.stringify(message.content)
             const toolStatus = message.status
 
-            // 获取工具参数
-            const toolArgs = assistantToolCalls.find(tc => tc.id === toolCallId)?.args || ''
+            // 从累加的 tool_call_chunks 中获取完整的工具参数
+            // 通过 id 查找对应的 index，再获取 args
+            const toolIndex = toolIdToIndex.get(toolCallId)
+            const toolCallInfo = toolIndex !== undefined ? assistantToolCalls.get(toolIndex) : undefined
+            const toolArgs = toolCallInfo?.args || ''
 
             // 映射后端状态到 UI 状态
             const mapToolStatus = (status: string): string => {
@@ -249,16 +255,64 @@ async function handleSubmit(userMessage: string) {
             continue // 跳过后续处理
           }
 
-          // 处理工具调用 - 保存参数供 tool 消息使用
+          // 处理 tool_call_chunks - 流式累加工具参数（阶段1-3）
+          // 工具参数是通过 tool_call_chunks 逐步流式发送的
+          // 使用 index 来匹配同一个工具调用
+          if (message.tool_call_chunks && message.tool_call_chunks.length > 0) {
+            for (const tcChunk of message.tool_call_chunks) {
+              const index = tcChunk.index
+              if (index === undefined) continue
+
+              // 记录 id 到 index 的映射
+              if (tcChunk.id) {
+                toolIdToIndex.set(tcChunk.id, index)
+              }
+
+              let existing = assistantToolCalls.get(index)
+              if (!existing) {
+                // 新工具调用 - 保存 id（可能为空）和 name（name 可能为空，后续会更新）
+                assistantToolCalls.set(index, {
+                  id: tcChunk.id || '',
+                  name: tcChunk.name || '',
+                  args: tcChunk.args || ''
+                })
+              } else {
+                // 累加参数 - 直接追加字符串
+                if (tcChunk.args) {
+                  existing.args = (existing.args || '') + tcChunk.args
+                }
+                // 更新 id（如果新 chunk 有 id）
+                if (tcChunk.id && !existing.id) {
+                  existing.id = tcChunk.id
+                }
+                // 更新名称（如果新 chunk 有名称）
+                if (tcChunk.name) {
+                  existing.name = tcChunk.name
+                }
+              }
+            }
+
+            console.log('📝 工具参数累加:', Array.from(assistantToolCalls.entries()).map(([k, v]) => ({ index: k, ...v })))
+          }
+
+          // 处理 tool_calls - 获取完整的工具调用信息（阶段1：首次出现）
           if (message.tool_calls && message.tool_calls.length > 0) {
             for (const tc of message.tool_calls) {
-              const existing = assistantToolCalls.find(t => t.id === tc.id)
-              if (!existing) {
-                assistantToolCalls.push({
+              const index = message.tool_calls?.indexOf(tc) ?? 0
+              // 记录 id 到 index 的映射
+              toolIdToIndex.set(tc.id, index)
+
+              // 更新或创建工具调用信息
+              if (!assistantToolCalls.has(index)) {
+                assistantToolCalls.set(index, {
                   id: tc.id,
                   name: tc.name,
                   args: JSON.stringify(tc.args, null, 2)
                 })
+              } else {
+                const existing = assistantToolCalls.get(index)!
+                if (tc.id) existing.id = tc.id
+                if (tc.name) existing.name = tc.name
               }
             }
           }
@@ -273,16 +327,6 @@ async function handleSubmit(userMessage: string) {
               .filter((block: any) => block.type === 'text')
               .map((block: any) => block.text)
               .join('')
-          }
-
-          // 处理图片内容
-          let images: string[] = []
-          if (Array.isArray(message.content)) {
-            images = message.content
-              .filter((block: any) => block.type === 'image_url')
-              .map((block: any) =>
-                typeof block.image_url === 'string' ? block.image_url : block.image_url?.url
-              )
           }
 
           // 检查是否需要创建新消息（tool 消息后第一条 AI 消息）
@@ -300,7 +344,7 @@ async function handleSubmit(userMessage: string) {
               key: newAssistantMessageId,
               type: 'ai',
               content: '',
-              batchId: runId
+              batchId: runId.value
             })
             assistantContent = ''
             needNewAssistantMessage = false
