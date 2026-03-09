@@ -253,10 +253,10 @@ async function handleSubmit(userMessage: string) {
             // 映射后端状态到 UI 状态
             const mapToolStatus = (status: string): string => {
               switch (status) {
-                case 'success': return 'output-available'
-                case 'error': return 'output-error'
-                case 'running': return 'input-available'
-                default: return 'output-available'
+                case 'success': return 'completed'
+                case 'error': return 'error'
+                case 'running': return 'running'
+                default: return 'completed'
               }
             }
             const uiState = mapToolStatus(toolStatus)
@@ -309,7 +309,7 @@ async function handleSubmit(userMessage: string) {
           if (message.chunk_position === 'last') {
             for (const [key, tc] of assistantToolCalls) {
               if (tc.messageKey !== undefined) {
-                updateToolMessage(tc.messageKey, { state: 'output-available' })
+                updateToolMessage(tc.messageKey, { state: 'running' })
               }
             }
             console.log('🛑 阶段3 - 工具调用结束', {
@@ -337,7 +337,7 @@ async function handleSubmit(userMessage: string) {
                 const existing = assistantToolCalls.get(messageKey)
                 if (!existing) {
                   // 新建 - 创建工具消息并添加到 messages
-                  const toolMsg = createToolMessage(tc.id, tc.name, '', 'input-streaming')
+                  const toolMsg = createToolMessage(tc.id, tc.name, '', 'start')
                   messages.value.push(toolMsg)
                   // 记录消息在数组中的索引
                   const msgIndex = messages.value.length - 1
@@ -377,7 +377,7 @@ async function handleSubmit(userMessage: string) {
 
                 if (!existing) {
                   // 如果还没有工具调用记录，用 chunks 创建
-                  const toolMsg = createToolMessage(tcChunk.id || '', tcChunk.name || '', tcChunk.args || '', 'input-streaming')
+                  const toolMsg = createToolMessage(tcChunk.id || '', tcChunk.name || '', tcChunk.args || '', 'running')
                   messages.value.push(toolMsg)
                   const msgIndex = messages.value.length - 1
 
@@ -398,9 +398,9 @@ async function handleSubmit(userMessage: string) {
                   // 已有记录 - 累加有实际内容的 args 并更新工具消息
                   if (tcChunk.args && tcChunk.args.trim()) {
                     existing.args = (existing.args || '') + tcChunk.args
-                    // 实时更新工具消息的参数
+                    // 实时更新工具消息的参数和状态
                     if (existing.messageKey) {
-                      updateToolMessage(existing.messageKey, { args: existing.args })
+                      updateToolMessage(existing.messageKey, { args: existing.args, state: 'running' })
                     }
                   }
                   // 补充 id 和 name

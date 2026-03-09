@@ -10,16 +10,14 @@ defineProps<{
 
 const getStateColor = (state: string) => {
   switch (state) {
-    case 'output-error':
-      return 'text-red-500'
-    case 'output-available':
-    case 'output-denied':
-      return 'text-green-500'
-    case 'input-available':
-    case 'input-streaming':
+    case 'start':
       return 'text-blue-500'
-    case 'approval-requested':
+    case 'running':
       return 'text-yellow-500'
+    case 'completed':
+      return 'text-green-500'
+    case 'error':
+      return 'text-red-500'
     default:
       return 'text-muted-foreground'
   }
@@ -56,13 +54,13 @@ const getStateColor = (state: string) => {
       </div>
       <div v-if="tool.result || tool.error">
         <p class="text-muted-foreground mb-1">
-          {{ tool.state === 'output-error' ? 'Error:' : 'Result:' }}
+          {{ tool.state === 'error' ? 'Error:' : 'Result:' }}
         </p>
         <pre
           :class="
             cn(
               'bg-muted p-2 rounded text-[10px] overflow-x-auto',
-              tool.state === 'output-error' && 'text-red-500'
+              tool.state === 'error' && 'text-red-500'
             )
           "
         >{{ tool.error || tool.result }}</pre>
