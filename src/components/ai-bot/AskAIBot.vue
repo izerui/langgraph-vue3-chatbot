@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import type { ChatStatus } from 'ai'
-import type { PromptInputMessage } from '@/components/ai-elements/prompt-input'
+import type { PromptInputMessage } from '@/components/ai-bot/ai-elements/prompt-input'
 import type { ChatMessage } from '@/components/ai-bot/types/chat'
 import { fetchModels, getDefaultModel, type ModelInfo } from '@/components/ai-bot/lib/models'
 import { Client } from '@langchain/langgraph-sdk'
@@ -12,7 +12,7 @@ import ChatMessages from '@/components/ai-bot/ChatMessages.vue'
 import ChatSuggestions from '@/components/ai-bot/ChatSuggestions.vue'
 import ChatInput from '@/components/ai-bot/ChatInput.vue'
 import FloatButton from '@/components/ai-bot/FloatButton.vue'
-import { Loader } from '@/components/ai-elements/loader'
+import { Loader } from '@/components/ai-bot/ai-elements/loader'
 
 interface Props {
   assistantId?: string

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { ToolUIInfo } from './types/chat'
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ai-bot/ui/collapsible'
 import { ChevronDownIcon, WrenchIcon } from 'lucide-vue-next'
-import { cn } from '@/lib/utils'
+import { cn } from '@/components/ai-bot/lib/utils'
 
 defineProps<{
   toolCalls: ToolUIInfo[]

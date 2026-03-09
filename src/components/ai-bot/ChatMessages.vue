@@ -5,11 +5,11 @@ import {
   Conversation,
   ConversationContent,
   ConversationScrollButton,
-} from '@/components/ai-elements/conversation'
+} from '@/components/ai-bot/ai-elements/conversation'
 import {
   Message,
   MessageContent,
-} from '@/components/ai-elements/message'
+} from '@/components/ai-bot/ai-elements/message'
 import MarkdownRender from 'markstream-vue'
 import 'markstream-vue/index.css'
 

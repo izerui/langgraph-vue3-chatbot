@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Suggestion, Suggestions } from '@/components/ai-elements/suggestion'
+import { Suggestion, Suggestions } from '@/components/ai-bot/ai-elements/suggestion'
 
 interface Props {
   suggestions: string[]

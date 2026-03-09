@@ -17,7 +17,7 @@ import {
   PromptInputSubmit,
   PromptInputTextarea,
   PromptInputTools,
-} from '@/components/ai-elements/prompt-input'
+} from '@/components/ai-bot/ai-elements/prompt-input'
 import {
   ModelSelector,
   ModelSelectorContent,
@@ -28,9 +28,9 @@ import {
   ModelSelectorList,
   ModelSelectorName,
   ModelSelectorTrigger,
-} from '@/components/ai-elements/model-selector'
+} from '@/components/ai-bot/ai-elements/model-selector'
 import { CheckIcon, ChevronDownIcon, GlobeIcon, Loader2Icon } from 'lucide-vue-next'
-import type { PromptInputMessage } from '@/components/ai-elements/prompt-input'
+import type { PromptInputMessage } from '@/components/ai-bot/ai-elements/prompt-input'
 
 interface Props {
   status: ChatStatus

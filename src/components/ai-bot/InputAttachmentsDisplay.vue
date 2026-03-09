@@ -4,8 +4,8 @@ import {
   AttachmentPreview,
   AttachmentRemove,
   Attachments,
-} from '@/components/ai-elements/attachments'
-import { usePromptInput } from '@/components/ai-elements/prompt-input'
+} from '@/components/ai-bot/ai-elements/attachments'
+import { usePromptInput } from '@/components/ai-bot/ai-elements/prompt-input'
 
 const { files, removeFile } = usePromptInput()
 </script>
