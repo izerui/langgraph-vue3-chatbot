@@ -45,6 +45,7 @@ const client = new Client({
 const isMaximized = ref(false)
 const threadId = ref<string | null>(null)
 const status = ref<ChatStatus>('ready')
+const runId = ref<string>('')
 const useWebSearch = ref(false)
 const modelSelectorOpen = ref(false)
 const isLoading = ref(true)
@@ -166,7 +167,6 @@ async function handleSubmit(userMessage: string) {
 
     let assistantContent = ''
     const assistantToolCalls: { id: string; name: string; args: string }[] = []
-    let runId = ''
     let needNewAssistantMessage = false // 是否需要创建新的 assistant 消息
 
     // 流式处理 LangGraph SDK 返回的消息
@@ -176,7 +176,7 @@ async function handleSubmit(userMessage: string) {
 
       // 从 metadata 事件中获取 run_id
       if (chunkEvent === 'metadata' && data?.run_id) {
-        runId = data.run_id
+        runId.value = data.run_id
       }
 
       if (chunkEvent === 'messages' || chunkEvent === 'messages/partial') {
@@ -186,7 +186,7 @@ async function handleSubmit(userMessage: string) {
         // 从消息元数据中获取 run_id
         const messageMeta = messageArray[1] as any
         if (messageMeta?.run_id) {
-          runId = messageMeta.run_id
+          runId.value = messageMeta.run_id
         }
 
         if (message) {
@@ -220,7 +220,7 @@ async function handleSubmit(userMessage: string) {
               key: toolMessageId,
               type: 'tool',
               content: toolResult,
-              batchId: runId,
+              batchId: runId.value,
               toolCalls: [{
                 id: toolCallId,
                 name: toolName,
@@ -323,7 +323,7 @@ async function handleSubmit(userMessage: string) {
           }
           if (lastAssistantIndex >= 0) {
             messages.value[lastAssistantIndex].content = assistantContent
-            messages.value[lastAssistantIndex].batchId = runId
+            messages.value[lastAssistantIndex].batchId = runId.value
           }
         }
       }
@@ -331,7 +331,7 @@ async function handleSubmit(userMessage: string) {
 
     const lastIndex = messages.value.length - 1
     if (lastIndex >= 0) {
-      messages.value[lastIndex].batchId = runId
+      messages.value[lastIndex].batchId = runId.value
     }
 
     status.value = 'ready'
@@ -365,6 +365,23 @@ function handleFormSubmit(message: PromptInputMessage) {
 
   const text = message.text?.trim() || ''
   handleSubmit(text || 'Sent with attachments')
+}
+
+// 处理停止按钮点击
+async function handleStop() {
+  if (threadId.value && runId.value) {
+    try {
+      await client.runs.cancel(threadId.value, runId.value)
+      status.value = 'ready'
+    }
+    catch (error) {
+      console.error('Failed to stop stream:', error)
+      status.value = 'ready'
+    }
+  }
+  else {
+    status.value = 'ready'
+  }
 }
 
 // 选择建议
@@ -417,6 +434,7 @@ function handleClose() {
         :use-web-search="useWebSearch"
         v-model:modelSelectorOpen="modelSelectorOpen"
         @submit="handleFormSubmit"
+        @stop="handleStop"
         @update:current-model="currentModel = $event"
         @update:use-web-search="useWebSearch = $event"
       />
