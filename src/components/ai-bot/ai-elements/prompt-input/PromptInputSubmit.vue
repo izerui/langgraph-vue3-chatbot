@@ -24,12 +24,13 @@ const props = withDefaults(defineProps<Props>(), {
 
 // 根据状态动态计算 variant
 // 可发送时: 橙红色 (#c96442)
-// 不可发送时: 灰色
+// 忙碌中: 红色
 const buttonVariant = computed(() => {
-  // 不可发送: disabled 或 忙碌中 (streaming/submitted)
-  if (props.disabled || props.status === 'streaming' || props.status === 'submitted') {
-    return 'default'
+  // 忙碌中 (streaming/submitted)
+  if (props.status === 'streaming' || props.status === 'submitted') {
+    return 'destructive'
   }
+  // 输入为空或可发送时，都使用 submit 颜色（橙红色）
   return 'submit'
 })
 
@@ -60,6 +61,21 @@ const isDisabled = computed(() => {
 })
 
 const { status, size, variant, disabled, class: _, ...restProps } = props
+
+const emit = defineEmits<{
+  stop: []
+}>()
+
+// 判断是否为忙碌状态
+const isLoading = computed(() => {
+  return props.status === 'streaming' || props.status === 'submitted'
+})
+
+function handleClick() {
+  if (isLoading.value) {
+    emit('stop')
+  }
+}
 </script>
 
 <template>
@@ -69,7 +85,7 @@ const { status, size, variant, disabled, class: _, ...restProps } = props
     :size="size"
     :variant="buttonVariant"
     :disabled="isDisabled"
-    type="submit"
+    @click="handleClick"
     v-bind="restProps"
   >
     <slot>

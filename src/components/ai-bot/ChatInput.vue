@@ -43,6 +43,7 @@ const props = defineProps<Props>()
 
 const emit = defineEmits<{
   submit: [message: PromptInputMessage]
+  stop: []
   'update:currentModel': [model: ModelInfo]
   'update:useWebSearch': [value: boolean]
 }>()
@@ -188,7 +189,7 @@ function toggleWebSearch() {
         </PromptInputTools>
 
         <!-- 发送按钮 -->
-        <PromptInputSubmit :status="status" :disabled="isEmpty" />
+        <PromptInputSubmit :status="status" :disabled="isEmpty" @stop="emit('stop')" />
       </PromptInputFooter>
     </PromptInput>
   </div>
