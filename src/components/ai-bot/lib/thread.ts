@@ -86,7 +86,7 @@ export async function loadThreadHistory(
           id: tc.id,
           name: tc.name,
           args: JSON.stringify(tc.args, null, 2),
-          state: 'output-available' as const,
+          state: 'completed' as const,
           result: ''
         })) || []
 
@@ -106,12 +106,23 @@ export async function loadThreadHistory(
             if (nextMsg.type === 'tool') {
               const toolMsgContent = typeof nextMsg.content === 'string' ? nextMsg.content : JSON.stringify(nextMsg.content)
               const toolCallId = nextMsg.tool_call_id
+              const toolStatus = nextMsg.status
+
+              // 根据 status 映射状态
+              const mapStatus = (status: string): string => {
+                switch (status) {
+                  case 'success': return 'completed'
+                  case 'error': return 'error'
+                  default: return 'completed'
+                }
+              }
+              const toolState = mapStatus(toolStatus)
 
               // 找到对应的 tool_call 并填充结果
               const toolCall = toolCalls.find(tc => tc.id === toolCallId)
               if (toolCall) {
                 toolCall.result = toolMsgContent
-                toolCall.state = 'output-available'
+                toolCall.state = toolState
 
                 // 创建独立的工具消息
                 const toolMessageId = `tool-${toolCallId}-${Date.now()}`
@@ -124,7 +135,8 @@ export async function loadThreadHistory(
                     name: toolCall.name,
                     args: toolCall.args,
                     result: toolMsgContent,
-                    state: 'output-available'
+                    state: toolState,
+                    error: toolStatus === 'error' ? toolMsgContent : undefined
                   }]
                 })
               }
