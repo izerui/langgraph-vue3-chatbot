@@ -25,4 +25,14 @@ export interface PromptInputContext {
   submitForm: () => void
 }
 
+import { inject } from 'vue'
+
 export const PROMPT_INPUT_KEY = Symbol('PromptInputContext')
+
+export function usePromptInput() {
+  const context = inject<PromptInputContext>(PROMPT_INPUT_KEY)
+  if (!context) {
+    throw new Error('usePromptInput must be used within a PromptInput component')
+  }
+  return context
+}

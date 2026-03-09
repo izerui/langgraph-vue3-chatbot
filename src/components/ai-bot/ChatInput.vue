@@ -1,37 +1,16 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, provide, onBeforeUnmount } from 'vue'
 import type { ChatStatus } from 'ai'
+import type { FileUIPart } from 'ai'
+import { nanoid } from 'nanoid'
+import { PROMPT_INPUT_KEY, type AttachmentFile, type PromptInputContext } from './ai-elements/usePromptInput'
 import { getProviderByModelName, type ModelInfo } from './lib/models'
 import PromptInputAttachmentsDisplay from './InputAttachmentsDisplay.vue'
-import {
-  PromptInput,
-  PromptInputActionAddAttachments,
-  PromptInputActionMenu,
-  PromptInputActionMenuContent,
-  PromptInputActionMenuTrigger,
-  PromptInputBody,
-  PromptInputButton,
-  PromptInputFooter,
-  PromptInputHeader,
-  PromptInputSpeechButton,
-  PromptInputSubmit,
-  PromptInputTextarea,
-  PromptInputTools,
-} from '@/components/ai-bot/ai-elements/prompt-input'
-import {
-  ModelSelector,
-  ModelSelectorContent,
-  ModelSelectorEmpty,
-  ModelSelectorGroup,
-  ModelSelectorInput,
-  ModelSelectorItem,
-  ModelSelectorList,
-  ModelSelectorName,
-  ModelSelectorTrigger,
-} from '@/components/ai-bot/ai-elements/model-selector'
-import { CheckIcon, ChevronDownIcon, GlobeIcon, Loader2Icon } from 'lucide-vue-next'
-import type { PromptInputMessage } from '@/components/ai-bot/ai-elements/prompt-input'
+import { CheckIcon, ChevronDownIcon, Loader2Icon, CornerDownLeftIcon, SquareIcon, XIcon, PlusIcon, ImageIcon } from 'lucide-vue-next'
+import { InputGroup, InputGroupAddon, InputGroupTextarea, InputGroupButton } from '@/components/ai-bot/ui/input-group'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuItem } from '@/components/ai-bot/ui/dropdown-menu'
 
+// ============== 类型定义 ==============
 interface Props {
   status: ChatStatus
   currentModel: ModelInfo | null
@@ -42,7 +21,7 @@ interface Props {
 const props = defineProps<Props>()
 
 const emit = defineEmits<{
-  submit: [message: PromptInputMessage]
+  submit: [message: { text: string, files: FileUIPart[] }]
   stop: []
   'update:currentModel': [model: ModelInfo]
   'update:useWebSearch': [value: boolean]
@@ -50,9 +29,125 @@ const emit = defineEmits<{
 
 const modelSelectorOpen = defineModel<boolean>('modelSelectorOpen', { default: false })
 
-// 本地输入状态
+// ============== PromptInput Context ==============
+
+// 本地状态
 const inputText = ref('')
 const hasFiles = ref(false)
+const files = ref<AttachmentFile[]>([])
+const fileInputRef = ref<HTMLInputElement | null>(null)
+const isLoading = ref(false)
+
+// Cleanup object URLs
+onBeforeUnmount(() => {
+  files.value.forEach((f) => {
+    if (f.url && f.url.startsWith('blob:')) {
+      URL.revokeObjectURL(f.url)
+    }
+  })
+})
+
+const setTextInput = (val: string) => {
+  inputText.value = val
+}
+
+const addFiles = (incoming: File[] | FileList) => {
+  const fileList = Array.from(incoming)
+  const newAttachments: AttachmentFile[] = fileList.map(file => ({
+    id: nanoid(),
+    type: 'file',
+    url: URL.createObjectURL(file),
+    mediaType: file.type,
+    filename: file.name,
+    file,
+  }))
+  files.value = [...files.value, ...newAttachments]
+  hasFiles.value = files.value.length > 0
+}
+
+const removeFile = (id: string) => {
+  const file = files.value.find(f => f.id === id)
+  if (file?.url && file.url.startsWith('blob:')) {
+    URL.revokeObjectURL(file.url)
+  }
+  files.value = files.value.filter(f => f.id !== id)
+  hasFiles.value = files.value.length > 0
+}
+
+const clearFiles = () => {
+  files.value.forEach((f) => {
+    if (f.url && f.url.startsWith('blob:')) {
+      URL.revokeObjectURL(f.url)
+    }
+  })
+  files.value = []
+  hasFiles.value = false
+}
+
+const clearInput = () => {
+  inputText.value = ''
+}
+
+const openFileDialog = () => {
+  fileInputRef.value?.click()
+}
+
+const convertBlobUrlToDataUrl = async (url: string): Promise<string | null> => {
+  try {
+    const response = await fetch(url)
+    const blob = await response.blob()
+    return new Promise((resolve) => {
+      const reader = new FileReader()
+      reader.onloadend = () => resolve(reader.result as string)
+      reader.onerror = () => resolve(null)
+      reader.readAsDataURL(blob)
+    })
+  }
+  catch {
+    return null
+  }
+}
+
+const submitForm = async () => {
+  // Process files (convert blobs to base64 if needed for AI SDK)
+  const processedFiles = await Promise.all(
+    files.value.map(async (item) => {
+      if (item.url && item.url.startsWith('blob:')) {
+        const dataUrl = await convertBlobUrlToDataUrl(item.url)
+        return { ...item, url: dataUrl ?? item.url }
+      }
+      return item
+    }),
+  )
+
+  const message = {
+    text: inputText.value,
+    files: processedFiles,
+  }
+
+  emit('submit', message)
+  clearInput()
+  clearFiles()
+}
+
+// 提供 context 给子组件
+const context: PromptInputContext = {
+  textInput: inputText,
+  files,
+  fileInputRef,
+  isLoading,
+  setTextInput,
+  addFiles,
+  removeFile,
+  clearFiles,
+  clearInput,
+  openFileDialog,
+  submitForm,
+}
+
+provide(PROMPT_INPUT_KEY, context)
+
+// ============== 本地输入状态 ==============
 
 // 输入是否为空
 const isEmpty = computed(() => {
@@ -86,112 +181,235 @@ function handleModelSelect(name: string) {
   modelSelectorOpen.value = false
 }
 
-function toggleWebSearch() {
-  emit('update:useWebSearch', !props.useWebSearch)
+// ============== PromptInputTextarea 逻辑 ==============
+const isComposing = ref(false)
+
+function handleKeyDown(e: KeyboardEvent) {
+  if (e.key === 'Enter') {
+    if (isComposing.value || e.shiftKey)
+      return
+    e.preventDefault()
+    submitForm()
+  }
+
+  // Remove last attachment on backspace if input is empty
+  if (e.key === 'Backspace' && inputText.value === '' && files.value.length > 0) {
+    const lastFile = files.value[files.value.length - 1]
+    if (lastFile) {
+      removeFile(lastFile.id)
+    }
+  }
+}
+
+function handlePaste(e: ClipboardEvent) {
+  const items = e.clipboardData?.items
+  if (!items)
+    return
+
+  const pastedFiles: File[] = []
+  for (const item of Array.from(items)) {
+    if (item.kind === 'file') {
+      const file = item.getAsFile()
+      if (file)
+        pastedFiles.push(file)
+    }
+  }
+
+  if (pastedFiles.length > 0) {
+    e.preventDefault()
+    addFiles(pastedFiles)
+  }
+}
+
+// ============== PromptInputSubmit 逻辑 ==============
+const buttonVariant = computed(() => {
+  if (props.status === 'streaming' || props.status === 'submitted') {
+    return 'destructive'
+  }
+  return 'submit'
+})
+
+const submitIcon = computed(() => {
+  if (props.status === 'submitted') {
+    return Loader2Icon
+  }
+  else if (props.status === 'streaming') {
+    return SquareIcon
+  }
+  else if (props.status === 'error') {
+    return XIcon
+  }
+  return CornerDownLeftIcon
+})
+
+const iconClass = computed(() => {
+  if (props.status === 'submitted') {
+    return 'size-4 animate-spin'
+  }
+  return 'size-4'
+})
+
+const isDisabled = computed(() => {
+  return isEmpty.value
+})
+
+const isLoadingStatus = computed(() => {
+  return props.status === 'streaming' || props.status === 'submitted'
+})
+
+function handleSubmitClick() {
+  if (isLoadingStatus.value) {
+    emit('stop')
+  }
+}
+
+// ============== 处理文件上传 ==============
+function onFileChange(e: Event) {
+  const input = e.target as HTMLInputElement
+  if (input.files) {
+    addFiles(input.files)
+  }
+  input.value = ''
 }
 </script>
 
 <template>
   <div class="input-wrapper">
-    <PromptInput
+    <!-- 隐藏的文件输入 -->
+    <input
+      ref="fileInputRef"
+      type="file"
+      class="hidden"
       multiple
-      global-drop
-      class="w-full bg-card"
-      v-model="inputText"
-      @submit="emit('submit', $event)"
+      @change="onFileChange"
     >
-      <!-- 附件显示区域 -->
-      <PromptInputHeader>
-        <PromptInputAttachmentsDisplay />
-      </PromptInputHeader>
 
-      <!-- 文本输入区域 -->
-      <PromptInputBody>
-        <PromptInputTextarea />
-      </PromptInputBody>
+    <form
+      class="w-full"
+      @submit.prevent="submitForm"
+    >
+      <InputGroup class="overflow-hidden">
+        <!-- 附件显示区域 (PromptInputHeader) -->
+        <InputGroupAddon
+          align="block-end"
+          class="order-first flex-wrap gap-1"
+        >
+          <PromptInputAttachmentsDisplay />
+        </InputGroupAddon>
 
-      <!-- 底部工具栏 -->
-      <PromptInputFooter>
-        <PromptInputTools>
-          <!-- 添加附件菜单 -->
-          <PromptInputActionMenu>
-            <PromptInputActionMenuTrigger />
-            <PromptInputActionMenuContent>
-              <PromptInputActionAddAttachments />
-            </PromptInputActionMenuContent>
-          </PromptInputActionMenu>
+        <!-- 文本输入区域 (PromptInputBody) -->
+        <div class="contents">
+          <InputGroupTextarea
+            v-model="inputText"
+            placeholder="有什么我能帮您的?"
+            name="message"
+            class="field-sizing-content max-h-48 min-h-16"
+            @keydown="handleKeyDown"
+            @paste="handlePaste"
+            @compositionstart="isComposing = true"
+            @compositionend="isComposing = false"
+          />
+        </div>
 
-          <!-- 语音输入按钮 -->
-<!--          <PromptInputSpeechButton />-->
+        <!-- 底部工具栏 (PromptInputFooter) -->
+        <InputGroupAddon
+          align="block-end"
+          class="justify-between gap-1"
+        >
+          <!-- 工具栏内容 (PromptInputTools) -->
+          <div class="flex items-center gap-1">
+            <!-- 添加附件菜单 -->
+            <DropdownMenu>
+              <DropdownMenuTrigger as-child>
+                <InputGroupButton type="button" class="cursor-pointer">
+                  <PlusIcon class="size-4" />
+                </InputGroupButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuItem @select.prevent="openFileDialog">
+                  <ImageIcon class="mr-2 size-4" />
+                  添加照片或文件
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
-          <!-- 网页搜索开关 -->
-<!--          <PromptInputButton-->
-<!--            :variant="useWebSearch ? 'default' : 'ghost'"-->
-<!--            @click="toggleWebSearch"-->
-<!--          >-->
-<!--            <GlobeIcon :size="16" />-->
-<!--            <span>Search</span>-->
-<!--          </PromptInputButton>-->
+            <!-- 语音输入按钮 -->
+            <!-- <PromptInputSpeechButton /> -->
 
-          <!-- 模型选择器 -->
-          <ModelSelector v-model:open="modelSelectorOpen">
-            <ModelSelectorTrigger as-child>
-              <PromptInputButton class="flex items-center gap-1">
-                <img
-                  v-if="selectedModelData"
-                  :src="`https://models.dev/logos/${getProviderByModelName(selectedModelData.name)}.svg`"
-                  class="size-4 rounded-sm object-contain"
-                  :alt="selectedModelData.name"
-                  @error="(e) => { (e.target as HTMLImageElement).src = 'https://models.dev/logos/openai.svg' }"
-                >
-                <span v-if="selectedModelData" class="whitespace-nowrap">{{ selectedModelData.name }}</span>
-                <span v-else class="text-muted-foreground">选择模型</span>
-                <ChevronDownIcon class="size-4 opacity-50 shrink-0" />
-              </PromptInputButton>
-            </ModelSelectorTrigger>
+            <!-- 网页搜索开关 -->
+            <!-- <PromptInputButton
+              :variant="useWebSearch ? 'default' : 'ghost'"
+              @click="toggleWebSearch"
+            >
+              <GlobeIcon :size="16" />
+              <span>Search</span>
+            </PromptInputButton> -->
 
-            <ModelSelectorContent>
-              <ModelSelectorInput placeholder="搜索模型..." />
-              <ModelSelectorList>
-                <ModelSelectorEmpty>未找到模型</ModelSelectorEmpty>
+            <!-- 模型选择器 -->
+            <DropdownMenu v-model:open="modelSelectorOpen">
+              <DropdownMenuTrigger as-child>
+                <InputGroupButton type="button" class="flex items-center gap-1 cursor-pointer">
+                  <img
+                    v-if="selectedModelData"
+                    :src="`https://models.dev/logos/${getProviderByModelName(selectedModelData.name)}.svg`"
+                    class="size-4 rounded-sm object-contain"
+                    :alt="selectedModelData.name"
+                    @error="(e) => { (e.target as HTMLImageElement).src = 'https://models.dev/logos/openai.svg' }"
+                  >
+                  <span v-if="selectedModelData" class="whitespace-nowrap">{{ selectedModelData.name }}</span>
+                  <span v-else class="text-muted-foreground">选择模型</span>
+                  <ChevronDownIcon class="size-4 opacity-50 shrink-0" />
+                </InputGroupButton>
+              </DropdownMenuTrigger>
 
+              <DropdownMenuContent align="start">
+                <!-- 这里可以使用 ModelSelector 的内容，或者简化为直接显示 -->
                 <template v-for="provider in providers" :key="provider">
-                  <ModelSelectorGroup :heading="provider">
-                    <ModelSelectorItem
-                      v-for="model in groupedModels[provider]"
-                      :key="model.name"
-                      :value="model.name"
-                      @select="() => handleModelSelect(model.name)"
-                      class="cursor-pointer gap-1"
+                  <div class="px-2 py-1.5 text-sm font-semibold text-muted-foreground">
+                    {{ provider }}
+                  </div>
+                  <DropdownMenuItem
+                    v-for="model in groupedModels[provider]"
+                    :key="model.name"
+                    @select="() => handleModelSelect(model.name)"
+                    class="cursor-pointer gap-1"
+                  >
+                    <img
+                      :src="`https://models.dev/logos/${getProviderByModelName(model.name)}.svg`"
+                      class="size-4 rounded-sm object-contain"
+                      :alt="model.name"
+                      @error="(e) => { (e.target as HTMLImageElement).src = 'https://models.dev/logos/openai.svg' }"
                     >
-                      <img
-                        :src="`https://models.dev/logos/${getProviderByModelName(model.name)}.svg`"
-                        class="size-4 rounded-sm object-contain"
-                        :alt="model.name"
-                        @error="(e) => { (e.target as HTMLImageElement).src = 'https://models.dev/logos/openai.svg' }"
-                      >
-                      <span class="flex-1 truncate">
-                        {{ model.name }}
-                        <span v-if="model.is_default" class="ml-1.5 text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                          默认
-                        </span>
+                    <span class="flex-1 truncate">
+                      {{ model.name }}
+                      <span v-if="model.is_default" class="ml-1.5 text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                        默认
                       </span>
-                      <CheckIcon
-                        v-if="selectedModelData?.name === model.name"
-                        class="size-4"
-                      />
-                    </ModelSelectorItem>
-                  </ModelSelectorGroup>
+                    </span>
+                    <CheckIcon
+                      v-if="selectedModelData?.name === model.name"
+                      class="size-4"
+                    />
+                  </DropdownMenuItem>
                 </template>
-              </ModelSelectorList>
-            </ModelSelectorContent>
-          </ModelSelector>
-        </PromptInputTools>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
 
-        <!-- 发送按钮 -->
-        <PromptInputSubmit :status="status" :disabled="isEmpty" @stop="emit('stop')" />
-      </PromptInputFooter>
-    </PromptInput>
+          <!-- 发送按钮 (PromptInputSubmit) -->
+          <InputGroupButton
+            aria-label="Submit"
+            type="submit"
+            size="icon-sm"
+            :variant="buttonVariant"
+            :disabled="isDisabled"
+            @click="handleSubmitClick"
+          >
+            <component :is="submitIcon" :class="iconClass" />
+          </InputGroupButton>
+        </InputGroupAddon>
+      </InputGroup>
+    </form>
   </div>
 </template>
 
