@@ -488,15 +488,12 @@ function handleCopy(content: string) {
 .loading-mask {
   position: absolute;
   inset: 0;
-  background: var(--background);
-  opacity: 0.9;
+  background: rgba(0, 0, 0, 0.05);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 12px;
   z-index: 10;
-  color: var(--muted-foreground);
-  font-size: 14px;
 }
 </style>
