@@ -1,6 +1,6 @@
 import type { AttachmentFile, PromptInputContext } from './types'
 import { nanoid } from 'nanoid'
-import { inject, onBeforeUnmount, provide, ref } from 'vue'
+import { inject, onBeforeUnmount, provide, ref, watch } from 'vue'
 import { PROMPT_INPUT_KEY } from './types'
 
 export function usePromptInputProvider(props: {
@@ -8,6 +8,8 @@ export function usePromptInputProvider(props: {
   maxFiles?: number
   maxFileSize?: number
   accept?: string
+  modelValue?: string
+  onUpdateModelValue?: (val: string) => void
   onSubmit?: (message: { text: string, files: any[] }) => void | Promise<void>
   onError?: (err: { code: string, message: string }) => void
 }) {
@@ -15,6 +17,13 @@ export function usePromptInputProvider(props: {
   const files = ref<AttachmentFile[]>([])
   const fileInputRef = ref<HTMLInputElement | null>(null)
   const isLoading = ref(false)
+
+  // 监听外部 modelValue 变化
+  watch(() => props.modelValue, (newVal) => {
+    if (newVal !== undefined && newVal !== textInput.value) {
+      textInput.value = newVal
+    }
+  })
 
   // Cleanup object URLs to avoid memory leaks
   onBeforeUnmount(() => {
@@ -27,6 +36,9 @@ export function usePromptInputProvider(props: {
 
   const setTextInput = (val: string) => {
     textInput.value = val
+    if (props.onUpdateModelValue) {
+      props.onUpdateModelValue(val)
+    }
   }
 
   const matchesAccept = (file: File) => {

@@ -15,11 +15,13 @@ const props = defineProps<{
   maxFiles?: number
   maxFileSize?: number
   initialInput?: string
+  modelValue?: string
 }>()
 
 const emit = defineEmits<{
   (e: 'submit', payload: PromptInputMessage): void
   (e: 'error', payload: { code: string, message: string }): void
+  (e: 'update:modelValue', value: string): void
 }>()
 
 const formRef = ref<HTMLFormElement | null>(null)
@@ -33,6 +35,8 @@ const localContext = inheritedContext
       maxFiles: props.maxFiles,
       maxFileSize: props.maxFileSize,
       accept: props.accept,
+      modelValue: props.modelValue,
+      onUpdateModelValue: val => emit('update:modelValue', val),
       onSubmit: msg => emit('submit', msg as any),
       onError: err => emit('error', err),
     })

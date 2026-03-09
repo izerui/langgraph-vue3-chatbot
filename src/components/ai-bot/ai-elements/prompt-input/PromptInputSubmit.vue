@@ -54,8 +54,9 @@ const iconClass = computed(() => {
 })
 
 // 动态计算 disabled 状态
+// 只有输入为空时才禁用，忙碌中不禁用（可以点击停止流式输出）
 const isDisabled = computed(() => {
-  return props.disabled || props.status === 'streaming' || props.status === 'submitted'
+  return props.disabled
 })
 
 const { status, size, variant, disabled, class: _, ...restProps } = props

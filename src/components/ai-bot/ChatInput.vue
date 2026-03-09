@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import type { ChatStatus } from 'ai'
 import { getProviderByModelName, type ModelInfo } from './lib/models'
 import PromptInputAttachmentsDisplay from './InputAttachmentsDisplay.vue'
@@ -49,6 +49,15 @@ const emit = defineEmits<{
 
 const modelSelectorOpen = defineModel<boolean>('modelSelectorOpen', { default: false })
 
+// 本地输入状态
+const inputText = ref('')
+const hasFiles = ref(false)
+
+// 输入是否为空
+const isEmpty = computed(() => {
+  return !inputText.value.trim() && !hasFiles.value
+})
+
 const selectedModelData = computed(() => {
   return props.currentModel || props.models.find(m => m.is_default) || props.models[0]
 })
@@ -87,6 +96,7 @@ function toggleWebSearch() {
       multiple
       global-drop
       class="w-full bg-card"
+      v-model="inputText"
       @submit="emit('submit', $event)"
     >
       <!-- 附件显示区域 -->
@@ -178,7 +188,7 @@ function toggleWebSearch() {
         </PromptInputTools>
 
         <!-- 发送按钮 -->
-        <PromptInputSubmit :status="status" />
+        <PromptInputSubmit :status="status" :disabled="isEmpty" />
       </PromptInputFooter>
     </PromptInput>
   </div>
