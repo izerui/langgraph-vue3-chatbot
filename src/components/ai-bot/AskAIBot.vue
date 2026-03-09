@@ -19,13 +19,15 @@ interface Props {
   defaultExpanded?: boolean
   systemPrompt?: string
   threadId?: string
+  userId?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
   assistantId: 'research',
   assistantName: 'Chat',
   defaultExpanded: false,
-  systemPrompt: '用中文回答'
+  systemPrompt: '用中文回答',
+  userId: 'user001'
 })
 
 // LangGraph Client
@@ -58,7 +60,7 @@ async function createThread() {
     const thread = await client.threads.create({
       ...(props.threadId ? { threadId: props.threadId, ifExists: 'do_nothing' } : {}),
       metadata: {
-        user_id: 'user001',
+        user_id: props.userId,
       }
     })
     threadId.value = thread.thread_id || props.threadId || ''
@@ -247,7 +249,7 @@ async function handleSubmit(userMessage: string) {
     if (!threadId.value) {
       const thread = await client.threads.create({
         metadata: {
-          user_id: 'user001',
+          user_id: props.userId,
           name: userMessage.slice(0, 50)
         }
       })
@@ -279,7 +281,7 @@ async function handleSubmit(userMessage: string) {
           }
         },
         metadata: {
-          user_id: 'user001',
+          user_id: props.userId,
           name: userMessage.slice(0, 50)
         },
         streamMode: ['messages-tuple', 'custom'],
