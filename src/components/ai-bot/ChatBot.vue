@@ -437,7 +437,7 @@ function handleClose() {
   display: flex;
   flex-direction: column;
   background: var(--background);
-  border-radius: 12px;
+  border-radius: 8px;
   border: 1px solid var(--border);
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
   overflow: hidden;
@@ -445,7 +445,7 @@ function handleClose() {
 }
 
 .chat-window.maximized {
-  border-radius: 12px;
+  border-radius: 8px;
   border: 1px solid var(--border);
 }
 
