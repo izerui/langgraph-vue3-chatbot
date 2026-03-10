@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ChatMessage } from './types/chat'
+import type { ChatMessage } from './lib/types'
 import ToolCall from './ToolCall.vue'
 import {
   Conversation,

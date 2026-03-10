@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import './chatbot.css'
 import { ref, onMounted } from 'vue'
-import type { ChatStatus } from 'ai'
 import type { PromptInputMessage } from './lib/prompt-input'
-import type { ChatMessage } from './types/chat'
+import type { ChatMessage, ChatStatus } from './lib/types'
 import { fetchModels, getDefaultModel, type ModelInfo } from './lib/models'
 import { Client } from '@langchain/langgraph-sdk'
 import { createThread, loadThreadHistory } from './lib/thread'
@@ -70,8 +69,7 @@ onMounted(async () => {
     props.threadId ? (async () => {
       const tid = await createThread(client, props.threadId, props.userId)
       threadId.value = tid
-      const history = await loadThreadHistory(client, tid)
-      messages.value = history
+      messages.value = await loadThreadHistory(client, tid)
     })() : Promise.resolve()
   ])
   isLoading.value = false
@@ -93,8 +91,8 @@ function toggleMaximize() {
 
 // 发送消息
 async function handleSubmit(userMessage: string) {
+  // 统一状态控制：忙碌状态不允许发送
   if (status.value === 'streaming') return
-
   status.value = 'streaming'
 
   // 添加用户消息
@@ -307,7 +305,7 @@ async function handleSubmit(userMessage: string) {
           // 阶段3：调用结束 - chunk_position 为 "last" 表示工具调用完成
           // 更新所有工具消息状态为等待结果
           if (message.chunk_position === 'last') {
-            for (const [key, tc] of assistantToolCalls) {
+            for (const [, tc] of assistantToolCalls) {
               if (tc.messageKey !== undefined) {
                 updateToolMessage(tc.messageKey, { state: 'running' })
               }
@@ -480,8 +478,35 @@ async function handleSubmit(userMessage: string) {
     }
 
     status.value = 'ready'
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error sending message:', error)
+
+    // 提取错误信息
+    let errorDisplayMessage = '抱歉，发生了一些错误，请稍后重试。'
+    if (error) {
+      // 尝试从 error 对象中提取详细信息
+      const errorMsg = error.message || error.error?.message || String(error)
+      const errorType = error.error?.error || error.name || 'APIError'
+
+      // 如果是 API 错误，显示更友好的信息
+      if (errorMsg && errorMsg !== '[object Object]') {
+        if (errorType === 'APIError' && errorMsg.includes('internal error')) {
+          errorDisplayMessage = '服务内部错误，请稍后重试。'
+        } else if (errorMsg.includes('timeout') || errorMsg.includes('Timeout')) {
+          errorDisplayMessage = '请求超时，请稍后重试。'
+        } else if (errorMsg.includes('network') || errorMsg.includes('Network')) {
+          errorDisplayMessage = '网络连接失败，请检查网络后重试。'
+        } else if (errorMsg.includes('401') || errorMsg.includes('unauthorized')) {
+          errorDisplayMessage = '认证失败，请重新登录。'
+        } else if (errorMsg.includes('403') || errorMsg.includes('forbidden')) {
+          errorDisplayMessage = '没有权限执行此操作。'
+        } else if (errorMsg.includes('429') || errorMsg.includes('rate limit')) {
+          errorDisplayMessage = '请求过于频繁，请稍后再试。'
+        } else {
+          errorDisplayMessage = `抱歉，发生错误: ${errorMsg}`
+        }
+      }
+    }
 
     const errorMessageId = `error-${Date.now()}`
     messages.value = [
@@ -489,7 +514,7 @@ async function handleSubmit(userMessage: string) {
       {
         key: errorMessageId,
         type: 'ai',
-        content: '抱歉，发生了一些错误，请稍后重试。',
+        content: errorDisplayMessage,
         batchId: errorMessageId
       }
     ]
@@ -506,32 +531,33 @@ function handleFormSubmit(message: PromptInputMessage) {
     return
   }
 
-  status.value = 'submitted'
-
   const text = message.text?.trim() || ''
   handleSubmit(text || 'Sent with attachments')
 }
 
 // 处理停止按钮点击
 async function handleStop() {
+  console.log('🛑 点击停止按钮:', { threadId: threadId.value, runId: runId.value })
   if (threadId.value && runId.value) {
     try {
+      console.log('📡 发送 cancel 请求...')
       await client.runs.cancel(threadId.value, runId.value)
+      console.log('✅ cancel 请求成功')
       status.value = 'ready'
     }
     catch (error) {
-      console.error('Failed to stop stream:', error)
+      console.error('❌ cancel 请求失败:', error)
       status.value = 'ready'
     }
   }
   else {
+    console.log('⚠️ 缺少 threadId 或 runId，直接重置状态')
     status.value = 'ready'
   }
 }
 
 // 选择建议
 function handleSuggestionClick(suggestion: string) {
-  status.value = 'submitted'
   handleSubmit(suggestion)
 }
 

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, provide, onBeforeUnmount } from 'vue'
-import type { ChatStatus } from 'ai'
+import type { ChatStatus } from './lib/types'
 import type { FileUIPart } from 'ai'
 import { nanoid } from 'nanoid'
 import { PROMPT_INPUT_KEY, type AttachmentFile, type PromptInputContext } from './lib/prompt-input'
@@ -230,27 +230,21 @@ function handlePaste(e: ClipboardEvent) {
 
 // ============== PromptInputSubmit 逻辑 ==============
 const buttonVariant = computed(() => {
-  if (props.status === 'streaming' || props.status === 'submitted') {
+  if (props.status === 'streaming') {
     return 'destructive'
   }
   return 'submit'
 })
 
 const submitIcon = computed(() => {
-  if (props.status === 'submitted') {
+  if (props.status === 'streaming') {
     return Loader2Icon
-  }
-  else if (props.status === 'streaming') {
-    return SquareIcon
-  }
-  else if (props.status === 'error') {
-    return XIcon
   }
   return CornerDownLeftIcon
 })
 
 const iconClass = computed(() => {
-  if (props.status === 'submitted') {
+  if (props.status === 'streaming') {
     return 'size-4 animate-spin'
   }
   return 'size-4'
@@ -264,7 +258,7 @@ const isDisabled = computed(() => {
 })
 
 const isLoadingStatus = computed(() => {
-  return props.status === 'streaming' || props.status === 'submitted'
+  return props.status === 'streaming'
 })
 
 function handleSubmitClick() {

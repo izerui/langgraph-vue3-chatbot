@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import type { ToolUIInfo } from './types/chat'
+import type { ToolCall } from './lib/types'
 import { ChevronDownIcon, PlayCircle, Loader, CheckCircle, XCircle } from 'lucide-vue-next'
 import { cn } from '@/components/ai-bot/lib/utils'
 import { ref } from 'vue'
 
 defineProps<{
-  toolCalls: ToolUIInfo[]
+  toolCalls: ToolCall[]
 }>()
 
 const getStateIcon = (state: string) => {

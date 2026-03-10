@@ -1,3 +1,6 @@
+// 聊天状态
+export type ChatStatus = 'ready' | 'streaming'
+
 // 消息类型
 export type MessageType = 'ai' | 'human' | 'system' | 'tool'
 
