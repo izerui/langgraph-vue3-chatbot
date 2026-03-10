@@ -23,6 +23,25 @@ const getStateIcon = (state: string) => {
   }
 }
 
+const toolNameMap: Record<string, string> = {
+  think_tool: '战略反思',
+  fetch_markdown: '获取网页',
+  convert_to_markdown: '文件转换',
+  ls: '列出目录',
+  read_file: '读取文件',
+  write_file: '写入文件',
+  edit_file: '编辑文件',
+  glob: '查找文件',
+  grep: '搜索文本',
+  execute: '执行命令',
+  write_todos: '待办事项',
+  task: '子任务',
+}
+
+const getToolName = (name: string) => {
+  return toolNameMap[name] || name
+}
+
 const formatArgs = (args: string) => {
   try {
     return JSON.stringify(JSON.parse(args))
@@ -53,7 +72,7 @@ const toggle = (id: string) => {
           class="h-4 w-4 shrink-0 transition-transform"
           :class="openStates[tool.id] ? 'rotate-0' : 'rotate-[-90deg]'"
         />
-        <span class="font-medium">{{ tool.name }}</span>
+        <span class="font-medium">{{ getToolName(tool.name) }}</span>
         <span class="text-muted-foreground truncate flex-1 min-w-0">{{ formatArgs(tool.args) }}</span>
         <component
           :is="getStateIcon(tool.state).icon"
