@@ -16,7 +16,6 @@ import { Loader } from './ai-elements/loader'
 interface Props {
   assistantId?: string
   assistantName?: string
-  defaultExpanded?: boolean
   systemPrompt?: string
   threadId?: string
   userId?: string
@@ -27,7 +26,6 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   assistantId: 'research',
   assistantName: 'Chat',
-  defaultExpanded: false,
   systemPrompt: '用中文回答',
   userId: 'user001',
   showHeaderActions: true,
