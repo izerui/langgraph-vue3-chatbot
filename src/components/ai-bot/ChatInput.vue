@@ -250,6 +250,9 @@ const iconClass = computed(() => {
 })
 
 const isDisabled = computed(() => {
+  // 忙碌状态时不应禁用（需要可以点击取消）
+  if (isLoadingStatus.value)
+    return false
   return isEmpty.value
 })
 
