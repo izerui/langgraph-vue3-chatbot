@@ -1,25 +1,25 @@
 <script setup lang="ts">
 import type { ToolUIInfo } from './types/chat'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ai-bot/ui/collapsible'
-import { ChevronDownIcon, WrenchIcon } from 'lucide-vue-next'
+import { ChevronDownIcon, PlayCircle, Loader, CheckCircle, XCircle } from 'lucide-vue-next'
 import { cn } from '@/components/ai-bot/lib/utils'
 
 defineProps<{
   toolCalls: ToolUIInfo[]
 }>()
 
-const getStateColor = (state: string) => {
+const getStateIcon = (state: string) => {
   switch (state) {
     case 'start':
-      return 'text-blue-500'
+      return { icon: PlayCircle, color: 'text-blue-500' }
     case 'running':
-      return 'text-yellow-500'
+      return { icon: Loader, color: 'text-yellow-500 animate-spin' }
     case 'completed':
-      return 'text-green-500'
+      return { icon: CheckCircle, color: 'text-green-500' }
     case 'error':
-      return 'text-red-500'
+      return { icon: XCircle, color: 'text-red-500' }
     default:
-      return 'text-muted-foreground'
+      return { icon: PlayCircle, color: 'text-muted-foreground' }
   }
 }
 </script>
@@ -28,17 +28,21 @@ const getStateColor = (state: string) => {
   <Collapsible
     v-for="tool in toolCalls"
     :key="tool.id"
+    v-slot="{ open }"
     class="mb-3 text-xs"
   >
     <CollapsibleTrigger
       :class="cn('flex items-center gap-2 w-full text-left hover:bg-muted/50 rounded px-2 py-1.5 transition-colors')"
     >
-      <WrenchIcon class="h-4 w-4 shrink-0" />
+      <ChevronDownIcon
+        class="h-4 w-4 shrink-0 transition-transform"
+        :class="open ? 'rotate-0' : 'rotate-[-90deg]'"
+      />
       <span class="font-medium flex-1">{{ tool.name }}</span>
-      <span :class="cn('text-[10px] uppercase', getStateColor(tool.state))">
-        {{ tool.state.replace(/-/g, ' ') }}
-      </span>
-      <ChevronDownIcon class="h-4 w-4 shrink-0 transition-transform data-[state=closed]:rotate-[-90deg]" />
+      <component
+        :is="getStateIcon(tool.state).icon"
+        :class="cn('h-4 w-4 shrink-0', getStateIcon(tool.state).color)"
+      />
     </CollapsibleTrigger>
     <CollapsibleContent
       :class="
