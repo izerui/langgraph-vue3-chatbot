@@ -348,19 +348,10 @@ function onFileChange(e: Event) {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+          </div>
 
-            <!-- 语音输入按钮 -->
-            <!-- <PromptInputSpeechButton /> -->
-
-            <!-- 网页搜索开关 -->
-            <!-- <PromptInputButton
-              :variant="useWebSearch ? 'default' : 'ghost'"
-              @click="toggleWebSearch"
-            >
-              <GlobeIcon :size="16" />
-              <span>Search</span>
-            </PromptInputButton> -->
-
+          <!-- 右侧：模型选择器 + 发送按钮 -->
+          <div class="flex items-center gap-1">
             <!-- 模型选择器 -->
             <DropdownMenu v-model:open="modelSelectorOpen">
               <DropdownMenuTrigger as-child>
@@ -409,19 +400,19 @@ function onFileChange(e: Event) {
                 </template>
               </DropdownMenuContent>
             </DropdownMenu>
-          </div>
 
-          <!-- 发送按钮 (PromptInputSubmit) -->
-          <InputGroupButton
-            aria-label="Submit"
-            type="button"
-            size="icon-sm"
-            :variant="buttonVariant"
-            :disabled="isDisabled"
-            @click="handleSubmitClick"
-          >
-            <component :is="submitIcon" :class="iconClass" />
-          </InputGroupButton>
+            <!-- 发送按钮 (PromptInputSubmit) -->
+            <InputGroupButton
+              aria-label="Submit"
+              type="button"
+              size="icon-sm"
+              :variant="buttonVariant"
+              :disabled="isDisabled"
+              @click="handleSubmitClick"
+            >
+              <component :is="submitIcon" :class="iconClass" />
+            </InputGroupButton>
+          </div>
         </InputGroupAddon>
       </InputGroup>
     </div>
