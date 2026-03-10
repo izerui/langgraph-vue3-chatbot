@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import './chatbot.css'
 import { ref, onMounted } from 'vue'
+import type { FileUIPart } from 'ai'
 import type { PromptInputMessage } from './lib/prompt-input'
 import type { ChatMessage, ChatStatus } from './lib/types'
 import { fetchModels, getDefaultModel, type ModelInfo } from './lib/models'
@@ -82,19 +83,51 @@ function toggleMaximize() {
 }
 
 // 发送消息
-async function handleSubmit(userMessage: string) {
+async function handleSubmit(userMessage: string, files: FileUIPart[] = []) {
   // 统一状态控制：忙碌状态不允许发送
   if (status.value === 'streaming') return
   status.value = 'streaming'
 
-  // 添加用户消息
+  // 构建消息内容：文本 + 附件
+  const contentBlocks: any[] = []
+
+  // 添加文本内容
+  if (userMessage.trim()) {
+    contentBlocks.push({ type: 'text', text: userMessage })
+  }
+
+  // 添加附件内容
+  for (const file of files) {
+    if (file.url) {
+      // 将 data URL 转换为 base64（移除 data:image/png;base64, 前缀）
+      const base64Data = file.url.split(',')[1]
+      if (file.contentType?.startsWith('image/')) {
+        contentBlocks.push({
+          type: 'image',
+          mimeType: file.contentType,
+          data: base64Data,
+          metadata: { name: file.filename || file.id }
+        })
+      } else {
+        contentBlocks.push({
+          type: 'file',
+          mimeType: file.contentType,
+          data: base64Data,
+          metadata: { filename: file.filename || file.id }
+        })
+      }
+    }
+  }
+
+  // 添加用户消息到本地列表
   const userMessageId = `human-${Date.now()}`
   messages.value = [
     ...messages.value,
     {
       key: userMessageId,
       type: 'human',
-      content: userMessage
+      content: userMessage,
+      files: files.map(f => ({ url: f.url, contentType: f.contentType, filename: f.filename }))
     }
   ]
 
@@ -121,7 +154,7 @@ async function handleSubmit(userMessage: string) {
             }] : []),
             {
               type: 'human' as const,
-              content: [{ type: 'text', text: userMessage }]
+              content: contentBlocks
             }
           ]
         },
@@ -524,7 +557,7 @@ function handleFormSubmit(message: PromptInputMessage) {
   }
 
   const text = message.text?.trim() || ''
-  handleSubmit(text || 'Sent with attachments')
+  handleSubmit(text || 'Sent with attachments', message.files || [])
 }
 
 // 处理停止按钮点击

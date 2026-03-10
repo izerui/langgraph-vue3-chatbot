@@ -21,4 +21,5 @@ export interface ChatMessage {
   content: string
   toolCalls?: ToolCall[]
   batchId?: string
+  files?: { url?: string; contentType?: string; filename?: string }[]
 }
