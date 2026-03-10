@@ -16,7 +16,7 @@ const props = defineProps<Props>()
     :class="
       cn(
         'group flex w-full max-w-[80%]',
-        props.from === 'user' ? 'is-user ml-auto justify-end' : 'is-assistant',
+        props.from === 'user' ? 'is-user ml-auto' : 'is-assistant mr-auto',
         props.class,
       )
     "
