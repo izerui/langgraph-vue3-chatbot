@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Maximize2Icon, Minimize2Icon } from 'lucide-vue-next'
+import { Maximize2Icon, Minimize2Icon, XIcon } from 'lucide-vue-next'
 
 interface Props {
   title: string
@@ -28,9 +28,7 @@ const emit = defineEmits<{
         <Maximize2Icon v-else class="size-4" />
       </button>
       <button class="action-btn" @click="emit('close')" type="button" title="关闭">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M18 6L6 18M6 6l12 12"/>
-        </svg>
+        <XIcon class="size-4" />
       </button>
     </div>
   </div>
