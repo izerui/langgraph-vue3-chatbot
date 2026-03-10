@@ -43,7 +43,6 @@ import ChatBot from "@/components/ai-bot/ChatBot.vue";
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: #f5f5f5;
 }
 
 .app-container {
@@ -69,78 +68,10 @@ header > p {
   opacity: 0.8;
 }
 
-.header-intro {
-  margin-top: 12px;
-  text-align: left;
-  background: rgba(255, 255, 255, 0.1);
-  padding: 12px;
-  border-radius: 6px;
-}
-
-.header-intro p {
-  margin: 0 0 4px;
-  font-size: 13px;
-}
-
-.header-intro ul {
-  margin: 0;
-  padding-left: 18px;
-  font-size: 12px;
-  line-height: 1.5;
-}
-
-.header-intro code {
-  background: rgba(255, 255, 255, 0.2);
-  color: #fff;
-}
-
 main {
   max-width: 900px;
   margin: 0 auto;
   padding: 20px;
-}
-
-section {
-  background: #fff;
-  padding: 20px;
-  border-radius: 8px;
-  margin-bottom: 20px;
-}
-
-section h2 {
-  margin-top: 0;
-  color: #333;
-}
-
-section p {
-  color: #666;
-  line-height: 1.6;
-}
-
-section ul {
-  color: #666;
-  line-height: 1.8;
-}
-
-code {
-  background: #f0f0f0;
-  padding: 2px 8px;
-  border-radius: 4px;
-  color: #e65100;
-}
-
-pre {
-  background: #1e1e1e;
-  color: #d4d4d4;
-  padding: 16px;
-  border-radius: 8px;
-  overflow-x: auto;
-}
-
-pre code {
-  background: none;
-  padding: 0;
-  color: inherit;
 }
 
 .divider {

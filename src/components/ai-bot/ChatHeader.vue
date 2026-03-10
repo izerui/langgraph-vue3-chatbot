@@ -39,9 +39,9 @@ const emit = defineEmits<{
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 6px 12px;
-  background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
-  color: #333;
+  padding: 6px 16px;
+  background: #f9fafb;
+  color: #1f2937;
   flex-shrink: 0;
   border-bottom: 1px solid #e5e7eb;
 }
@@ -49,35 +49,35 @@ const emit = defineEmits<{
 .chat-title {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 
 .title-text {
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 14px;
+  font-weight: 600;
 }
 
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 1px;
+  gap: 4px;
 }
 
 .action-btn {
   background: transparent;
   border: none;
   border-radius: 6px;
-  padding: 4px 6px;
+  padding: 6px;
   cursor: pointer;
-  color: #666;
+  color: #6b7280;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: color 0.15s, background-color 0.15s;
+  transition: all 0.15s ease;
 }
 
 .action-btn:hover {
-  color: #333;
-  background: rgba(0, 0, 0, 0.05);
+  color: #374151;
+  background: #f3f4f6;
 }
 </style>
