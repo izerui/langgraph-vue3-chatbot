@@ -22,7 +22,7 @@ export interface PromptInputContext {
   clearFiles: () => void
   clearInput: () => void
   openFileDialog: () => void
-  submitForm: () => void
+  sendMessage: () => void
 }
 
 import { inject } from 'vue'

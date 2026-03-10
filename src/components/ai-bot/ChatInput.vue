@@ -108,7 +108,7 @@ const convertBlobUrlToDataUrl = async (url: string): Promise<string | null> => {
   }
 }
 
-const submitForm = async () => {
+const sendMessage = async () => {
   // Process files (convert blobs to base64 if needed for AI SDK)
   const processedFiles = await Promise.all(
     files.value.map(async (item) => {
@@ -142,7 +142,7 @@ const context: PromptInputContext = {
   clearFiles,
   clearInput,
   openFileDialog,
-  submitForm,
+  sendMessage,
 }
 
 provide(PROMPT_INPUT_KEY, context)
@@ -189,7 +189,7 @@ function handleKeyDown(e: KeyboardEvent) {
     if (isComposing.value || e.shiftKey)
       return
     e.preventDefault()
-    submitForm()
+    sendMessage()
   }
 
   // Remove last attachment on backspace if input is empty
@@ -260,7 +260,15 @@ const isLoadingStatus = computed(() => {
 function handleSubmitClick() {
   if (isLoadingStatus.value) {
     emit('stop')
+  } else {
+    sendMessage()
   }
+}
+
+// ============== 图片错误处理 ==============
+function handleImageError(e: Event) {
+  const img = e.target as HTMLImageElement
+  img.src = 'https://models.dev/logos/openai.svg'
 }
 
 // ============== 处理文件上传 ==============
@@ -281,13 +289,11 @@ function onFileChange(e: Event) {
       type="file"
       class="hidden"
       multiple
+      accept="image/*,.pdf,.doc,.docx,.txt"
       @change="onFileChange"
     >
 
-    <form
-      class="w-full"
-      @submit.prevent="submitForm"
-    >
+    <div class="w-full">
       <InputGroup class="overflow-hidden" style="background-color: white;">
         <!-- 附件显示区域 (PromptInputHeader) -->
         <InputGroupAddon
@@ -354,7 +360,7 @@ function onFileChange(e: Event) {
                     :src="`https://models.dev/logos/${getProviderByModelName(selectedModelData.name)}.svg`"
                     class="size-4 rounded-sm object-contain"
                     :alt="selectedModelData.name"
-                    @error="(e) => { (e.target as HTMLImageElement).src = 'https://models.dev/logos/openai.svg' }"
+                    @error="handleImageError"
                   >
                   <span v-if="selectedModelData" class="whitespace-nowrap">{{ selectedModelData.name }}</span>
                   <span v-else class="text-muted-foreground">选择模型</span>
@@ -377,7 +383,7 @@ function onFileChange(e: Event) {
                       :src="`https://models.dev/logos/${getProviderByModelName(model.name)}.svg`"
                       class="size-4 rounded-sm object-contain"
                       :alt="model.name"
-                      @error="(e) => { (e.target as HTMLImageElement).src = 'https://models.dev/logos/openai.svg' }"
+                      @error="handleImageError"
                     >
                     <span class="flex-1 truncate">
                       {{ model.name }}
@@ -398,7 +404,7 @@ function onFileChange(e: Event) {
           <!-- 发送按钮 (PromptInputSubmit) -->
           <InputGroupButton
             aria-label="Submit"
-            type="submit"
+            type="button"
             size="icon-sm"
             :variant="buttonVariant"
             :disabled="isDisabled"
@@ -408,7 +414,7 @@ function onFileChange(e: Event) {
           </InputGroupButton>
         </InputGroupAddon>
       </InputGroup>
-    </form>
+    </div>
   </div>
 </template>
 
