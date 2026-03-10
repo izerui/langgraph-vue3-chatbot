@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import AskAiBtn from './components/ai-bot/AskAiBtn.vue'
+import AskAi from './components/ai-bot/AskAi.vue'
 import ChatBotExample from './components/ai-elements/examples/chatbot.vue'
 import ChatBot from "@/components/ai-bot/ChatBot.vue";
 </script>
@@ -35,7 +35,7 @@ import ChatBot from "@/components/ai-bot/ChatBot.vue";
       </div>
     </main>
 
-    <AskAiBtn
+    <AskAi
       assistant-id="research"
       thread-id="9f31354d-b2f8-4472-8ab7-fd49cd52e32a"
       assistant-name="我的助手"
