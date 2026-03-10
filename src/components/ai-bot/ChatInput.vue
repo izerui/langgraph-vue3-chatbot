@@ -186,6 +186,13 @@ const isComposing = ref(false)
 
 function handleKeyDown(e: KeyboardEvent) {
   if (e.key === 'Enter') {
+    // 忙碌状态不允许发送，但 shift+回车允许换行
+    if (isLoadingStatus.value) {
+      if (!e.shiftKey)
+        e.preventDefault()
+      return
+    }
+    // 中文输入或 shift+回车，允许换行
     if (isComposing.value || e.shiftKey)
       return
     e.preventDefault()
