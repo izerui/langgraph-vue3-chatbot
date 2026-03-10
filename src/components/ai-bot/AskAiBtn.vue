@@ -24,6 +24,8 @@ const props = withDefaults(defineProps<Props>(), {
 
 const isExpanded = ref(props.defaultExpanded)
 const isMaximized = ref(false)
+const chatWidth = ref(500)
+const isResizing = ref(false)
 
 function toggleExpanded() {
   isExpanded.value = !isExpanded.value
@@ -35,13 +37,38 @@ function toggleExpanded() {
 function handleMaximizeChange(value: boolean) {
   isMaximized.value = value
 }
+
+// 拖拽调整宽度
+function startResize(e: MouseEvent) {
+  e.preventDefault()
+  isResizing.value = true
+  document.addEventListener('mousemove', handleResize)
+  document.addEventListener('mouseup', stopResize)
+}
+
+function handleResize(e: MouseEvent) {
+  if (!isResizing.value) return
+  const newWidth = window.innerWidth - e.clientX - 20
+  chatWidth.value = Math.max(300, Math.min(800, newWidth))
+}
+
+function stopResize() {
+  isResizing.value = false
+  document.removeEventListener('mousemove', handleResize)
+  document.removeEventListener('mouseup', stopResize)
+}
 </script>
 
 <template>
   <div class="ask-ai-bot">
     <!-- 聊天窗口 -->
     <Transition name="slide-up">
-      <div v-show="isExpanded" class="chat-window-container" :class="{ maximized: isMaximized }">
+      <div
+        v-show="isExpanded"
+        class="chat-window-container"
+        :class="{ maximized: isMaximized }"
+        :style="!isMaximized ? { width: chatWidth + 'px' } : {}"
+      >
         <ChatBot
           :assistant-id="assistantId"
           :assistant-name="assistantName"
@@ -51,6 +78,12 @@ function handleMaximizeChange(value: boolean) {
           :suggestions="suggestions"
           @close="toggleExpanded"
           @update:is-maximized="handleMaximizeChange"
+        />
+        <!-- 拖拽手柄 -->
+        <div
+          v-if="!isMaximized"
+          class="resize-handle"
+          @mousedown="startResize"
         />
       </div>
     </Transition>
@@ -74,9 +107,9 @@ function handleMaximizeChange(value: boolean) {
   position: fixed;
   top: 20px;
   right: 20px;
-  width: max(300px, min(500px, calc(100vw - 40px)));
+  width: 500px;
   height: calc(100vh - 90px);
-  transition: all 0.3s ease;
+  transition: height 0.3s ease;
 }
 
 .chat-window-container.maximized {
@@ -85,6 +118,17 @@ function handleMaximizeChange(value: boolean) {
   left: 20px;
   width: auto;
   height: calc(100vh - 40px);
+}
+
+/* 拖拽手柄 */
+.resize-handle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 6px;
+  height: 100%;
+  cursor: ew-resize;
+  background: transparent;
 }
 
 @media (max-width: 480px) {
