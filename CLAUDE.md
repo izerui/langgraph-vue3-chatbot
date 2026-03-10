@@ -31,62 +31,70 @@ pnpm preview
 - **AI SDK**: @langchain/langgraph-sdk, ai
 - **UI 组件库**: ai-elements-vue, reka-ui (基于 shadcn-vue)
 
-### 项目结构
+### 组件层级
+
 ```
-src/
-├── main.ts                    # 应用入口
-├── App.vue                    # 根组件
-├── style.css                  # 全局样式
-├── lib/utils.ts               # 工具函数 (cn, 等)
-├── components/
-│   ├── AskAIBot.vue          # 悬浮聊天组件 (核心)
-│   ├── ai-elements/          # AI 元素组件库 (对话 UI)
-│   │   ├── conversation/     # 对话容器
-│   │   ├── message/          # 消息组件
-│   │   ├── prompt-input/     # 输入框组件
-│   │   ├── attachments/      # 附件组件
-│   │   ├── reasoning/        # 推理过程展示
-│   │   ├── sources/          # 来源引用
-│   │   └── suggestion/       # 建议提示
-│   └── ui/                   # 基础 UI 组件 (shadcn-vue)
+App.vue
+├── ChatBot (直接嵌入页面的聊天组件)
+└── AskAiBtn (悬浮按钮组件)
+    ├── FloatButton (悬浮按钮)
+    └── ChatBot (展开的聊天窗口)
 ```
 
-### 核心组件: AskAIBot.vue
+### 核心组件
 
-`src/components/AskAIBot.vue` 是核心聊天组件:
-- 使用 `LangGraph.Client` 连接到后端 `/agent` API
-- 支持流式响应 (stream)
-- 通过 Vite 代理转发请求到后端 (`VITE_LANGGRAPH_API_URL` 或默认 `http://localhost:2024`)
-- 使用 `thread` 管理对话上下文
+| 组件 | 说明 |
+|------|------|
+| `AskAiBtn.vue` | 悬浮聊天组件，管理展开/收起状态 |
+| `ChatBot.vue` | 核心聊天组件，处理消息发送、流式响应、工具调用 |
+| `ChatMessages.vue` | 消息列表渲染 |
+| `ChatInput.vue` | 输入框组件 |
+| `ChatHeader.vue` | 头部组件 |
+| `ChatSuggestions.vue` | 建议提示组件 |
+| `ToolCall.vue` | 工具调用展示 |
+
+### 类型定义
+
+统一在 `src/components/ai-bot/lib/types.ts`:
+- `ChatStatus`: `'ready' | 'streaming'`
+- `MessageType`: `'ai' | 'human' | 'system' | 'tool'`
+- `ToolCall`: 工具调用数据结构
+- `ChatMessage`: 聊天消息结构
 
 ### API 集成
 
-后端 API 通过 Vite 代理:
-- 开发环境请求 `/agent/*` → 代理到后端 (默认 `localhost:2024`)
-- 生产环境需配置反向代理或环境变量 `VITE_LANGGRAPH_API_URL`
+使用 `Client` from `@langchain/langgraph-sdk` 连接后端:
+```typescript
+const client = new Client({
+  apiUrl: import.meta.env.VITE_LANGGRAPH_API_URL || 'http://localhost:2024',
+  apiKey: import.meta.env.VITE_LANGGRAPH_API_KEY
+})
+```
 
-流式响应处理示例:
+流式响应处理:
 ```typescript
 const streamResponse = client.runs.stream(
   threadId,
   assistantId,
-  { input: { messages: [...] }, streamMode: ['messages-tuple', 'values', 'custom'] }
+  { input: { messages: [...] }, streamMode: ['messages-tuple', 'custom'] }
 )
 
 for await (const chunk of streamResponse) {
-  // 处理 chunk.event 和 chunk.data
+  // chunk.event: 'metadata' | 'messages' | 'messages/partial'
+  // chunk.data: 消息数据
 }
 ```
 
+### 状态管理
+
+ChatBot 使用统一的 `handleSubmit` 作为唯一消息发送入口:
+- `status = 'streaming'`: 忙碌中，不允许发送新消息
+- `status = 'ready'`: 空闲，可发送消息
+
+### 环境配置
+
+- `VITE_LANGGRAPH_API_URL`: LangGraph 后端地址
+- `VITE_LANGGRAPH_API_KEY`: API 密钥
+
 ### 路径别名
 - `@` 指向 `src/`
-
-### 配置
-- 环境变量: `.env.development`, `.env.production`, `.env.test`
-- 关键配置: `VITE_LANGGRAPH_API_URL` - LangGraph 后端地址
-
-## Development Notes
-
-- tsconfig.json 中 `exclude: ["src/components/ai-elements/**/*"]` - AI 元素组件使用 JavaScript
-- AskAIBot 组件默认使用 MiniMax M2.5 模型 (可通过 `configurable` 修改)
-- 消息支持多版本展示 (MessageBranch)、附件 (Attachments)、来源引用 (Sources)、推理过程 (Reasoning)
