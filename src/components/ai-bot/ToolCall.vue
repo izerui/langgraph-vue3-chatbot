@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ToolCall } from './lib/types'
-import { ChevronDownIcon, PlayCircle, Loader, CheckCircle, XCircle } from 'lucide-vue-next'
+import { ChevronDownIcon, PlayCircle, Loader, CheckCircle, XCircle, BrainIcon, GlobeIcon, FileTextIcon, FolderSearch, FileEditIcon, ListTodoIcon, EyeIcon, SquarePen, FileSearch, BookOpenCheck, FolderSearchIcon, ZapIcon, WrenchIcon } from 'lucide-vue-next'
 import { cn } from '@/components/ai-bot/lib/utils'
 import { ref } from 'vue'
 
@@ -38,8 +38,27 @@ const toolNameMap: Record<string, string> = {
   task: '子任务',
 }
 
+const toolIconMap: Record<string, any> = {
+  think_tool: BrainIcon,
+  fetch_markdown: GlobeIcon,
+  convert_to_markdown: FileTextIcon,
+  ls: FolderSearchIcon,
+  read_file: EyeIcon,
+  write_file: FileEditIcon,
+  edit_file: SquarePen,
+  glob: FolderSearch,
+  grep: FileSearch,
+  execute: ZapIcon,
+  write_todos: ListTodoIcon,
+  task: BookOpenCheck,
+}
+
 const getToolName = (name: string) => {
   return toolNameMap[name] || name
+}
+
+const getToolIcon = (name: string) => {
+  return toolIconMap[name] || WrenchIcon
 }
 
 const formatArgs = (args: string) => {
@@ -71,6 +90,10 @@ const toggle = (id: string) => {
         <ChevronDownIcon
           class="h-4 w-4 shrink-0 transition-transform"
           :class="openStates[tool.id] ? 'rotate-0' : 'rotate-[-90deg]'"
+        />
+        <component
+          :is="getToolIcon(tool.name)"
+          class="h-3.5 w-3.5 shrink-0 text-muted-foreground"
         />
         <span class="font-medium">{{ getToolName(tool.name) }}</span>
         <span class="text-muted-foreground truncate flex-1 min-w-0">{{ formatArgs(tool.args) }}</span>
