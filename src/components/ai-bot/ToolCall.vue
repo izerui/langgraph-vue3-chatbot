@@ -38,10 +38,10 @@ const getStateIcon = (state: string) => {
         class="h-4 w-4 shrink-0 transition-transform"
         :class="open ? 'rotate-0' : 'rotate-[-90deg]'"
       />
-      <span class="font-medium flex-1">{{ tool.name }}</span>
+      <span class="font-medium">{{ tool.name }}</span>
       <component
         :is="getStateIcon(tool.state).icon"
-        :class="cn('h-4 w-4 shrink-0', getStateIcon(tool.state).color)"
+        :class="cn('h-3 w-3 shrink-0 ml-1', getStateIcon(tool.state).color)"
       />
     </CollapsibleTrigger>
     <CollapsibleContent
