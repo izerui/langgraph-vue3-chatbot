@@ -22,6 +22,19 @@ const getStateIcon = (state: string) => {
       return { icon: PlayCircle, color: 'text-muted-foreground' }
   }
 }
+
+const formatArgs = (args: string, maxLength = 30) => {
+  try {
+    const parsed = JSON.parse(args)
+    const str = JSON.stringify(parsed)
+    if (str.length > maxLength) {
+      return str.slice(0, maxLength) + '...'
+    }
+    return str
+  } catch {
+    return args.length > maxLength ? args.slice(0, maxLength) + '...' : args
+  }
+}
 </script>
 
 <template>
@@ -29,7 +42,7 @@ const getStateIcon = (state: string) => {
     v-for="tool in toolCalls"
     :key="tool.id"
     v-slot="{ open }"
-    class="mb-3 text-xs"
+    class="mb-3 text-xs overflow-hidden max-w-full"
   >
     <CollapsibleTrigger
       :class="cn('flex items-center gap-2 w-full text-left hover:bg-muted/50 rounded px-2 py-1.5 transition-colors')"
@@ -39,9 +52,13 @@ const getStateIcon = (state: string) => {
         :class="open ? 'rotate-0' : 'rotate-[-90deg]'"
       />
       <span class="font-medium">{{ tool.name }}</span>
+      <span
+        class="text-muted-foreground truncate max-w-[120px]"
+        :title="tool.args"
+      >{{ formatArgs(tool.args) }}</span>
       <component
         :is="getStateIcon(tool.state).icon"
-        :class="cn('h-3 w-3 shrink-0 ml-1', getStateIcon(tool.state).color)"
+        :class="cn('h-3 w-3 shrink-0 ml-auto', getStateIcon(tool.state).color)"
       />
     </CollapsibleTrigger>
     <CollapsibleContent
@@ -54,7 +71,7 @@ const getStateIcon = (state: string) => {
     >
       <div>
         <p class="text-muted-foreground mb-1">Arguments:</p>
-        <pre class="bg-muted p-2 rounded text-[10px] overflow-x-auto">{{ tool.args }}</pre>
+        <pre class="bg-muted p-2 rounded text-[10px] overflow-x-auto max-w-full">{{ tool.args }}</pre>
       </div>
       <div v-if="tool.result || tool.error">
         <p class="text-muted-foreground mb-1">
@@ -63,7 +80,7 @@ const getStateIcon = (state: string) => {
         <pre
           :class="
             cn(
-              'bg-muted p-2 rounded text-[10px] overflow-x-auto',
+              'bg-muted p-2 rounded text-[10px] overflow-x-auto max-w-full',
               tool.state === 'error' && 'text-red-500'
             )
           "
