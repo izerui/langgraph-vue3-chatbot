@@ -24,11 +24,11 @@ const emit = defineEmits<{
     </div>
     <div v-if="props.showHeaderActions" class="header-actions">
       <button class="action-btn" @click="emit('toggleMaximize')" type="button" :title="isMaximized ? '还原' : '最大化'">
-        <Minimize2Icon v-if="isMaximized" class="h-4 w-4" />
-        <Maximize2Icon v-else class="h-4 w-4" />
+        <Minimize2Icon v-if="isMaximized" class="size-4" />
+        <Maximize2Icon v-else class="size-4" />
       </button>
       <button class="action-btn" @click="emit('close')" type="button" title="关闭">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M18 6L6 18M6 6l12 12"/>
         </svg>
       </button>
@@ -41,42 +41,45 @@ const emit = defineEmits<{
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 4px 16px;
-  background: var(--primary);
-  color: var(--primary-foreground);
+  padding: 6px 12px;
+  background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
+  color: #333;
   flex-shrink: 0;
+  border-bottom: 1px solid #e5e7eb;
 }
 
 .chat-title {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .title-text {
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 500;
 }
 
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 1px;
 }
 
 .action-btn {
   background: transparent;
   border: none;
-  border-radius: 4px;
-  padding: 2px;
+  border-radius: 6px;
+  padding: 4px 6px;
   cursor: pointer;
-  color: var(--primary-foreground);
+  color: #666;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: color 0.15s, background-color 0.15s;
 }
 
 .action-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
+  color: #333;
+  background: rgba(0, 0, 0, 0.05);
 }
 </style>
