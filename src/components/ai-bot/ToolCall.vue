@@ -23,6 +23,14 @@ const getStateIcon = (state: string) => {
   }
 }
 
+const formatArgs = (args: string) => {
+  try {
+    return JSON.stringify(JSON.parse(args))
+  } catch {
+    return args
+  }
+}
+
 const openStates = ref<Record<string, boolean>>({})
 
 const toggle = (id: string) => {
@@ -46,6 +54,7 @@ const toggle = (id: string) => {
           :class="openStates[tool.id] ? 'rotate-0' : 'rotate-[-90deg]'"
         />
         <span class="font-medium">{{ tool.name }}</span>
+        <span class="text-muted-foreground truncate flex-1 min-w-0">{{ formatArgs(tool.args) }}</span>
         <component
           :is="getStateIcon(tool.state).icon"
           :class="cn('h-3 w-3 shrink-0 ml-auto', getStateIcon(tool.state).color)"
@@ -56,12 +65,12 @@ const toggle = (id: string) => {
         class="mt-2 ml-6 flex flex-col gap-2"
       >
         <div>
-          <p class="text-muted-foreground mb-1">Arguments:</p>
+          <p class="text-muted-foreground mb-1">请求:</p>
           <pre class="bg-muted p-2 rounded text-[10px] overflow-x-auto max-w-full">{{ tool.args }}</pre>
         </div>
         <div v-if="tool.result || tool.error">
           <p class="text-muted-foreground mb-1">
-            {{ tool.state === 'error' ? 'Error:' : 'Result:' }}
+            {{ tool.state === 'error' ? 'Error:' : '结果:' }}
           </p>
           <pre
             :class="
