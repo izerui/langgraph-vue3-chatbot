@@ -10,6 +10,7 @@ interface Props {
   systemPrompt?: string
   threadId?: string
   userId?: string
+  suggestions?: string[]
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -17,7 +18,8 @@ const props = withDefaults(defineProps<Props>(), {
   assistantName: 'Chat',
   defaultExpanded: false,
   systemPrompt: '用中文回答',
-  userId: 'user001'
+  userId: 'user001',
+  suggestions: () => []
 })
 
 const isExpanded = ref(props.defaultExpanded)
@@ -46,6 +48,7 @@ function handleMaximizeChange(value: boolean) {
           :system-prompt="systemPrompt"
           :thread-id="threadId"
           :user-id="userId"
+          :suggestions="suggestions"
           @close="toggleExpanded"
           @update:is-maximized="handleMaximizeChange"
         />

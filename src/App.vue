@@ -25,6 +25,12 @@ import ChatBot from "@/components/ai-bot/ChatBot.vue";
           :default-expanded="false"
           system-prompt="你是一个专业的技术顾问，擅长回答编程问题。"
           :show-header-actions="false"
+          :suggestions="[
+            '你好，请介绍一下自己',
+            '你能做什么？',
+            '演示几个工具调用,针对每个工具演示要进行说明.',
+            '今天天气怎么样？'
+          ]"
         />
       </div>
     </main>
@@ -35,6 +41,12 @@ import ChatBot from "@/components/ai-bot/ChatBot.vue";
       assistant-name="我的助手"
       :default-expanded=false
       system-prompt="你是一个专业的技术顾问，擅长回答编程问题。"
+      :suggestions="[
+        '你好，请介绍一下自己',
+        '你能做什么？',
+        '演示几个工具调用,针对每个工具演示要进行说明.',
+        '今天天气怎么样？'
+      ]"
     />
   </div>
 </template>

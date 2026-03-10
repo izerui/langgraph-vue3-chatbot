@@ -21,6 +21,7 @@ interface Props {
   threadId?: string
   userId?: string
   showHeaderActions?: boolean
+  suggestions?: string[]
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -29,7 +30,8 @@ const props = withDefaults(defineProps<Props>(), {
   defaultExpanded: false,
   systemPrompt: '用中文回答',
   userId: 'user001',
-  showHeaderActions: true
+  showHeaderActions: true,
+  suggestions: () => []
 })
 
 // LangGraph Client
@@ -74,14 +76,6 @@ onMounted(async () => {
   ])
   isLoading.value = false
 })
-
-// 建议列表
-const suggestions = [
-  '你好，请介绍一下自己',
-  '你能做什么？',
-  '演示几个工具调用,针对每个工具演示要进行说明.',
-  '今天天气怎么样？'
-]
 
 // 切换最大化状态
 function toggleMaximize() {
