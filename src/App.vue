@@ -31,7 +31,7 @@ import ChatBot from "@/components/ai-bot/ChatBot.vue";
 
     <AskAiBtn
       assistant-id="research"
-      thread-id="9f31354d-b2f8-4472-8ab7-fd49cd52e32e"
+      thread-id="9f31354d-b2f8-4472-8ab7-fd49cd52e32a"
       assistant-name="我的助手"
       :default-expanded=false
       system-prompt="你是一个专业的技术顾问，擅长回答编程问题。"
