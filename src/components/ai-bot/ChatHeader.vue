@@ -41,7 +41,7 @@ const emit = defineEmits<{
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
+  padding: 4px 16px;
   background: var(--primary);
   color: var(--primary-foreground);
   flex-shrink: 0;
@@ -61,14 +61,14 @@ const emit = defineEmits<{
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
 }
 
 .action-btn {
   background: transparent;
   border: none;
-  border-radius: 6px;
-  padding: 4px;
+  border-radius: 4px;
+  padding: 2px;
   cursor: pointer;
   color: var(--primary-foreground);
   display: flex;
