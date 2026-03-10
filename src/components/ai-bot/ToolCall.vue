@@ -86,8 +86,8 @@ const toggle = (id: string) => {
         @click="toggle(tool.id)"
       >
         <ChevronDownIcon
-          class="h-4 w-4 shrink-0 transition-transform"
-          :class="openStates[tool.id] ? 'rotate-0' : 'rotate-[-90deg]'"
+          class="h-4 w-4 shrink-0"
+          :class="openStates[tool.id] ? '' : '-rotate-90'"
         />
         <component
           :is="getToolIcon(tool.name)"
