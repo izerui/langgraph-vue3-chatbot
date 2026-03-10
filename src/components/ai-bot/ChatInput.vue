@@ -372,13 +372,13 @@ function onFileChange(e: Event) {
               <DropdownMenuContent align="start">
                 <template v-for="provider in providers" :key="provider">
                   <div class="px-2 py-1.5 text-sm font-semibold text-muted-foreground">
-                    {{ provider }}
+                    请选择模型
                   </div>
                   <DropdownMenuItem
                     v-for="model in groupedModels[provider]"
                     :key="model.name"
                     @select="() => handleModelSelect(model.name)"
-                    class="cursor-pointer gap-1"
+                    class="cursor-pointer gap-1 text-muted-foreground"
                   >
                     <img
                       :src="`https://models.dev/logos/${getProviderByModelName(model.name)}.svg`"
