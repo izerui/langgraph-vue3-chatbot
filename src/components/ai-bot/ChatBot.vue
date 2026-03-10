@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import './chatbot.css'
 import { ref, onMounted } from 'vue'
-import type { FileUIPart } from 'ai'
 import type { PromptInputMessage } from './lib/prompt-input'
-import type { ChatMessage, ChatStatus } from './lib/types'
+import type { ChatMessage, ChatStatus, ChatFile } from './lib/types'
 import { fetchModels, getDefaultModel, type ModelInfo } from './lib/models'
 import { Client } from '@langchain/langgraph-sdk'
 import { createThread, loadThreadHistory } from './lib/thread'
@@ -83,7 +82,7 @@ function toggleMaximize() {
 }
 
 // 发送消息
-async function handleSubmit(userMessage: string, files: FileUIPart[] = []) {
+async function handleSubmit(userMessage: string, files: ChatFile[] = []) {
   // 统一状态控制：忙碌状态不允许发送
   if (status.value === 'streaming') return
   status.value = 'streaming'
@@ -101,17 +100,18 @@ async function handleSubmit(userMessage: string, files: FileUIPart[] = []) {
     if (file.url) {
       // 将 data URL 转换为 base64（移除 data:image/png;base64, 前缀）
       const base64Data = file.url.split(',')[1]
-      if (file.contentType?.startsWith('image/')) {
+      const mimeType = file.mediaType || 'application/octet-stream'
+      if (mimeType.startsWith('image/')) {
         contentBlocks.push({
           type: 'image',
-          mimeType: file.contentType,
+          mimeType: mimeType,
           data: base64Data,
           metadata: { name: file.filename || file.id }
         })
       } else {
         contentBlocks.push({
           type: 'file',
-          mimeType: file.contentType,
+          mimeType: mimeType,
           data: base64Data,
           metadata: { filename: file.filename || file.id }
         })
@@ -127,7 +127,7 @@ async function handleSubmit(userMessage: string, files: FileUIPart[] = []) {
       key: userMessageId,
       type: 'human',
       content: userMessage,
-      files: files.map(f => ({ url: f.url, contentType: f.contentType, filename: f.filename }))
+      files: files.map(f => ({ url: f.url, mediaType: f.mediaType, filename: f.filename }))
     }
   ]
 

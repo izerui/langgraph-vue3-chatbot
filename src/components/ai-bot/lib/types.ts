@@ -14,6 +14,14 @@ export interface ToolCall {
   error?: string
 }
 
+// 聊天消息附件
+export interface ChatFile {
+  id?: string
+  url?: string
+  mediaType?: string
+  filename?: string
+}
+
 // 聊天消息
 export interface ChatMessage {
   key: string
@@ -21,5 +29,5 @@ export interface ChatMessage {
   content: string
   toolCalls?: ToolCall[]
   batchId?: string
-  files?: { url?: string; contentType?: string; filename?: string }[]
+  files?: ChatFile[]
 }
