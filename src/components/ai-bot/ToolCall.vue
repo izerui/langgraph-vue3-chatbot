@@ -23,19 +23,6 @@ const getStateIcon = (state: string) => {
   }
 }
 
-const formatArgs = (args: string, maxLength = 30) => {
-  try {
-    const parsed = JSON.parse(args)
-    const str = JSON.stringify(parsed)
-    if (str.length > maxLength) {
-      return str.slice(0, maxLength) + '...'
-    }
-    return str
-  } catch {
-    return args.length > maxLength ? args.slice(0, maxLength) + '...' : args
-  }
-}
-
 const openStates = ref<Record<string, boolean>>({})
 
 const toggle = (id: string) => {
@@ -59,10 +46,6 @@ const toggle = (id: string) => {
           :class="openStates[tool.id] ? 'rotate-0' : 'rotate-[-90deg]'"
         />
         <span class="font-medium">{{ tool.name }}</span>
-        <span
-          class="text-muted-foreground truncate max-w-[120px]"
-          :title="tool.args"
-        >{{ formatArgs(tool.args) }}</span>
         <component
           :is="getStateIcon(tool.state).icon"
           :class="cn('h-3 w-3 shrink-0 ml-auto', getStateIcon(tool.state).color)"
