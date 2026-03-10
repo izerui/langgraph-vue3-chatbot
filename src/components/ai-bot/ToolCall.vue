@@ -61,12 +61,10 @@ const getToolIcon = (name: string) => {
   return toolIconMap[name] || WrenchIcon
 }
 
+// 简化 args 展示，只取前100个字符
 const formatArgs = (args: string) => {
-  try {
-    return JSON.stringify(JSON.parse(args))
-  } catch {
-    return args
-  }
+  if (!args) return ''
+  return args.length > 50 ? args.slice(0, 100) + '...' : args
 }
 
 const openStates = ref<Record<string, boolean>>({})
