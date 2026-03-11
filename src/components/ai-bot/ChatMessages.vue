@@ -46,8 +46,8 @@ function getMessageClass(index: number) {
 }
 
 .dot {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
   background-color: #9ca3af;
   border-radius: 50%;
   animation: bounce 1.4s infinite ease-in-out both;
