@@ -239,6 +239,12 @@ async function handleSubmit(userMessage: string, files: ChatFile[] = []) {
         runId.value = data.run_id
       }
 
+      // 处理 custom 事件
+      if (chunkEvent === 'custom') {
+        handleCustomEvent(data)
+        return
+      }
+
       if (chunkEvent === 'messages' || chunkEvent === 'messages/partial') {
         const messageArray = Array.isArray(data) ? data : [data]
         const message = messageArray[0] as any
@@ -599,6 +605,12 @@ const emit = defineEmits<{
 // 关闭聊天窗口
 function handleClose() {
   emit('close')
+}
+
+// 处理自定义事件
+function handleCustomEvent(data: any) {
+  // TODO: 实现自定义事件处理逻辑
+  console.log('Custom event received:', data)
 }
 </script>
 
