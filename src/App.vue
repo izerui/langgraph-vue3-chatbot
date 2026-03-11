@@ -37,6 +37,7 @@ const apiKey = import.meta.env.VITE_LANGGRAPH_API_KEY
             '今天天气怎么样？'
           ]"
         >
+          <!-- 覆盖默认的自定义消息 --->
           <template #custom="{ customContent, threadId }">
             <GeneratedFiles
               v-if="customContent?.type === 'generated_files'"
