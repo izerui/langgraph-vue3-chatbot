@@ -15,9 +15,12 @@ import 'markstream-vue/index.css'
 
 interface Props {
   messages: ChatMessage[]
+  isStreaming?: boolean
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  isStreaming: false
+})
 
 function getMessageClass(index: number) {
   if (index === 0) return ''
@@ -29,6 +32,44 @@ function getMessageClass(index: number) {
   return ''
 }
 </script>
+
+<style scoped>
+.loading-indicator {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 12px 0;
+  background: transparent;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  background-color: #9ca3af;
+  border-radius: 50%;
+  animation: bounce 1.4s infinite ease-in-out both;
+}
+
+.dot:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.dot:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+@keyframes bounce {
+  0%, 80%, 100% {
+    transform: scale(0);
+  }
+  40% {
+    transform: scale(1);
+  }
+}
+</style>
 
 <template>
   <Conversation>
@@ -69,5 +110,12 @@ function getMessageClass(index: number) {
       </template>
     </ConversationContent>
     <ConversationScrollButton />
+
+    <!-- 加载指示器 -->
+    <div v-if="isStreaming" class="loading-indicator">
+      <span class="dot"></span>
+      <span class="dot"></span>
+      <span class="dot"></span>
+    </div>
   </Conversation>
 </template>

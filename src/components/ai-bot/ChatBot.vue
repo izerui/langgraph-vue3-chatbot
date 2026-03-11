@@ -627,6 +627,7 @@ function handleCustomEvent(data: any) {
 
       <ChatMessages
         :messages="messages"
+        :is-streaming="status === 'streaming'"
         @copy="handleCopy"
       />
 
