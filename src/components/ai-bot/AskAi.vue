@@ -24,7 +24,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const isExpanded = ref(props.defaultExpanded)
 const isMaximized = ref(false)
-const chatWidth = ref(500)
+const chatWidth = ref(600)
 const isResizing = ref(false)
 
 function toggleExpanded() {
