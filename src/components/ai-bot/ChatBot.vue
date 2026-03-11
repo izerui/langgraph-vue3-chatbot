@@ -21,6 +21,8 @@ interface Props {
   userId?: string
   showHeaderActions?: boolean
   suggestions?: string[]
+  apiUrl?: string
+  apiKey?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -29,15 +31,15 @@ const props = withDefaults(defineProps<Props>(), {
   systemPrompt: '用中文回答',
   userId: 'user001',
   showHeaderActions: true,
-  suggestions: () => []
+  suggestions: () => [],
+  apiUrl: 'http://localhost:2024',
+  apiKey: undefined
 })
 
 // LangGraph Client
-const apiUrl = import.meta.env.VITE_LANGGRAPH_API_URL || 'http://localhost:2024'
-const apiKey = import.meta.env.VITE_LANGGRAPH_API_KEY
 const client = new Client({
-  apiUrl,
-  apiKey: apiKey || undefined
+  apiUrl: props.apiUrl,
+  apiKey: props.apiKey || undefined
 })
 
 // 状态
@@ -62,7 +64,7 @@ onMounted(async () => {
   // 并行获取模型列表和加载历史
   await Promise.all([
     (async () => {
-      const data = await fetchModels(apiUrl)
+      const data = await fetchModels(props.apiUrl)
       models.value = data
       currentModel.value = getDefaultModel(data) || null
     })(),
@@ -653,7 +655,7 @@ function handleCustomEvent(data: any) {
               v-for="(file, index) in customContent.content"
               :key="index"
               class="custom-file-item"
-              :href="`${apiUrl}/webapp/download/${threadId}?path=${encodeURIComponent(file)}`"
+              :href="`${props.apiUrl}/webapp/download/${threadId}?path=${encodeURIComponent(file)}`"
               target="_blank"
               rel="noopener noreferrer"
             >

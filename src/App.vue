@@ -2,6 +2,9 @@
 import AskAi from './components/ai-bot/AskAi.vue'
 import ChatBotExample from './components/ai-elements/examples/chatbot.vue'
 import ChatBot from "@/components/ai-bot/ChatBot.vue";
+
+const apiUrl = import.meta.env.VITE_LANGGRAPH_API_URL || 'http://localhost:2024'
+const apiKey = import.meta.env.VITE_LANGGRAPH_API_KEY
 </script>
 
 <template>
@@ -19,6 +22,8 @@ import ChatBot from "@/components/ai-bot/ChatBot.vue";
 
       <div class="demo-container">
         <ChatBot
+          :api-url="apiUrl"
+          :api-key="apiKey"
           assistant-id="research"
           thread-id="9f31354d-b2f8-4472-8ab7-fd49cd52e322"
           assistant-name="我的助手"
@@ -35,6 +40,8 @@ import ChatBot from "@/components/ai-bot/ChatBot.vue";
     </main>
 
     <AskAi
+      :api-url="apiUrl"
+      :api-key="apiKey"
       assistant-id="research"
       thread-id="9f31354d-b2f8-4472-8ab7-fd49cd52e321"
       assistant-name="我的助手"

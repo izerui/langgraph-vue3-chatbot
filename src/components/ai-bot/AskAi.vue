@@ -11,6 +11,8 @@ interface Props {
   threadId?: string
   userId?: string
   suggestions?: string[]
+  apiUrl?: string
+  apiKey?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -19,7 +21,9 @@ const props = withDefaults(defineProps<Props>(), {
   defaultExpanded: false,
   systemPrompt: '用中文回答',
   userId: 'user001',
-  suggestions: () => []
+  suggestions: () => [],
+  apiUrl: 'http://localhost:2024',
+  apiKey: undefined
 })
 
 const isExpanded = ref(props.defaultExpanded)
@@ -70,6 +74,8 @@ function stopResize() {
         :style="!isMaximized ? { width: chatWidth + 'px' } : {}"
       >
         <ChatBot
+          :api-url="apiUrl"
+          :api-key="apiKey"
           :assistant-id="assistantId"
           :assistant-name="assistantName"
           :system-prompt="systemPrompt"
