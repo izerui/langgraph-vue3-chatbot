@@ -61,19 +61,15 @@ function getMessageClass(index: number) {
 }
 
 .loading-indicator {
-  position: sticky;
-  bottom: 0;
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 4px;
-  padding: 6px 0;
-  background: transparent;
+  padding: 4px 0;
 }
 
 .dot {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   background-color: #9ca3af;
   border-radius: 50%;
   animation: bounce 1.4s infinite ease-in-out both;
@@ -144,14 +140,15 @@ function getMessageClass(index: number) {
           </template>
         </Message>
       </template>
+      <!-- 加载指示器 - 放在左边跟 AI 消息一样 -->
+      <Message v-if="isStreaming" from="assistant">
+        <div class="loading-indicator">
+          <span class="dot"></span>
+          <span class="dot"></span>
+          <span class="dot"></span>
+        </div>
+      </Message>
     </ConversationContent>
     <ConversationScrollButton />
-
-    <!-- 加载指示器 -->
-    <div v-if="isStreaming" class="loading-indicator">
-      <span class="dot"></span>
-      <span class="dot"></span>
-      <span class="dot"></span>
-    </div>
   </Conversation>
 </template>
