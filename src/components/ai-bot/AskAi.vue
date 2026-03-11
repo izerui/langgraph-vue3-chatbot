@@ -49,7 +49,7 @@ function startResize(e: MouseEvent) {
 function handleResize(e: MouseEvent) {
   if (!isResizing.value) return
   const newWidth = window.innerWidth - e.clientX - 20
-  chatWidth.value = Math.max(300, Math.min(800, newWidth))
+  chatWidth.value = Math.max(300, Math.min(1400, newWidth))
 }
 
 function stopResize() {
