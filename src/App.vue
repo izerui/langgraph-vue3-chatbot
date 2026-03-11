@@ -105,7 +105,7 @@ main {
 }
 
 .demo-container {
-  height: 600px;
+  height: calc(100vh - 220px);
   border: 1px solid #ddd;
   border-radius: 8px;
   overflow: hidden;
