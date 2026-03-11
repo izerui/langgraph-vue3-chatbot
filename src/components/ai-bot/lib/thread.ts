@@ -1,5 +1,5 @@
 import { Client } from '@langchain/langgraph-sdk'
-import type { ChatMessage } from '../lib/types'
+import type { ChatMessage, CustomContent } from '../lib/types'
 
 // 创建线程
 export async function createThread(
@@ -151,6 +151,21 @@ export async function loadThreadHistory(
       }
 
       i++
+    }
+
+    // 处理 generated_files 自定义消息
+    const generatedFiles = values.generated_files
+    if (generatedFiles && Array.isArray(generatedFiles) && generatedFiles.length > 0) {
+      const customContent: CustomContent = {
+        type: 'generated_files',
+        content: generatedFiles
+      }
+      loadedMessages.push({
+        key: `custom-generated_files-${Date.now()}-${Math.random()}`,
+        type: 'custom',
+        content: '',
+        customContent
+      })
     }
 
     return loadedMessages
