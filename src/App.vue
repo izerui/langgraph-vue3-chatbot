@@ -20,7 +20,7 @@ import ChatBot from "@/components/ai-bot/ChatBot.vue";
       <div class="demo-container">
         <ChatBot
           assistant-id="research"
-          thread-id="9f31354d-b2f8-4472-8ab7-fd49cd52e32a"
+          thread-id="9f31354d-b2f8-4472-8ab7-fd49cd52e321"
           assistant-name="我的助手"
           system-prompt="你是一个专业的技术顾问，擅长回答编程问题。"
           :show-header-actions="false"
@@ -36,7 +36,7 @@ import ChatBot from "@/components/ai-bot/ChatBot.vue";
 
     <AskAi
       assistant-id="research"
-      thread-id="9f31354d-b2f8-4472-8ab7-fd49cd52e32a"
+      thread-id="9f31354d-b2f8-4472-8ab7-fd49cd52e321"
       assistant-name="我的助手"
       :default-expanded=false
       system-prompt="你是一个专业的技术顾问，擅长回答编程问题。"
