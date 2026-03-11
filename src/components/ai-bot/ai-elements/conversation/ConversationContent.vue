@@ -10,7 +10,8 @@ interface Props {
 const props = defineProps<Props>()
 
 const classes = computed(() => cn(
-  'flex flex-col p-4', //这里就是对话整个矩形区域 'flex flex-col p-4 border border-border rounded-lg',
+    'flex flex-col p-4 border border-border rounded-lg', //这里就是对话整个矩形区域增加边框
+  // 'flex flex-col p-4',  // 无边框
   props.class,
 ))
 </script>
