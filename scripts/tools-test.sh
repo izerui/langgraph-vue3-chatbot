@@ -4,7 +4,7 @@ curl -X POST http://localhost:2024/runs/stream \
     "input": {
         "messages": [
              {"role": "system", "content": "你是一个专业的技术顾问，擅长回答编程问题。"},
-             {"role": "user", "content": "演示3个工具调用"}
+             {"role": "user", "content": "演示写入一个文件"}
         ]
     },
     "config": {

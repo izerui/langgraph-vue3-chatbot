@@ -34,6 +34,32 @@ function getMessageClass(index: number) {
 </script>
 
 <style scoped>
+.custom-message {
+  padding: 8px 0;
+}
+
+.custom-type-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #6366f1;
+  background: #e0e7ff;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+
+.custom-content {
+  margin: 0;
+  padding: 8px;
+  font-size: 13px;
+  background: #f8fafc;
+  border-radius: 4px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
 .loading-indicator {
   position: sticky;
   bottom: 0;
@@ -75,14 +101,24 @@ function getMessageClass(index: number) {
   <Conversation>
     <ConversationContent>
       <template v-for="(message, index) in messages" :key="message.key">
-        <!-- system 消息按照 assistant 方式渲染 -->
+        <!-- system/custom 消息按照 assistant 方式渲染 -->
         <Message
-          :from="message.type === 'tool' || message.type === 'system' ? 'assistant' : message.type === 'human' ? 'user' : 'assistant'"
+          :from="message.type === 'tool' || message.type === 'system' || message.type === 'custom' ? 'assistant' : message.type === 'human' ? 'user' : 'assistant'"
           :class="getMessageClass(index)"
         >
           <!-- tool 消息：显示 ToolCall -->
           <template v-if="message.type === 'tool'">
             <ToolCall :tool-calls="message.toolCalls" />
+          </template>
+
+          <!-- custom 消息：显示自定义内容 -->
+          <template v-else-if="message.type === 'custom'">
+            <MessageContent>
+              <div class="custom-message">
+                <div class="custom-type-badge">{{ message.customContent?.type }}</div>
+                <pre class="custom-content">{{ JSON.stringify(message.customContent?.content, null, 2) }}</pre>
+              </div>
+            </MessageContent>
           </template>
 
           <!-- assistant/system/human 消息 -->

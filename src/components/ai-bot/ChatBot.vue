@@ -2,7 +2,7 @@
 import './chatbot.css'
 import { ref, onMounted } from 'vue'
 import type { PromptInputMessage } from './lib/prompt-input'
-import type { ChatMessage, ChatStatus, ChatFile } from './lib/types'
+import type { ChatMessage, ChatStatus, ChatFile, CustomContent } from './lib/types'
 import { fetchModels, getDefaultModel, type ModelInfo } from './lib/models'
 import { Client } from '@langchain/langgraph-sdk'
 import { createThread, loadThreadHistory } from './lib/thread'
@@ -242,7 +242,23 @@ async function handleSubmit(userMessage: string, files: ChatFile[] = []) {
       // 处理 custom 事件
       if (chunkEvent === 'custom') {
         handleCustomEvent(data)
-        return
+        // 将 custom 消息添加到消息列表
+        const customContent: CustomContent = {
+          type: data?.type || 'unknown',
+          content: data?.content
+        }
+        const customMessageId = `custom-${Date.now()}`
+        messages.value = [
+          ...messages.value,
+          {
+            key: customMessageId,
+            type: 'custom',
+            content: '',
+            customContent
+          }
+        ]
+        console.log('📦 Custom 消息:', customContent)
+        continue
       }
 
       if (chunkEvent === 'messages' || chunkEvent === 'messages/partial') {

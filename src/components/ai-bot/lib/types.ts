@@ -2,7 +2,13 @@
 export type ChatStatus = 'ready' | 'streaming'
 
 // 消息类型
-export type MessageType = 'ai' | 'human' | 'system' | 'tool'
+export type MessageType = 'ai' | 'human' | 'system' | 'tool' | 'custom'
+
+// 自定义消息内容
+export interface CustomContent {
+  type: string
+  content: any
+}
 
 // 工具调用
 export interface ToolCall {
@@ -30,4 +36,5 @@ export interface ChatMessage {
   toolCalls?: ToolCall[]
   batchId?: string
   files?: ChatFile[]
+  customContent?: CustomContent
 }
