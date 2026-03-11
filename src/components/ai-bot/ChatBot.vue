@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import './chatbot.css'
 import { ref, onMounted } from 'vue'
-import { ArrowUpRight } from 'lucide-vue-next'
 import type { PromptInputMessage } from './lib/prompt-input'
 import type { ChatMessage, ChatStatus, ChatFile, CustomContent } from './lib/types'
 import { fetchModels, getDefaultModel, type ModelInfo } from './lib/models'
@@ -13,6 +12,7 @@ import ChatMessages from './ChatMessages.vue'
 import ChatSuggestions from './ChatSuggestions.vue'
 import ChatInput from './ChatInput.vue'
 import { Loader } from './ai-elements/loader'
+import GeneratedFiles from './GeneratedFiles.vue'
 
 interface Props {
   assistantId?: string
@@ -649,25 +649,16 @@ function handleCustomEvent(data: any) {
         :is-streaming="status === 'streaming'"
         @copy="handleCopy"
       >
-        <!-- custom 消息默认实现 -->
+        <!-- custom 消息：透传插槽 -->
         <template #custom="{ customContent }">
-          <div v-if="customContent?.type === 'generated_files' && Array.isArray(customContent?.content)" class="custom-files">
-            <a
-              v-for="(file, index) in customContent.content"
-              :key="index"
-              class="custom-file-item"
-              :href="`${props.apiUrl}/webapp/download/${threadId}?path=${encodeURIComponent(file)}`"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <span>{{ file }}</span>
-              <ArrowUpRight class="file-icon" />
-            </a>
-          </div>
-          <div v-else class="custom-message">
-            <div class="custom-type-badge">{{ customContent?.type }}</div>
-            <pre class="custom-content">{{ JSON.stringify(customContent?.content, null, 2) }}</pre>
-          </div>
+          <slot name="custom" :customContent="customContent" :threadId="threadId">
+            <GeneratedFiles
+              v-if="customContent?.type === 'generated_files'"
+              :custom-content="customContent"
+              :api-url="props.apiUrl"
+              :thread-id="threadId"
+            />
+          </slot>
         </template>
       </ChatMessages>
 
@@ -730,62 +721,5 @@ function handleCustomEvent(data: any) {
   justify-content: center;
   gap: 12px;
   z-index: 10;
-}
-
-/* custom 消息样式 */
-.custom-message {
-  padding: 8px 0;
-}
-
-.custom-type-badge {
-  display: inline-block;
-  padding: 2px 8px;
-  font-size: 12px;
-  font-weight: 500;
-  color: #6366f1;
-  background: #e0e7ff;
-  border-radius: 4px;
-  margin-bottom: 8px;
-}
-
-.custom-content {
-  margin: 0;
-  padding: 8px;
-  font-size: 13px;
-  background: #f8fafc;
-  border-radius: 4px;
-  overflow-x: auto;
-  white-space: pre-wrap;
-  word-break: break-all;
-}
-
-.custom-files {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.custom-file-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 10px;
-  font-size: 13px;
-  color: #374151;
-  background: #f3f4f6;
-  border-radius: 9999px;
-  text-decoration: none;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.custom-file-item:hover {
-  background: #e5e7eb;
-}
-
-.custom-file-item .file-icon {
-  width: 14px;
-  height: 14px;
-  flex-shrink: 0;
 }
 </style>

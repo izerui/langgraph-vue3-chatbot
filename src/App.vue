@@ -2,6 +2,7 @@
 import AskAi from './components/ai-bot/AskAi.vue'
 import ChatBotExample from './components/ai-elements/examples/chatbot.vue'
 import ChatBot from "@/components/ai-bot/ChatBot.vue";
+import GeneratedFiles from './components/ai-bot/GeneratedFiles.vue'
 
 const apiUrl = import.meta.env.VITE_LANGGRAPH_API_URL || 'http://localhost:2024'
 const apiKey = import.meta.env.VITE_LANGGRAPH_API_KEY
@@ -35,7 +36,20 @@ const apiKey = import.meta.env.VITE_LANGGRAPH_API_KEY
             '演示几个工具调用,针对每个工具演示要进行说明.',
             '今天天气怎么样？'
           ]"
-        />
+        >
+          <template #custom="{ customContent, threadId }">
+            <GeneratedFiles
+              v-if="customContent?.type === 'generated_files'"
+              :custom-content="customContent"
+              :api-url="apiUrl"
+              :thread-id="threadId"
+            />
+            <div v-else class="custom-message">
+              <div class="custom-type-badge">{{ customContent?.type }}</div>
+              <pre class="custom-content">{{ JSON.stringify(customContent?.content, null, 2) }}</pre>
+            </div>
+          </template>
+        </ChatBot>
       </div>
     </main>
 
@@ -117,5 +131,32 @@ main {
   border-radius: 8px;
   overflow: hidden;
   background: #fff;
+}
+
+/* custom 消息样式 */
+.custom-message {
+  padding: 8px 0;
+}
+
+.custom-type-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #6366f1;
+  background: #e0e7ff;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+
+.custom-content {
+  margin: 0;
+  padding: 8px;
+  font-size: 13px;
+  background: #f8fafc;
+  border-radius: 4px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
 }
 </style>
