@@ -27,7 +27,7 @@ function getMessageClass(index: number) {
   const current = props.messages[index]
   // 只有 human 消息需要间隔
   if (current.type === 'human') {
-    return 'mt-4'
+    return 'my-4'
   }
   return ''
 }
