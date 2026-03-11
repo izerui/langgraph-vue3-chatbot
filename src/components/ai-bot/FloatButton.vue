@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { BotMessageSquare, BotOff } from 'lucide-vue-next'
+import { BotMessageSquare, BotOff, X } from 'lucide-vue-next'
 
 interface Props {
   isExpanded: boolean
@@ -16,7 +16,8 @@ const emit = defineEmits<{
   <button class="float-button" :class="{ expanded: isExpanded }" @click="emit('toggle')" type="button">
     <span class="icon-wrapper">
       <BotMessageSquare class="icon-svg" />
-      <BotOff class="icon-svg" />
+      <X :size="16" :stroke-width="2" absoluteStrokeWidth class="icon-svg"/>
+<!--      <BotOff class="icon-svg" />-->
     </span>
   </button>
 </template>
