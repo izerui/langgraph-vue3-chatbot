@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import './chatbot.css'
 import { ref, onMounted } from 'vue'
+import { ArrowUpRight } from 'lucide-vue-next'
 import type { PromptInputMessage } from './lib/prompt-input'
 import type { ChatMessage, ChatStatus, ChatFile, CustomContent } from './lib/types'
 import { fetchModels, getDefaultModel, type ModelInfo } from './lib/models'
@@ -659,7 +660,8 @@ function handleCustomEvent(data: any) {
               target="_blank"
               rel="noopener noreferrer"
             >
-              {{ file }}
+              <span>{{ file }}</span>
+              <ArrowUpRight class="file-icon" />
             </a>
           </div>
           <div v-else class="custom-message">
@@ -764,19 +766,26 @@ function handleCustomEvent(data: any) {
 }
 
 .custom-file-item {
-  display: block;
-  padding: 4px 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
   font-size: 13px;
-  background: #f0fdf4;
-  border: 1px solid #bbf7d0;
-  border-radius: 4px;
-  color: #166534;
+  color: #374151;
+  background: #f3f4f6;
+  border-radius: 9999px;
   text-decoration: none;
   cursor: pointer;
+  transition: all 0.2s;
 }
 
 .custom-file-item:hover {
-  background: #dcfce7;
-  border-color: #86efac;
+  background: #e5e7eb;
+}
+
+.custom-file-item .file-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
 }
 </style>
