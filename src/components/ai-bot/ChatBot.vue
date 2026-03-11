@@ -645,7 +645,27 @@ function handleCustomEvent(data: any) {
         :messages="messages"
         :is-streaming="status === 'streaming'"
         @copy="handleCopy"
-      />
+      >
+        <!-- custom 消息默认实现 -->
+        <template #custom="{ customContent }">
+          <div v-if="customContent?.type === 'generated_files' && Array.isArray(customContent?.content)" class="custom-files">
+            <a
+              v-for="(file, index) in customContent.content"
+              :key="index"
+              class="custom-file-item"
+              :href="`${apiUrl}/webapp/download/${threadId}?path=${encodeURIComponent(file)}`"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {{ file }}
+            </a>
+          </div>
+          <div v-else class="custom-message">
+            <div class="custom-type-badge">{{ customContent?.type }}</div>
+            <pre class="custom-content">{{ JSON.stringify(customContent?.content, null, 2) }}</pre>
+          </div>
+        </template>
+      </ChatMessages>
 
       <ChatSuggestions
         :suggestions="suggestions"
@@ -706,5 +726,55 @@ function handleCustomEvent(data: any) {
   justify-content: center;
   gap: 12px;
   z-index: 10;
+}
+
+/* custom 消息样式 */
+.custom-message {
+  padding: 8px 0;
+}
+
+.custom-type-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #6366f1;
+  background: #e0e7ff;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+
+.custom-content {
+  margin: 0;
+  padding: 8px;
+  font-size: 13px;
+  background: #f8fafc;
+  border-radius: 4px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.custom-files {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.custom-file-item {
+  display: block;
+  padding: 4px 8px;
+  font-size: 13px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 4px;
+  color: #166534;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.custom-file-item:hover {
+  background: #dcfce7;
+  border-color: #86efac;
 }
 </style>

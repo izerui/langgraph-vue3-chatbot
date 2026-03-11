@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ChatMessage } from './lib/types'
+import type { ChatMessage, CustomContent } from './lib/types'
 import ToolCall from './ToolCall.vue'
 import {
   Conversation,
@@ -34,32 +34,6 @@ function getMessageClass(index: number) {
 </script>
 
 <style scoped>
-.custom-message {
-  padding: 8px 0;
-}
-
-.custom-type-badge {
-  display: inline-block;
-  padding: 2px 8px;
-  font-size: 12px;
-  font-weight: 500;
-  color: #6366f1;
-  background: #e0e7ff;
-  border-radius: 4px;
-  margin-bottom: 8px;
-}
-
-.custom-content {
-  margin: 0;
-  padding: 8px;
-  font-size: 13px;
-  background: #f8fafc;
-  border-radius: 4px;
-  overflow-x: auto;
-  white-space: pre-wrap;
-  word-break: break-all;
-}
-
 .loading-indicator {
   display: flex;
   align-items: center;
@@ -107,13 +81,10 @@ function getMessageClass(index: number) {
             <ToolCall :tool-calls="message.toolCalls" />
           </template>
 
-          <!-- custom 消息：显示自定义内容 -->
+          <!-- custom 消息：通过插槽渲染 -->
           <template v-else-if="message.type === 'custom'">
             <MessageContent>
-              <div class="custom-message">
-                <div class="custom-type-badge">{{ message.customContent?.type }}</div>
-                <pre class="custom-content">{{ JSON.stringify(message.customContent?.content, null, 2) }}</pre>
-              </div>
+              <slot name="custom" :customContent="message.customContent" />
             </MessageContent>
           </template>
 
