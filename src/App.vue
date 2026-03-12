@@ -27,12 +27,12 @@ const apiKey = import.meta.env.VITE_LANGGRAPH_API_KEY
           :api-url="apiUrl"
           :api-key="apiKey"
           assistant-id="research"
-          thread-id="9f31354d-b2f8-4472-8ab7-fd49cd52e362"
+          thread-id="9f31354d-b2f8-4472-8ab7-fd49cd52e376"
           assistant-name="我的助手"
           :system-prompt="KNOWLEDGE_GRAPH_PROMPT"
           :show-header-actions="false"
           :suggestions="[
-            '你好，请介绍一下自己',
+            '生成建模图',
             '你能做什么？',
             '演示几个工具调用,针对每个工具演示要进行说明.',
             '今天天气怎么样？'
@@ -75,17 +75,47 @@ const apiKey = import.meta.env.VITE_LANGGRAPH_API_KEY
       :api-url="apiUrl"
       :api-key="apiKey"
       assistant-id="research"
-      thread-id="9f31354d-b2f8-4472-8ab7-fd49cd52e321"
+      thread-id="9f31354d-b2f8-4472-8ab7-fd49cd52e376"
       assistant-name="我的助手"
-      :default-expanded=false
-      system-prompt="你是一个专业的技术顾问，擅长回答编程问题。"
+      :system-prompt="KNOWLEDGE_GRAPH_PROMPT"
+      :show-header-actions="false"
       :suggestions="[
-        '你好，请介绍一下自己',
+        '生成建模图',
         '你能做什么？',
         '演示几个工具调用,针对每个工具演示要进行说明.',
         '今天天气怎么样？'
       ]"
-    />
+    >
+      <!-- 空状态：欢迎卡片 -->
+      <template #empty="{ sendMessage }">
+        <div class="welcome-card">
+          <div class="ai-logo">AI</div>
+          <h2 class="welcome-title">您好，我是知识建模AI助手</h2>
+          <hr class="welcome-divider">
+          <p class="welcome-desc">
+            可以帮助您生成知识点、语义关系，并自动构建知识建模图。请点击下方的"生成知识点"按钮，我将引导您提供关键信息，为您逐步生成知识建模内容。
+          </p>
+<!--              <div class="welcome-actions">-->
+<!--                <button class="action-btn" @click="sendMessage('生成知识点')">第一步：生成知识点</button>-->
+<!--                <button class="action-btn" @click="sendMessage('生成语义关系')">第二步：生成语义关系</button>-->
+<!--                <button class="action-btn" @click="sendMessage('生成教学设计')">第三步：生成教学设计</button>-->
+<!--              </div>-->
+        </div>
+      </template>
+      <!-- 覆盖默认的自定义消息 --->
+      <template #custom="{ customContent, threadId }">
+        <GeneratedFiles
+          v-if="customContent?.type === 'generated_files'"
+          :custom-content="customContent"
+          :api-url="apiUrl"
+          :thread-id="threadId"
+        />
+        <div v-else class="custom-message">
+          <div class="custom-type-badge">{{ customContent?.type }}</div>
+          <pre class="custom-content">{{ JSON.stringify(customContent?.content, null, 2) }}</pre>
+        </div>
+      </template>
+    </AskAi>
   </div>
 </template>
 

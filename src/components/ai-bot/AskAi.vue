@@ -84,7 +84,15 @@ function stopResize() {
           :suggestions="suggestions"
           @close="toggleExpanded"
           @update:is-maximized="handleMaximizeChange"
-        />
+        >
+          <!-- 透传插槽 -->
+          <template #empty="slotProps">
+            <slot name="empty" v-bind="slotProps" />
+          </template>
+          <template #custom="slotProps">
+            <slot name="custom" v-bind="slotProps" />
+          </template>
+        </ChatBot>
         <!-- 拖拽手柄 -->
         <div
           v-if="!isMaximized"
