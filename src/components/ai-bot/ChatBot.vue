@@ -252,7 +252,13 @@ async function handleSubmit(userMessage: string, files: ChatFile[] = []) {
       // 处理 custom 事件
       if (chunkEvent === 'custom') {
         handleCustomEvent(data)
-        // 将 custom 消息添加到消息列表
+
+        // suggested_questions 类型不外发为消息，只更新 suggestions
+        if (data?.type === 'suggested_questions') {
+          continue
+        }
+
+        // 将其他 custom 消息添加到消息列表
         const customContent: CustomContent = {
           type: data?.type || 'unknown',
           content: data?.content
