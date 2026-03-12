@@ -27,7 +27,7 @@ const apiKey = import.meta.env.VITE_LANGGRAPH_API_KEY
           :api-url="apiUrl"
           :api-key="apiKey"
           assistant-id="research"
-          thread-id="9f31354d-b2f8-4472-8ab7-fd49cd52e328"
+          thread-id="9f31354d-b2f8-4472-8ab7-fd49cd52e362"
           assistant-name="我的助手"
           :system-prompt="KNOWLEDGE_GRAPH_PROMPT"
           :show-header-actions="false"
@@ -47,11 +47,11 @@ const apiKey = import.meta.env.VITE_LANGGRAPH_API_KEY
               <p class="welcome-desc">
                 可以帮助您生成知识点、语义关系，并自动构建知识建模图。请点击下方的"生成知识点"按钮，我将引导您提供关键信息，为您逐步生成知识建模内容。
               </p>
-              <div class="welcome-actions">
-                <button class="action-btn" @click="sendMessage('生成知识点')">第一步：生成知识点</button>
-                <button class="action-btn" @click="sendMessage('生成语义关系')">第二步：生成语义关系</button>
-                <button class="action-btn" @click="sendMessage('生成教学设计')">第三步：生成教学设计</button>
-              </div>
+<!--              <div class="welcome-actions">-->
+<!--                <button class="action-btn" @click="sendMessage('生成知识点')">第一步：生成知识点</button>-->
+<!--                <button class="action-btn" @click="sendMessage('生成语义关系')">第二步：生成语义关系</button>-->
+<!--                <button class="action-btn" @click="sendMessage('生成教学设计')">第三步：生成教学设计</button>-->
+<!--              </div>-->
             </div>
           </template>
           <!-- 覆盖默认的自定义消息 --->

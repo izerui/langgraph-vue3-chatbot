@@ -56,6 +56,9 @@ const isLoading = ref(true)
 // 消息
 const messages = ref<ChatMessage[]>([])
 
+// 建议问题（支持动态更新）
+const suggestions = ref<string[]>([])
+
 // 模型列表
 const models = ref<ModelInfo[]>([])
 const currentModel = ref<ModelInfo | null>(null)
@@ -63,6 +66,9 @@ const currentModel = ref<ModelInfo | null>(null)
 // 初始化
 onMounted(async () => {
   isLoading.value = true
+  // 初始化建议问题
+  suggestions.value = [...props.suggestions]
+
   // 并行获取模型列表和加载历史
   await Promise.all([
     (async () => {
@@ -624,7 +630,13 @@ function handleClose() {
 
 // 处理自定义事件
 function handleCustomEvent(data: any) {
-  // TODO: 实现自定义事件处理逻辑
+  // 处理 suggested_questions 类型
+  if (data?.type === 'suggested_questions' && Array.isArray(data?.content)) {
+    suggestions.value = data.content
+    console.log('📝 更新建议问题:', data.content)
+    return
+  }
+
   console.log('Custom event received:', data)
 }
 </script>
