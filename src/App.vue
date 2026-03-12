@@ -3,6 +3,7 @@ import AskAi from './components/ai-bot/AskAi.vue'
 import ChatBotExample from './components/ai-elements/examples/chatbot.vue'
 import ChatBot from "@/components/ai-bot/ChatBot.vue";
 import GeneratedFiles from './components/ai-bot/GeneratedFiles.vue'
+import { KNOWLEDGE_GRAPH_PROMPT } from './prompts'
 
 const apiUrl = import.meta.env.VITE_LANGGRAPH_API_URL || 'http://localhost:2024'
 const apiKey = import.meta.env.VITE_LANGGRAPH_API_KEY
@@ -26,9 +27,9 @@ const apiKey = import.meta.env.VITE_LANGGRAPH_API_KEY
           :api-url="apiUrl"
           :api-key="apiKey"
           assistant-id="research"
-          thread-id="9f31354d-b2f8-4472-8ab7-fd49cd52e325"
+          thread-id="9f31354d-b2f8-4472-8ab7-fd49cd52e328"
           assistant-name="我的助手"
-          system-prompt="你是一个专业的技术顾问，擅长回答编程问题。"
+          :system-prompt="KNOWLEDGE_GRAPH_PROMPT"
           :show-header-actions="false"
           :suggestions="[
             '你好，请介绍一下自己',

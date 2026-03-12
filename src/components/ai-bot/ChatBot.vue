@@ -4,6 +4,7 @@ import { ref, onMounted } from 'vue'
 import type { PromptInputMessage } from './lib/prompt-input'
 import type { ChatMessage, ChatStatus, ChatFile, CustomContent } from './lib/types'
 import { fetchModels, getDefaultModel, type ModelInfo } from './lib/models'
+import { KNOWLEDGE_GRAPH_PROMPT } from '@/prompts'
 import { Client } from '@langchain/langgraph-sdk'
 import { createThread, loadThreadHistory } from './lib/thread'
 
@@ -29,7 +30,7 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   assistantId: 'research',
   assistantName: 'Chat',
-  systemPrompt: '用中文回答',
+  systemPrompt: KNOWLEDGE_GRAPH_PROMPT,
   userId: 'user001',
   showHeaderActions: true,
   suggestions: () => [],
@@ -645,7 +646,7 @@ function handleCustomEvent(data: any) {
       />
 
       <!-- 空状态：messages 为空时显示 -->
-      <div v-if="messages.length === 0" class="flex-1 overflow-y-hidden flex flex-col items-center justify-center">
+      <div v-if="!isLoading && messages.length === 0" class="flex-1 overflow-y-hidden flex flex-col items-center justify-center">
         <slot name="empty" :send-message="handleSubmit" />
       </div>
       <!-- 有消息时显示 ChatMessages -->
