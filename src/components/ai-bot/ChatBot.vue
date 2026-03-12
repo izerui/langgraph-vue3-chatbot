@@ -612,11 +612,6 @@ function handleSuggestionClick(suggestion: string) {
   handleSubmit(suggestion)
 }
 
-// 消息操作
-function handleCopy(content: string) {
-  navigator.clipboard.writeText(content)
-}
-
 const emit = defineEmits<{
   close: []
   'update:isMaximized': [value: boolean]
@@ -654,7 +649,6 @@ function handleCustomEvent(data: any) {
         v-else
         :messages="messages"
         :is-streaming="status === 'streaming'"
-        @copy="handleCopy"
       >
         <!-- custom 消息：透传插槽 -->
         <template #custom="{ customContent }">

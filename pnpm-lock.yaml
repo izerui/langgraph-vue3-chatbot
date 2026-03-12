@@ -30,8 +30,8 @@ importers:
         specifier: ^0.577.0
         version: 0.577.0(vue@3.5.29(typescript@5.9.3))
       markstream-vue:
-        specifier: 0.0.8-beta.2
-        version: 0.0.8-beta.2(katex@0.16.33)(mermaid@11.12.3)(shiki@3.23.0)(vue@3.5.29(typescript@5.9.3))
+        specifier: 0.0.8
+        version: 0.0.8(katex@0.16.33)(mermaid@11.12.3)(shiki@3.23.0)(vue@3.5.29(typescript@5.9.3))
       mermaid:
         specifier: ^11.12.3
         version: 11.12.3
@@ -42,8 +42,8 @@ importers:
         specifier: ^5.1.6
         version: 5.1.6
       reka-ui:
-        specifier: ^2.9.0
-        version: 2.9.0(vue@3.5.29(typescript@5.9.3))
+        specifier: ^2.9.1
+        version: 2.9.1(vue@3.5.29(typescript@5.9.3))
       shiki:
         specifier: ^3.23.0
         version: 3.23.0
@@ -609,11 +609,11 @@ packages:
     peerDependencies:
       vite: ^5.2.0 || ^6 || ^7
 
-  '@tanstack/virtual-core@3.13.19':
-    resolution: {integrity: sha512-/BMP7kNhzKOd7wnDeB8NrIRNLwkf5AhCYCvtfZV2GXWbBieFm/el0n6LOAXlTi6ZwHICSNnQcIxRCWHrLzDY+g==}
+  '@tanstack/virtual-core@3.13.21':
+    resolution: {integrity: sha512-ww+fmLHyCbPSf7JNbWZP3g7wl6SdNo3ah5Aiw+0e9FDErkVHLKprYUrwTm7dF646FtEkN/KkAKPYezxpmvOjxw==}
 
-  '@tanstack/vue-virtual@3.13.19':
-    resolution: {integrity: sha512-07Fp1TYuIziB4zIDA/moeDKHODePy3K1fN4c4VIAGnkxo1+uOvBJP7m54CoxKiQX6Q9a1dZnznrwOg9C86yvvA==}
+  '@tanstack/vue-virtual@3.13.21':
+    resolution: {integrity: sha512-zneUNdQTcUhoDl6+ek+/O4S9gSZRAc2q7VLscZ4WZnFfZcHc3M7OyVCfSDC3hGuwFqzfL8Cx5bZF6zbGCYwXmw==}
     peerDependencies:
       vue: ^2.7.0 || ^3.0.0
 
@@ -1233,8 +1233,8 @@ packages:
     resolution: {integrity: sha512-zu9QWmjpzJcomzdJQAHgDVhLGq5bLosVak1KVa40NzQHXfqr4eAHupvnPOVXEoLkg6Ocefvf/93d//SB7du4YQ==}
     engines: {node: '>=20.10.0', npm: '>=10.2.3'}
 
-  langsmith@0.5.7:
-    resolution: {integrity: sha512-FjYf2oBGMoSXnaT4SRaFguIiGJaonZ5VKWKJDPl9awLZjz2RkN29AcQWceecSINVzXzTvtRWPOjAWT+XggqNNg==}
+  langsmith@0.5.9:
+    resolution: {integrity: sha512-mT88HlYTz7IZzVJP/OM7D6PAR3kzcbPGjYDJpx64ua9WiJXFqQx6YKewxIIxkVSZCb9I/9TiYvPYfZ4rawOdEg==}
     peerDependencies:
       '@opentelemetry/api': '*'
       '@opentelemetry/exporter-trace-otlp-proto': '*'
@@ -1365,8 +1365,8 @@ packages:
   markdown-it-task-checkbox@1.0.6:
     resolution: {integrity: sha512-7pxkHuvqTOu3iwVGmDPeYjQg+AIS9VQxzyLP9JCg9lBjgPAJXGEkChK6A2iFuj3tS0GV3HG2u5AMNhcQqwxpJw==}
 
-  markdown-it-ts@0.0.4:
-    resolution: {integrity: sha512-p+adWZuxPWfUjBAChLNDEqctER0QcvKob2Fjuu+e+8ryLKo+4D9GXmiUGu2aWYI8ht/vnsWAxsiptaQIlr5UNA==}
+  markdown-it-ts@0.0.5:
+    resolution: {integrity: sha512-co2cRRjr6GkxKL04oEF/1ABWogdF2daTpNvFAOqXjsdtoAOnrEMDwlAgh05s4I0HLHPuwEiYl/5AsOmgnOEpKg==}
     engines: {node: '>=18'}
 
   marked@16.4.2:
@@ -1374,8 +1374,8 @@ packages:
     engines: {node: '>= 20'}
     hasBin: true
 
-  markstream-vue@0.0.8-beta.2:
-    resolution: {integrity: sha512-P4nN4PnfGFtqNdboXLPoZ4x+d4acyYSWJ08BVnl2SmJOMkmFb4i+YtygAdvHVsrAcPsK3hpTBQz127r56cG1Ow==}
+  markstream-vue@0.0.8:
+    resolution: {integrity: sha512-wiIdhSm072G54i31pl+fzysi7CQJgVwY9sR0A1k53x8kIEd/ViPVz5898hmitCE//taOMaU9anb/BrO+/qG0Ow==}
     peerDependencies:
       '@antv/infographic': ^0.2.3
       '@terrastruct/d2': '>=0.1.33'
@@ -1383,7 +1383,7 @@ packages:
       mermaid: '>=11'
       shiki: ^3.13.0
       stream-markdown: '>=0.0.14'
-      stream-monaco: '>=0.0.17'
+      stream-monaco: '>=0.0.18'
       vue: '>=3.0.0'
       vue-i18n: '>=9'
     peerDependenciesMeta:
@@ -1551,8 +1551,8 @@ packages:
   regex@6.1.0:
     resolution: {integrity: sha512-6VwtthbV4o/7+OaAF9I5L5V3llLEsoPyq9P1JVXkedTP33c7MfCG0/5NOPcSJn0TzXcG9YUrR0gQSWioew3LDg==}
 
-  reka-ui@2.9.0:
-    resolution: {integrity: sha512-5dpp80u109iLTbRBu+jhAk8R/877/JN20gYGjb3GsuAgS7E/5QTX5ZxuzWtZAVbChBDYDpXc8pkaQAFpa6s+4w==}
+  reka-ui@2.9.1:
+    resolution: {integrity: sha512-5Oa77f4VVNgUsMtGZKh3AnMCjJvA4TJ9phcN+TxPfGutdENaqleXO+NvhCkgK02PEHcyys8fqIF9CdcvSq5Flw==}
     peerDependencies:
       vue: '>= 3.4.0'
 
@@ -1591,8 +1591,8 @@ packages:
   space-separated-tokens@2.0.2:
     resolution: {integrity: sha512-PEGlAwrG8yXGXRjW32fGbg66JAlOAwbObuqVoJpv/mRgoWDQfgH1wDPvtzWyUSNAXBGSk8h755YDbbcEy3SH2Q==}
 
-  stream-markdown-parser@0.0.65:
-    resolution: {integrity: sha512-nE+aw4oiBPeH3mYh6GQK6IX7M3/LrSbvtvjrYsE2JL20Li/25TDfO3o6rZEG0Kkp4ylczlDDhVJ+G9qHU7T5HQ==}
+  stream-markdown-parser@0.0.68:
+    resolution: {integrity: sha512-DxU4n+6n8HjHgmKH3leOYf+U7SjiUj3Tm0w1bHa1NFsMAXsX9VDP5++727/A3SIO+E00KSSQ20Ik1jFXPej5qw==}
 
   stringify-entities@4.0.4:
     resolution: {integrity: sha512-IwfBptatlO+QCJUo19AqvrPNqlVMpW9YEL2LIVY+Rpv2qsjCGxaDLNRgeGsQWJhfItebuJhsGSLjaBbNSQ+ieg==}
@@ -1959,7 +1959,7 @@ snapshots:
       camelcase: 6.3.0
       decamelize: 1.2.0
       js-tiktoken: 1.0.21
-      langsmith: 0.5.7(@opentelemetry/api@1.9.0)
+      langsmith: 0.5.9(@opentelemetry/api@1.9.0)
       mustache: 4.2.0
       p-queue: 6.6.2
       uuid: 11.1.0
@@ -2169,11 +2169,11 @@ snapshots:
       tailwindcss: 4.2.1
       vite: 5.4.21(@types/node@25.3.3)(lightningcss@1.31.1)
 
-  '@tanstack/virtual-core@3.13.19': {}
+  '@tanstack/virtual-core@3.13.21': {}
 
-  '@tanstack/vue-virtual@3.13.19(vue@3.5.29(typescript@5.9.3))':
+  '@tanstack/vue-virtual@3.13.21(vue@3.5.29(typescript@5.9.3))':
     dependencies:
-      '@tanstack/virtual-core': 3.13.19
+      '@tanstack/virtual-core': 3.13.21
       vue: 3.5.29(typescript@5.9.3)
 
   '@types/d3-array@3.2.2': {}
@@ -2864,7 +2864,7 @@ snapshots:
       vscode-languageserver-textdocument: 1.0.12
       vscode-uri: 3.1.0
 
-  langsmith@0.5.7(@opentelemetry/api@1.9.0):
+  langsmith@0.5.9(@opentelemetry/api@1.9.0):
     dependencies:
       '@types/uuid': 10.0.0
       chalk: 5.6.2
@@ -2957,7 +2957,7 @@ snapshots:
 
   markdown-it-task-checkbox@1.0.6: {}
 
-  markdown-it-ts@0.0.4:
+  markdown-it-ts@0.0.5:
     dependencies:
       entities: 4.5.0
       linkify-it: 5.0.0
@@ -2967,10 +2967,10 @@ snapshots:
 
   marked@16.4.2: {}
 
-  markstream-vue@0.0.8-beta.2(katex@0.16.33)(mermaid@11.12.3)(shiki@3.23.0)(vue@3.5.29(typescript@5.9.3)):
+  markstream-vue@0.0.8(katex@0.16.33)(mermaid@11.12.3)(shiki@3.23.0)(vue@3.5.29(typescript@5.9.3)):
     dependencies:
       '@floating-ui/dom': 1.7.6
-      stream-markdown-parser: 0.0.65
+      stream-markdown-parser: 0.0.68
       vue: 3.5.29(typescript@5.9.3)
     optionalDependencies:
       katex: 0.16.33
@@ -3155,13 +3155,13 @@ snapshots:
     dependencies:
       regex-utilities: 2.3.0
 
-  reka-ui@2.9.0(vue@3.5.29(typescript@5.9.3)):
+  reka-ui@2.9.1(vue@3.5.29(typescript@5.9.3)):
     dependencies:
       '@floating-ui/dom': 1.7.6
       '@floating-ui/vue': 1.1.11(vue@3.5.29(typescript@5.9.3))
       '@internationalized/date': 3.12.0
       '@internationalized/number': 3.6.5
-      '@tanstack/vue-virtual': 3.13.19(vue@3.5.29(typescript@5.9.3))
+      '@tanstack/vue-virtual': 3.13.21(vue@3.5.29(typescript@5.9.3))
       '@vueuse/core': 14.2.1(vue@3.5.29(typescript@5.9.3))
       '@vueuse/shared': 14.2.1(vue@3.5.29(typescript@5.9.3))
       aria-hidden: 1.2.6
@@ -3236,7 +3236,7 @@ snapshots:
 
   space-separated-tokens@2.0.2: {}
 
-  stream-markdown-parser@0.0.65:
+  stream-markdown-parser@0.0.68:
     dependencies:
       markdown-it-container: 4.0.0
       markdown-it-footnote: 4.0.0
@@ -3245,7 +3245,7 @@ snapshots:
       markdown-it-sub: 2.0.0
       markdown-it-sup: 2.0.0
       markdown-it-task-checkbox: 1.0.6
-      markdown-it-ts: 0.0.4
+      markdown-it-ts: 0.0.5
 
   stringify-entities@4.0.4:
     dependencies:
