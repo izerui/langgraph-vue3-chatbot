@@ -38,7 +38,7 @@ const apiKey = import.meta.env.VITE_LANGGRAPH_API_KEY
           ]"
         >
           <!-- 空状态：欢迎卡片 -->
-          <template #empty>
+          <template #empty="{ sendMessage }">
             <div class="welcome-card">
               <div class="ai-logo">AI</div>
               <h2 class="welcome-title">您好，我是知识建模AI助手</h2>
@@ -47,9 +47,9 @@ const apiKey = import.meta.env.VITE_LANGGRAPH_API_KEY
                 可以帮助您生成知识点、语义关系，并自动构建知识建模图。请点击下方的"生成知识点"按钮，我将引导您提供关键信息，为您逐步生成知识建模内容。
               </p>
               <div class="welcome-actions">
-                <button class="action-btn">第一步：生成知识点</button>
-                <button class="action-btn">第二步：生成语义关系</button>
-                <button class="action-btn">第三步：生成教学设计</button>
+                <button class="action-btn" @click="sendMessage('生成知识点')">第一步：生成知识点</button>
+                <button class="action-btn" @click="sendMessage('生成语义关系')">第二步：生成语义关系</button>
+                <button class="action-btn" @click="sendMessage('生成教学设计')">第三步：生成教学设计</button>
               </div>
             </div>
           </template>

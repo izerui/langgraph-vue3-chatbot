@@ -646,7 +646,7 @@ function handleCustomEvent(data: any) {
 
       <!-- 空状态：messages 为空时显示 -->
       <div v-if="messages.length === 0" class="flex-1 overflow-y-hidden flex flex-col items-center justify-center">
-        <slot name="empty" />
+        <slot name="empty" :send-message="handleSubmit" />
       </div>
       <!-- 有消息时显示 ChatMessages -->
       <ChatMessages
