@@ -79,7 +79,9 @@ onMounted(async () => {
     props.threadId ? (async () => {
       const tid = await createThread(client, props.threadId, props.userId)
       threadId.value = tid
-      messages.value = await loadThreadHistory(client, tid)
+      messages.value = await loadThreadHistory(client, tid, (questions) => {
+        suggestions.value = questions
+      })
     })() : Promise.resolve()
   ])
   isLoading.value = false

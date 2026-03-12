@@ -24,7 +24,8 @@ export async function createThread(
 // 获取对话历史
 export async function loadThreadHistory(
   client: Client,
-  threadId: string
+  threadId: string,
+  onSuggestedQuestions?: (questions: string[]) => void
 ): Promise<ChatMessage[]> {
   if (!threadId) return []
 
@@ -166,6 +167,14 @@ export async function loadThreadHistory(
         content: '',
         customContent
       })
+    }
+
+    // 处理 suggested_questions 通过 callback 返回，不 push 到消息列表
+    const suggestedQuestions = values.suggested_questions
+    if (suggestedQuestions && Array.isArray(suggestedQuestions) && suggestedQuestions.length > 0) {
+      if (onSuggestedQuestions) {
+        onSuggestedQuestions(suggestedQuestions)
+      }
     }
 
     return loadedMessages
