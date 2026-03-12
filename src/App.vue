@@ -26,7 +26,7 @@ const apiKey = import.meta.env.VITE_LANGGRAPH_API_KEY
           :api-url="apiUrl"
           :api-key="apiKey"
           assistant-id="research"
-          thread-id="9f31354d-b2f8-4472-8ab7-fd49cd52e322"
+          thread-id="9f31354d-b2f8-4472-8ab7-fd49cd52e325"
           assistant-name="我的助手"
           system-prompt="你是一个专业的技术顾问，擅长回答编程问题。"
           :show-header-actions="false"
@@ -37,6 +37,22 @@ const apiKey = import.meta.env.VITE_LANGGRAPH_API_KEY
             '今天天气怎么样？'
           ]"
         >
+          <!-- 空状态：欢迎卡片 -->
+          <template #empty>
+            <div class="welcome-card">
+              <div class="ai-logo">AI</div>
+              <h2 class="welcome-title">您好，我是知识建模AI助手</h2>
+              <hr class="welcome-divider">
+              <p class="welcome-desc">
+                可以帮助您生成知识点、语义关系，并自动构建知识建模图。请点击下方的"生成知识点"按钮，我将引导您提供关键信息，为您逐步生成知识建模内容。
+              </p>
+              <div class="welcome-actions">
+                <button class="action-btn">第一步：生成知识点</button>
+                <button class="action-btn">第二步：生成语义关系</button>
+                <button class="action-btn">第三步：生成教学设计</button>
+              </div>
+            </div>
+          </template>
           <!-- 覆盖默认的自定义消息 --->
           <template #custom="{ customContent, threadId }">
             <GeneratedFiles
@@ -132,6 +148,73 @@ main {
   border-radius: 8px;
   overflow: hidden;
   background: #fff;
+}
+
+/* 欢迎卡片样式 */
+.welcome-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.ai-logo {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #a18cd1, #fbc2eb);
+  color: white;
+  font-size: 24px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.welcome-title {
+  font-size: 20px;
+  color: #4A69BD;
+  margin: 0 0 12px 0;
+  font-weight: 600;
+}
+
+.welcome-divider {
+  width: 60px;
+  height: 2px;
+  background: linear-gradient(to right, #a18cd1, #fbc2eb);
+  border: none;
+  margin: 0 0 16px 0;
+}
+
+.welcome-desc {
+  max-width: 320px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #666;
+  margin: 0 0 24px 0;
+}
+
+.welcome-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.action-btn {
+  padding: 8px 16px;
+  font-size: 13px;
+  color: #7c3aed;
+  background: #f3e8ff;
+  border: 1px solid #ddd;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.action-btn:hover {
+  background: #e9d5ff;
 }
 
 /* custom 消息样式 */
