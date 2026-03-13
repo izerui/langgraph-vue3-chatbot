@@ -65,6 +65,7 @@ function getMessageClass(index: number) {
     transform: scale(1);
   }
 }
+
 </style>
 
 <template>

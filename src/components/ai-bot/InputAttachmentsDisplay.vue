@@ -14,6 +14,7 @@ const { files, removeFile } = usePromptInput()
   <Attachments
     v-if="files.length > 0"
     variant="inline"
+    class="attachments-inline"
   >
     <Attachment
       v-for="attachment in files"
@@ -26,3 +27,9 @@ const { files, removeFile } = usePromptInput()
     </Attachment>
   </Attachments>
 </template>
+
+<style scoped>
+.attachments-inline {
+  justify-content: flex-start;
+}
+</style>

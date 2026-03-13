@@ -11,7 +11,6 @@ import { createThread, loadThreadHistory } from './lib/thread'
 
 import ChatHeader from './ChatHeader.vue'
 import ChatMessages from './ChatMessages.vue'
-import ChatSuggestions from './ChatSuggestions.vue'
 import ChatInput from './ChatInput.vue'
 import { Loader } from './ai-elements/loader'
 import GeneratedFiles from './GeneratedFiles.vue'
@@ -760,19 +759,17 @@ function handleCustomEvent(data: any) {
         :initial-todos="initialTodos"
         :tool-events="todoToolEvents"
       />
-      <ChatSuggestions
-        :suggestions="suggestions"
-        @select="handleSuggestionClick"
-      />
 
       <ChatInput
         :status="status"
         :current-model="currentModel"
         :models="models"
+        :suggestions="suggestions"
         :use-web-search="useWebSearch"
         v-model:modelSelectorOpen="modelSelectorOpen"
         @submit="handleFormSubmit"
         @stop="handleStop"
+        @select-suggestion="handleSuggestionClick"
         @update:current-model="currentModel = $event"
         @update:use-web-search="useWebSearch = $event"
       />

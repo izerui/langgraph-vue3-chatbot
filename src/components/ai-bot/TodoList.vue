@@ -22,9 +22,10 @@ const props = withDefaults(defineProps<Props>(), {
 const todos = ref<TodoItem[]>([])
 const processedEventCount = ref(0)
 const completedCount = computed(() => todos.value.filter(todo => todo.status === 'completed').length)
-const allCompleted = computed(() => todos.value.length > 0 && completedCount.value === todos.value.length)
+const inProgressCount = computed(() => todos.value.filter(todo => todo.status === 'in_progress').length)
+const pendingCount = computed(() => todos.value.filter(todo => todo.status === 'pending').length)
 
-const expanded = ref(true)
+const expanded = ref(false)
 
 function toggleExpanded() {
   expanded.value = !expanded.value
@@ -156,11 +157,14 @@ watch(
         <div class="title">
           <component
             :is="expanded ? ChevronsDown : ChevronsUp"
-            :size="14"
+            :size="13"
             class="title-chevron"
           />
           <span class="title-label">执行计划</span>
           <span class="title-summary">{{ completedCount }}/{{ todos.length }}</span>
+          <span class="title-meta">
+            {{ inProgressCount > 0 ? `进行中 ${inProgressCount}` : pendingCount > 0 ? `待处理 ${pendingCount}` : '已完成' }}
+          </span>
         </div>
       </div>
 
@@ -217,7 +221,7 @@ watch(
 
 <style scoped>
 .todo-section {
-  padding: 2px 12px 2px;
+  padding: 2px 12px 0;
 }
 
 .todo-card {
@@ -228,18 +232,17 @@ watch(
     rgba(255, 255, 255, 0.98);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.75),
-    0 4px 14px rgba(15, 23, 42, 0.05);
+    0 3px 10px rgba(15, 23, 42, 0.04);
   overflow: hidden;
 }
 
 .todo-divider {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 8px 12px 4px;
+  justify-content: flex-start;
+  padding: 8px 12px;
   cursor: pointer;
   user-select: none;
-  gap: 10px;
 }
 
 .title {
@@ -266,10 +269,10 @@ watch(
   align-items: center;
   justify-content: center;
   min-width: 34px;
-  height: 20px;
+  height: 18px;
   padding: 0 7px;
   border-radius: 999px;
-  font-size: 11px;
+  font-size: 10px;
   line-height: 1;
   font-weight: 700;
   background: rgba(241, 245, 249, 0.96);
@@ -277,8 +280,14 @@ watch(
   color: rgba(51, 65, 85, 0.86);
 }
 
+.title-meta {
+  font-size: 11px;
+  line-height: 1;
+  color: rgba(100, 116, 139, 0.78);
+}
+
 .todo-list {
-  padding: 2px 6px 6px;
+  padding: 0 6px 6px;
   max-height: 180px;
   overflow-y: auto;
   overflow-x: hidden;
@@ -300,7 +309,7 @@ watch(
 }
 
 .todo-item {
-  padding: 4px 8px;
+  padding: 3px 8px;
 }
 
 .todo-row {

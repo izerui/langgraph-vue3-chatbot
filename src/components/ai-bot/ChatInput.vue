@@ -6,6 +6,7 @@ import { nanoid } from 'nanoid'
 import { PROMPT_INPUT_KEY, type AttachmentFile, type PromptInputContext } from './lib/prompt-input'
 import { getProviderByModelName, type ModelInfo } from './lib/models'
 import PromptInputAttachmentsDisplay from './InputAttachmentsDisplay.vue'
+import ChatSuggestions from './ChatSuggestions.vue'
 import { CheckIcon, ChevronDownIcon, Loader2Icon, CornerDownLeftIcon, SquareIcon, XIcon, PlusIcon, ImageIcon } from 'lucide-vue-next'
 import { InputGroup, InputGroupAddon, InputGroupTextarea, InputGroupButton } from '@/components/ai-bot/ui/input-group'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuItem } from '@/components/ai-bot/ui/dropdown-menu'
@@ -15,6 +16,7 @@ interface Props {
   status: ChatStatus
   currentModel: ModelInfo | null
   models: ModelInfo[]
+  suggestions: string[]
   useWebSearch: boolean
 }
 
@@ -23,6 +25,7 @@ const props = defineProps<Props>()
 const emit = defineEmits<{
   submit: [message: { text: string, files: FileUIPart[] }]
   stop: []
+  selectSuggestion: [suggestion: string]
   'update:currentModel': [model: ModelInfo]
   'update:useWebSearch': [value: boolean]
 }>()
@@ -298,14 +301,19 @@ function onFileChange(e: Event) {
     >
 
     <div class="w-full">
-      <InputGroup class="overflow-hidden" style="background-color: white;">
-        <!-- 附件显示区域 (PromptInputHeader) -->
-        <InputGroupAddon
-          align="block-end"
-          class="order-first flex-wrap gap-1"
-        >
-          <PromptInputAttachmentsDisplay />
-        </InputGroupAddon>
+      <InputGroup class="input-group-shell overflow-hidden" style="background-color: white;">
+        <div class="input-top">
+          <div v-if="props.suggestions.length > 0" class="input-suggestions">
+            <ChatSuggestions
+              :suggestions="props.suggestions"
+              @select="emit('selectSuggestion', $event)"
+            />
+          </div>
+
+          <div class="input-attachments">
+            <PromptInputAttachmentsDisplay />
+          </div>
+        </div>
 
         <!-- 文本输入区域 (PromptInputBody) -->
         <div class="contents">
@@ -313,7 +321,7 @@ function onFileChange(e: Event) {
             v-model="inputText"
             placeholder="有什么我能帮您的?"
             name="message"
-            class="field-sizing-content max-h-48 min-h-16"
+            class="field-sizing-content max-h-48 min-h-16 pt-2 pb-3"
             @keydown="handleKeyDown"
             @paste="handlePaste"
             @compositionstart="isComposing = true"
@@ -419,5 +427,29 @@ function onFileChange(e: Event) {
   border-top: 1px solid var(--border);
   background: var(--background);
   flex-shrink: 0;
+}
+
+.input-top {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  align-items: flex-start;
+}
+
+.input-suggestions {
+  width: 100%;
+  padding: 8px 12px 0;
+}
+
+.input-attachments {
+  width: 100%;
+  padding: 0 12px 0;
+}
+
+.input-group-shell {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
 }
 </style>
