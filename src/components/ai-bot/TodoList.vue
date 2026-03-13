@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { ChevronsDown, ChevronsUp, CircleCheckBig, CircleDashed, CircleDotDashed } from 'lucide-vue-next'
+import { ChevronsDown, ChevronsUp, Circle, CircleCheckBig, LoaderCircle } from 'lucide-vue-next'
 import type { ToolEventPayload } from './lib/tool-events'
 
 export interface TodoItem {
@@ -188,19 +188,19 @@ watch(
               <span class="todo-index">{{ index + 1 }}.</span>
 
               <span class="indicator" aria-hidden="true">
-                <CircleDashed
+                <Circle
                   v-if="todo.status === 'pending'"
-                  :size="14"
+                  :size="13"
                   class="status-icon pending-icon"
                 />
-                <CircleDotDashed
+                <LoaderCircle
                   v-if="todo.status === 'in_progress'"
-                  :size="14"
+                  :size="13"
                   class="status-icon in-progress-icon"
                 />
                 <CircleCheckBig
                   v-if="todo.status === 'completed'"
-                  :size="14"
+                  :size="13"
                   class="status-icon completed-icon"
                 />
               </span>
@@ -393,6 +393,16 @@ watch(
 
 .in-progress-icon {
   color: #f59e0b;
+  animation: todo-spin 1.4s linear infinite;
+}
+
+@keyframes todo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 </style>
