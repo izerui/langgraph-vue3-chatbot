@@ -72,6 +72,11 @@ const todos = ref<TodoItem[]>([
   { id: '1', title: '收集课程信息', description: '获取课程名称、类型、专业等', status: 'completed' },
   { id: '2', title: '生成知识点', status: 'pending' },
   { id: '3', title: '建立语义关系', status: 'pending' },
+  { id: '4', title: '生成建模图JSON', status: 'pending' },
+  { id: '4', title: '生成建模图JSON', status: 'pending' },
+  { id: '4', title: '生成建模图JSON', status: 'pending' },
+  { id: '4', title: '生成建模图JSON', status: 'pending' },
+  { id: '4', title: '生成建模图JSON', status: 'pending' },
   { id: '4', title: '生成建模图JSON', status: 'pending' }
 ])
 

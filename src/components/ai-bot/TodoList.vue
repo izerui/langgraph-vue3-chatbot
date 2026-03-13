@@ -112,8 +112,8 @@ function toggleTodo(id: string) {
   user-select: none;
 }
 
-.todo-divider:hover .title {
-  opacity: 0.8;
+.todo-divider:hover .title-text-main {
+  opacity: 1;
 }
 
 /* 两侧线 */
@@ -144,6 +144,25 @@ function toggleTodo(id: string) {
 
 .todo-list {
   padding-top: 6px;
+  max-height: 140px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0,0,0,0.2) transparent;
+}
+
+.todo-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.todo-list::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.2);
+  border-radius: 999px;
+}
+
+.todo-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(0,0,0,0.3);
 }
 
 /* 单条 */
@@ -155,6 +174,11 @@ function toggleTodo(id: string) {
 
 .todo-item:hover {
   background: rgba(0,0,0,0.03);
+}
+
+.todo-item:hover .todo-index,
+.todo-item:hover .title-text {
+  opacity: 1;
 }
 
 /* 行 */
