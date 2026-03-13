@@ -20,7 +20,7 @@ const emit = defineEmits<{
   toggle: [id: string]
 }>()
 
-const expanded = ref(true)
+const expanded = ref(false)
 
 function toggleExpanded() {
   expanded.value = !expanded.value
@@ -40,10 +40,10 @@ function toggleTodo(id: string) {
       <div class="line"></div>
 
       <div class="title">
-        <span>待办事项 ({{ props.todos.length }})</span>
+        <span class="title-text-main">待办事项 ({{ props.todos.length }})</span>
 
         <component
-          :is="expanded ? ChevronsUp : ChevronsDown"
+          :is="expanded ? ChevronsDown : ChevronsUp"
           :size="14"
         />
       </div>
@@ -53,17 +53,18 @@ function toggleTodo(id: string) {
     </div>
 
     <!-- 列表 -->
-    <Transition name="todo-collapse">
-      <div v-show="expanded" class="todo-list">
+    <div v-show="expanded" class="todo-list">
 
         <div
-          v-for="todo in props.todos"
+          v-for="(todo, index) in props.todos"
           :key="todo.id"
           class="todo-item"
           :class="{ completed: todo.status === 'completed' }"
         >
 
           <div class="todo-row">
+
+            <span class="todo-index">{{ index + 1 }}.</span>
 
             <!-- 状态按钮 -->
             <button
@@ -86,8 +87,7 @@ function toggleTodo(id: string) {
 
         </div>
 
-      </div>
-    </Transition>
+    </div>
 
   </div>
 </template>
@@ -130,9 +130,14 @@ function toggleTodo(id: string) {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
-  color: var(--foreground);
   white-space: nowrap;
+}
+
+.title-text-main {
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--foreground);
+  opacity: 0.6;
 }
 
 /* 列表 */
@@ -160,6 +165,12 @@ function toggleTodo(id: string) {
   gap: 8px;
 }
 
+.todo-index {
+  min-width: 20px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
 /* indicator */
 
 .indicator {
@@ -181,16 +192,16 @@ function toggleTodo(id: string) {
 
 /* 标题 */
 
+.todo-index,
 .title-text {
   font-size: 13px;
   line-height: 1.4;
+  color: var(--foreground);
+  opacity: 0.6;
 }
-
-/* 完成状态 */
 
 .completed .title-text {
   text-decoration: line-through;
-  opacity: 0.6;
 }
 
 /* 绿色完成状态 */
@@ -203,19 +214,6 @@ function toggleTodo(id: string) {
 
 .check-icon {
   color: white;
-}
-
-/* 动画 */
-
-.todo-collapse-enter-active,
-.todo-collapse-leave-active {
-  transition: all 0.22s ease;
-}
-
-.todo-collapse-enter-from,
-.todo-collapse-leave-to {
-  opacity: 0;
-  transform: translateY(-6px);
 }
 
 </style>
