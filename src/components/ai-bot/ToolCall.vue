@@ -61,6 +61,10 @@ const getToolIcon = (name: string) => {
   return toolIconMap[name] || WrenchIcon
 }
 
+const isTodoTool = (name: string) => {
+  return name === 'write_todos' || name.includes('todo')
+}
+
 // 简化 args 展示，只取前100个字符
 const formatArgs = (args: string) => {
   if (!args) return ''
@@ -79,6 +83,7 @@ const toggle = (id: string) => {
     <div
       v-for="tool in toolCalls"
       :key="tool.id"
+      v-show="!isTodoTool(tool.name)"
       class="overflow-hidden"
     >
       <div
