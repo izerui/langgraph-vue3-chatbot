@@ -14,6 +14,7 @@ import ChatSuggestions from './ChatSuggestions.vue'
 import ChatInput from './ChatInput.vue'
 import { Loader } from './ai-elements/loader'
 import GeneratedFiles from './GeneratedFiles.vue'
+import TodoList from './TodoList.vue'
 
 interface Props {
   assistantId?: string
@@ -58,6 +59,21 @@ const messages = ref<ChatMessage[]>([])
 
 // 建议问题（支持动态更新）
 const suggestions = ref<string[]>([])
+
+// 待办事项列表
+interface TodoItem {
+  id: string
+  title: string
+  description?: string
+  status: 'pending' | 'completed'
+}
+
+const todos = ref<TodoItem[]>([
+  { id: '1', title: '收集课程信息', description: '获取课程名称、类型、专业等', status: 'completed' },
+  { id: '2', title: '生成知识点', status: 'pending' },
+  { id: '3', title: '建立语义关系', status: 'pending' },
+  { id: '4', title: '生成建模图JSON', status: 'pending' }
+])
 
 // 模型列表
 const models = ref<ModelInfo[]>([])
@@ -626,6 +642,7 @@ function handleSuggestionClick(suggestion: string) {
   handleSubmit(suggestion)
 }
 
+// 待办事项处理
 const emit = defineEmits<{
   close: []
   'update:isMaximized': [value: boolean]
@@ -682,7 +699,11 @@ function handleCustomEvent(data: any) {
           </slot>
         </template>
       </ChatMessages>
-
+      <!-- 待办事项列表 -->
+      <TodoList
+        :todos="todos"
+        @update:todos="todos = $event"
+      />
       <ChatSuggestions
         :suggestions="suggestions"
         @select="handleSuggestionClick"
@@ -743,4 +764,5 @@ function handleCustomEvent(data: any) {
   gap: 12px;
   z-index: 10;
 }
+
 </style>
