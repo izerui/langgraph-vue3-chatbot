@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ChatMessage, CustomContent } from './lib/types'
+import type { ChatMessage, CustomContent } from './lib/message-types'
 import ToolCall from './ToolCall.vue'
 import {
   Conversation,

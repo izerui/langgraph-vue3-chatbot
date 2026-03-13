@@ -1,5 +1,5 @@
 import { Client } from '@langchain/langgraph-sdk'
-import type { ChatMessage, CustomContent } from '../lib/types'
+import type { ChatMessage, CustomContent } from '../lib/message-types'
 
 // 创建线程
 export async function createThread(

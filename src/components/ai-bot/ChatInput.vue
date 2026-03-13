@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, provide, onBeforeUnmount } from 'vue'
-import type { ChatStatus } from './lib/types'
+import type { ChatStatus } from './lib/message-types'
 import type { FileUIPart } from 'ai'
 import { nanoid } from 'nanoid'
 import { PROMPT_INPUT_KEY, type AttachmentFile, type PromptInputContext } from './lib/prompt-input'

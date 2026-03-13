@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { CustomContent } from './lib/types'
+import type { CustomContent } from './lib/message-types'
 import { ArrowUpRight } from 'lucide-vue-next'
 
 interface Props {

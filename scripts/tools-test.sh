@@ -4,7 +4,7 @@ curl -X POST http://localhost:2024/runs/stream \
     "input": {
         "messages": [
              {"role": "system", "content": "你是一个专业的技术顾问，擅长回答编程问题。"},
-             {"role": "user", "content": "演示写入一个文件"}
+             {"role": "user", "content": "测试10个待办，一个一个来，创建10个待办事项，每个事项都会有一个简短的标题和一个未来的截止日期，慢一点，每个待办都要有标题和截止日期，标题要简短，截止日期要在未来。"}
         ]
     },
     "config": {

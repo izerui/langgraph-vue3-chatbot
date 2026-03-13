@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ToolCall } from './lib/types'
+import type { ToolCall } from './lib/message-types'
 import { ChevronDownIcon, PlayCircle, Loader, CheckCircle, XCircle, BrainIcon, GlobeIcon, FileTextIcon, FolderSearch, FileEditIcon, ListTodoIcon, EyeIcon, SquarePen, FileSearch, BookOpenCheck, FolderSearchIcon, ZapIcon, WrenchIcon } from 'lucide-vue-next'
 import { cn } from '@/components/ai-bot/lib/utils'
 import { ref } from 'vue'

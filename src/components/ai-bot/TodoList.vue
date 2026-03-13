@@ -1,24 +1,23 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { ChevronsDown, ChevronsUp, Check } from 'lucide-vue-next'
+import { ref, watch } from 'vue'
+import { ChevronsDown, ChevronsUp, CircleCheckBig, CircleDashed, CircleDotDashed } from 'lucide-vue-next'
+import type { ToolEventPayload } from './lib/tool-events'
 
 export interface TodoItem {
   id: string
   title: string
-  status: 'pending' | 'completed'
+  status: 'pending' | 'in_progress' | 'completed'
 }
 
 interface Props {
-  todos?: TodoItem[]
+  toolEvent?: ToolEventPayload | null
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  todos: () => []
+  toolEvent: null
 })
 
-const emit = defineEmits<{
-  toggle: [id: string]
-}>()
+const todos = ref<TodoItem[]>([])
 
 const expanded = ref(false)
 
@@ -27,12 +26,132 @@ function toggleExpanded() {
 }
 
 function toggleTodo(id: string) {
-  emit('toggle', id)
+  todos.value = todos.value.map(todo =>
+    todo.id === id
+      ? { ...todo, status: todo.status === 'completed' ? 'pending' : 'completed' }
+      : todo
+  )
 }
+
+function isWriteTodosTool(toolName?: string): boolean {
+  return (toolName || '') === 'write_todos'
+}
+
+function normalizeTodoStatus(rawStatus: unknown, fallback: TodoItem['status']): TodoItem['status'] {
+  const status = String(rawStatus || '').toLowerCase()
+  if (status === 'completed') return 'completed'
+  if (status === 'in_progress') return 'in_progress'
+  if (status === 'pending') return 'pending'
+  return fallback
+}
+
+function statusByPhase(event: ToolEventPayload): TodoItem['status'] {
+  if (event.state === 'completed') return 'completed'
+  if (event.phase === 'tool_call_started') return 'pending'
+  return 'in_progress'
+}
+
+type RawTodo = {
+  id?: string
+  title?: string
+  task?: string
+  content?: string
+  text?: string
+  name?: string
+  status?: string
+  state?: string
+}
+
+function parseRawTodoItems(raw?: string): RawTodo[] {
+  if (!raw) return []
+
+  try {
+    const payload = JSON.parse(raw) as
+      | RawTodo
+      | RawTodo[]
+      | { todo?: RawTodo; todos?: RawTodo[]; item?: RawTodo; items?: RawTodo[] }
+
+    return Array.isArray(payload)
+      ? payload
+      : Array.isArray(payload.todos)
+        ? payload.todos
+        : Array.isArray(payload.items)
+          ? payload.items
+          : payload.todo
+            ? [payload.todo]
+            : payload.item
+              ? [payload.item]
+              : []
+  } catch {
+    return []
+  }
+}
+
+function parseToolTodos(raw?: string, fallbackState: TodoItem['status'] = 'pending'): TodoItem[] {
+  const rawTodos = parseRawTodoItems(raw)
+
+  return rawTodos.map((todo, index) => ({
+    id: todo.id || `todo-${index + 1}`,
+    title: todo.title || todo.task || todo.content || todo.text || todo.name || '',
+    status: normalizeTodoStatus(todo.status || todo.state, fallbackState)
+  })).filter(todo => todo.title)
+}
+
+function mergeWriteTodos(raw?: string, fallbackState: TodoItem['status'] = 'pending') {
+  const updates = parseToolTodos(raw, fallbackState)
+  if (updates.length === 0) return false
+
+  if (todos.value.length === 0) {
+    todos.value = updates
+    return true
+  }
+
+  let hasMatchedExisting = false
+
+  todos.value = todos.value.map(existing => {
+    const matched = updates.find(update =>
+      (update.id && update.id === existing.id)
+      || (update.title && update.title === existing.title)
+    )
+
+    if (!matched) return existing
+    hasMatchedExisting = true
+
+    return {
+      ...existing,
+      title: matched.title || existing.title,
+      status: matched.status
+    }
+  })
+
+  if (!hasMatchedExisting) {
+    todos.value = updates
+  }
+
+  return true
+}
+
+function applyToolEvent(event: ToolEventPayload) {
+  const fallbackState = statusByPhase(event)
+
+  if (!isWriteTodosTool(event.name)) return
+
+  // write_todos 的结构化数据只看 args；result 只是日志文本，不参与待办解析。
+  mergeWriteTodos(event.args, fallbackState)
+}
+
+watch(
+  () => props.toolEvent,
+  (event) => {
+    if (!event) return
+    // TodoList 自己消费 todo 相关工具事件，列表状态和渲染逻辑保持在组件内部。
+    applyToolEvent(event)
+  }
+)
 </script>
 
 <template>
-  <div v-if="props.todos.length" class="todo-section">
+  <div v-if="todos.length" class="todo-section">
 
     <!-- 分割线标题 -->
     <div class="todo-divider" @click="toggleExpanded">
@@ -40,7 +159,7 @@ function toggleTodo(id: string) {
       <div class="line"></div>
 
       <div class="title">
-        <span class="title-text-main">待办事项 ({{ props.todos.length }})</span>
+        <span class="title-text-main">待办事项 ({{ todos.length }})</span>
 
         <component
           :is="expanded ? ChevronsDown : ChevronsUp"
@@ -56,10 +175,14 @@ function toggleTodo(id: string) {
     <div v-show="expanded" class="todo-list">
 
         <div
-          v-for="(todo, index) in props.todos"
+          v-for="(todo, index) in todos"
           :key="todo.id"
           class="todo-item"
-          :class="{ completed: todo.status === 'completed' }"
+          :class="{
+            completed: todo.status === 'completed',
+            pending: todo.status === 'pending',
+            'in-progress': todo.status === 'in_progress'
+          }"
         >
 
           <div class="todo-row">
@@ -71,10 +194,20 @@ function toggleTodo(id: string) {
               class="indicator"
               @click.stop="toggleTodo(todo.id)"
             >
-              <Check
+              <CircleDashed
+                v-if="todo.status === 'pending'"
+                :size="14"
+                class="status-icon pending-icon"
+              />
+              <CircleDotDashed
+                v-if="todo.status === 'in_progress'"
+                :size="14"
+                class="status-icon in-progress-icon"
+              />
+              <CircleCheckBig
                 v-if="todo.status === 'completed'"
-                :size="12"
-                class="check-icon"
+                :size="14"
+                class="status-icon completed-icon"
               />
             </button>
 
@@ -214,6 +347,10 @@ function toggleTodo(id: string) {
   border-color: rgba(0,0,0,0.4);
 }
 
+.status-icon {
+  display: block;
+}
+
 /* 标题 */
 
 .todo-index,
@@ -231,13 +368,27 @@ function toggleTodo(id: string) {
 /* 绿色完成状态 */
 
 .completed .indicator {
-  background: #22c55e;
-  border-color: #22c55e;
-  color: white;
+  color: #16a34a;
 }
 
-.check-icon {
-  color: white;
+.pending .indicator {
+  color: rgba(0, 0, 0, 0.5);
+}
+
+.in-progress .indicator {
+  color: #f59e0b;
+}
+
+.completed-icon {
+  color: #16a34a;
+}
+
+.pending-icon {
+  color: rgba(0, 0, 0, 0.5);
+}
+
+.in-progress-icon {
+  color: #f59e0b;
 }
 
 </style>

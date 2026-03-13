@@ -2,8 +2,9 @@
 import './chatbot.css'
 import { ref, onMounted } from 'vue'
 import type { PromptInputMessage } from './lib/prompt-input'
-import type { ChatMessage, ChatStatus, ChatFile, CustomContent } from './lib/types'
+import type { ChatMessage, ChatStatus, ChatFile, CustomContent } from './lib/message-types'
 import { fetchModels, getDefaultModel, type ModelInfo } from './lib/models'
+import type { ToolEventPayload, ToolEventPhase, ToolEventState } from './lib/tool-events'
 import { KNOWLEDGE_GRAPH_PROMPT } from '@/prompts'
 import { Client } from '@langchain/langgraph-sdk'
 import { createThread, loadThreadHistory } from './lib/thread'
@@ -60,25 +61,33 @@ const messages = ref<ChatMessage[]>([])
 // 建议问题（支持动态更新）
 const suggestions = ref<string[]>([])
 
-// 待办事项列表
-interface TodoItem {
-  id: string
-  title: string
-  description?: string
-  status: 'pending' | 'completed'
+const todoToolEvent = ref<ToolEventPayload | null>(null)
+
+function isTodoTool(toolName?: string): boolean {
+  const name = toolName || ''
+  return name.includes('todo') || name === 'write_todos'
 }
 
-const todos = ref<TodoItem[]>([
-  { id: '1', title: '收集课程信息', description: '获取课程名称、类型、专业等', status: 'completed' },
-  { id: '2', title: '生成知识点', status: 'pending' },
-  { id: '3', title: '建立语义关系', status: 'pending' },
-  { id: '4', title: '生成建模图JSON', status: 'pending' },
-  { id: '4', title: '生成建模图JSON', status: 'pending' },
-  { id: '4', title: '生成建模图JSON', status: 'pending' },
-  { id: '4', title: '生成建模图JSON', status: 'pending' },
-  { id: '4', title: '生成建模图JSON', status: 'pending' },
-  { id: '4', title: '生成建模图JSON', status: 'pending' }
-])
+function handleToolEvent(params: {
+  phase: ToolEventPhase
+  id?: string
+  name?: string
+  rawArgs?: string
+  result?: string
+  state: 'start' | 'running' | 'completed' | 'error'
+}) {
+  // ChatBot 只捕获通用工具事件，按工具名把 todo 事件分发给 TodoList。
+  if (!isTodoTool(params.name)) return
+
+  todoToolEvent.value = {
+    phase: params.phase,
+    id: params.id,
+    name: params.name,
+    args: params.rawArgs,
+    result: params.result,
+    state: params.state
+  }
+}
 
 // 模型列表
 const models = ref<ModelInfo[]>([])
@@ -222,10 +231,7 @@ async function handleSubmit(userMessage: string, files: ChatFile[] = []) {
     ]
 
     let assistantContent = ''
-    // 使用 Map：通过 message.id + index 来跟踪工具调用
-    // message.id 表示消息块，index 表示该消息块中的第几个工具
-    // 格式：messageId_index
-    // 包含 id, name, args, messageKey（对应 messages 数组中的索引）
+    // 使用 message.id + index 跟踪同一条流式工具调用，避免 chunks 的空 id / 空 name 无法匹配。
     const assistantToolCalls = new Map<string, { id: string; name: string; args: string; messageKey?: string }>()
     let needNewAssistantMessage = false // 是否需要创建新的 assistant 消息
 
@@ -322,8 +328,7 @@ async function handleSubmit(userMessage: string, files: ChatFile[] = []) {
             const toolResult = typeof message.content === 'string' ? message.content : JSON.stringify(message.content)
             const toolStatus = message.status
 
-            // 从累加的 tool_call_chunks 中获取完整的工具参数
-            // 查找匹配的 tool call 并更新工具消息
+            // 阶段4：根据 tool_call_id 找回前面阶段累加好的原始参数。
             let foundToolCall: { id: string; name: string; args: string; messageKey?: string } | undefined
             for (const [key, tc] of assistantToolCalls) {
               if (tc.id === toolCallId) {
@@ -345,7 +350,7 @@ async function handleSubmit(userMessage: string, files: ChatFile[] = []) {
             }
             const uiState = mapToolStatus(toolStatus)
 
-            // 如果已有对应的工具消息，则更新；否则创建新的
+            // 工具结果优先回填已有工具消息，找不到时再兜底创建一条。
             if (foundToolCall && foundToolCall.messageKey !== undefined) {
               // 更新已有的工具消息
               updateToolMessage(foundToolCall.messageKey, {
@@ -373,6 +378,16 @@ async function handleSubmit(userMessage: string, files: ChatFile[] = []) {
               messages.value.push(toolMessage)
             }
 
+            // 把阶段4结果交给通用工具事件分发器，由具体工具自行消费。
+            handleToolEvent({
+              phase: 'tool_result',
+              id: toolCallId,
+              name: toolName,
+              rawArgs: foundToolCall?.args || '',
+              result: toolResult,
+              state: uiState as ToolEventState
+            })
+
             console.log('🔧 阶段4 - 工具结果返回:', {
               name: toolName,
               id: toolCallId,
@@ -388,13 +403,20 @@ async function handleSubmit(userMessage: string, files: ChatFile[] = []) {
             continue // 跳过后续处理
           }
 
-          // 阶段3：调用结束 - chunk_position 为 "last" 表示工具调用完成
-          // 更新所有工具消息状态为等待结果
+          // 阶段3：tool_call_chunks 已经结束，但工具执行结果可能还没返回。
           if (message.chunk_position === 'last') {
             for (const [, tc] of assistantToolCalls) {
               if (tc.messageKey !== undefined) {
                 updateToolMessage(tc.messageKey, { state: 'running' })
               }
+              // 这里继续透传生命周期事件，让具体工具决定是否需要“运行中”过渡态。
+              handleToolEvent({
+                phase: 'tool_call_finished',
+                id: tc.id,
+                name: tc.name,
+                rawArgs: tc.args,
+                state: 'running'
+              })
             }
             console.log('🛑 阶段3 - 工具调用结束', {
               chunk_position: message.chunk_position,
@@ -403,16 +425,13 @@ async function handleSubmit(userMessage: string, files: ChatFile[] = []) {
             })
           }
 
-          // 统一处理 tool_calls 和 tool_call_chunks（阶段1-2）
-          // 阶段1：tool_calls 到达，补充 id 和 name
-          // 阶段2：tool_call_chunks 累加参数
-          // 使用 message.id（消息块 id） + index（工具索引）作为 key
+          // 阶段1-2：先记录工具声明，再逐块累加原始参数字符串。
           const messageId = message.id
           const hasToolCalls = message.tool_calls && message.tool_calls.length > 0
           const hasChunks = message.tool_call_chunks && message.tool_call_chunks.length > 0
 
           if (hasToolCalls || hasChunks) {
-            // 阶段1：tool_calls 到达，创建工具消息并显示
+            // 阶段1：tool_calls 到达，只拿稳定的 id/name，args 以后续 chunks 为准。
             if (hasToolCalls) {
               for (const tc of message.tool_calls) {
                 const index = message.tool_calls.indexOf(tc)
@@ -432,6 +451,14 @@ async function handleSubmit(userMessage: string, files: ChatFile[] = []) {
                     args: '',
                     messageKey: msgIndex.toString()
                   })
+                  // tool_calls 的 args 常常为空对象，这里只透传原始字符串，不做解释。
+                  handleToolEvent({
+                    phase: 'tool_call_started',
+                    id: tc.id,
+                    name: tc.name,
+                    rawArgs: typeof tc.args === 'string' ? tc.args : '',
+                    state: 'start'
+                  })
                   console.log('📝 阶段1 - 工具调用开始:', {
                     messageId,
                     index,
@@ -449,7 +476,7 @@ async function handleSubmit(userMessage: string, files: ChatFile[] = []) {
               }
             }
 
-            // 阶段2：tool_call_chunks 累加参数，同时更新工具消息
+            // 阶段2：tool_call_chunks 才是真正的原始参数流。
             if (hasChunks) {
               for (const tcChunk of message.tool_call_chunks) {
                 const index = tcChunk.index
@@ -471,6 +498,14 @@ async function handleSubmit(userMessage: string, files: ChatFile[] = []) {
                     args: tcChunk.args || '',
                     messageKey: msgIndex.toString()
                   })
+                  // 首块 chunk 到达时就通知业务侧，便于展示“运行中”的早期状态。
+                  handleToolEvent({
+                    phase: 'tool_args_streaming',
+                    id: tcChunk.id || '',
+                    name: tcChunk.name || '',
+                    rawArgs: tcChunk.args || '',
+                    state: 'running'
+                  })
                   console.log('📝 阶段1 - 工具调用开始:', {
                     messageId,
                     index,
@@ -486,6 +521,14 @@ async function handleSubmit(userMessage: string, files: ChatFile[] = []) {
                     if (existing.messageKey) {
                       updateToolMessage(existing.messageKey, { args: existing.args, state: 'running' })
                     }
+                    // 后续 chunk 持续透传完整 rawArgs，具体工具自己决定何时解析。
+                    handleToolEvent({
+                      phase: 'tool_args_streaming',
+                      id: existing.id || tcChunk.id || '',
+                      name: existing.name || tcChunk.name || '',
+                      rawArgs: existing.args,
+                      state: 'running'
+                    })
                   }
                   // 补充 id 和 name
                   if (tcChunk.id && !existing.id) existing.id = tcChunk.id
@@ -706,8 +749,7 @@ function handleCustomEvent(data: any) {
       </ChatMessages>
       <!-- 待办事项列表 -->
       <TodoList
-        :todos="todos"
-        @update:todos="todos = $event"
+        :tool-event="todoToolEvent"
       />
       <ChatSuggestions
         :suggestions="suggestions"
