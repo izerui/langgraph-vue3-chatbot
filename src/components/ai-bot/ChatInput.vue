@@ -415,7 +415,7 @@ function onFileChange(e: Event) {
 
 <style scoped>
 .input-wrapper {
-  padding: 8px 12px;
+  padding: 4px 12px 8px;
   border-top: 1px solid var(--border);
   background: var(--background);
   flex-shrink: 0;

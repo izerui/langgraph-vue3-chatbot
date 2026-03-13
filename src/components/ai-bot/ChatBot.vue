@@ -61,6 +61,7 @@ const messages = ref<ChatMessage[]>([])
 // 建议问题（支持动态更新）
 const suggestions = ref<string[]>([])
 
+const initialTodos = ref<any[]>([])
 const todoToolEvents = ref<ToolEventPayload[]>([])
 
 function isTodoTool(toolName?: string): boolean {
@@ -115,8 +116,8 @@ onMounted(async () => {
         (questions) => {
           suggestions.value = questions
         },
-        (events) => {
-          todoToolEvents.value = events.filter(event => isTodoTool(event.name))
+        (todos) => {
+          initialTodos.value = todos
         }
       )
     })() : Promise.resolve()
@@ -756,6 +757,7 @@ function handleCustomEvent(data: any) {
       </ChatMessages>
       <!-- 待办事项列表 -->
       <TodoList
+        :initial-todos="initialTodos"
         :tool-events="todoToolEvents"
       />
       <ChatSuggestions

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { ChevronsDown, ChevronsUp, CircleCheckBig, CircleDashed, CircleDotDashed } from 'lucide-vue-next'
 import type { ToolEventPayload } from './lib/tool-events'
 
@@ -10,28 +10,24 @@ export interface TodoItem {
 }
 
 interface Props {
+  initialTodos?: RawTodo[]
   toolEvents?: ToolEventPayload[]
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  initialTodos: () => [],
   toolEvents: () => []
 })
 
 const todos = ref<TodoItem[]>([])
 const processedEventCount = ref(0)
+const completedCount = computed(() => todos.value.filter(todo => todo.status === 'completed').length)
+const allCompleted = computed(() => todos.value.length > 0 && completedCount.value === todos.value.length)
 
-const expanded = ref(false)
+const expanded = ref(true)
 
 function toggleExpanded() {
   expanded.value = !expanded.value
-}
-
-function toggleTodo(id: string) {
-  todos.value = todos.value.map(todo =>
-    todo.id === id
-      ? { ...todo, status: todo.status === 'completed' ? 'pending' : 'completed' }
-      : todo
-  )
 }
 
 function isWriteTodosTool(toolName?: string): boolean {
@@ -63,6 +59,14 @@ type RawTodo = {
   state?: string
 }
 
+function mapRawTodos(rawTodos: RawTodo[], fallbackState: TodoItem['status'] = 'pending'): TodoItem[] {
+  return rawTodos.map((todo, index) => ({
+    id: todo.id || `todo-${index + 1}`,
+    title: todo.title || todo.task || todo.content || todo.text || todo.name || '',
+    status: normalizeTodoStatus(todo.status || todo.state, fallbackState)
+  })).filter(todo => todo.title)
+}
+
 function parseRawTodoItems(raw?: string): RawTodo[] {
   if (!raw) return []
 
@@ -90,12 +94,7 @@ function parseRawTodoItems(raw?: string): RawTodo[] {
 
 function parseToolTodos(raw?: string, fallbackState: TodoItem['status'] = 'pending'): TodoItem[] {
   const rawTodos = parseRawTodoItems(raw)
-
-  return rawTodos.map((todo, index) => ({
-    id: todo.id || `todo-${index + 1}`,
-    title: todo.title || todo.task || todo.content || todo.text || todo.name || '',
-    status: normalizeTodoStatus(todo.status || todo.state, fallbackState)
-  })).filter(todo => todo.title)
+  return mapRawTodos(rawTodos, fallbackState)
 }
 
 function replaceWriteTodos(raw?: string, fallbackState: TodoItem['status'] = 'pending') {
@@ -116,10 +115,17 @@ function applyToolEvent(event: ToolEventPayload) {
 }
 
 watch(
+  () => props.initialTodos,
+  (rawTodos) => {
+    todos.value = mapRawTodos(rawTodos || [])
+  },
+  { deep: true, immediate: true }
+)
+
+watch(
   () => props.toolEvents,
   (events) => {
     if (!events.length) {
-      todos.value = []
       processedEventCount.value = 0
       return
     }
@@ -142,137 +148,142 @@ watch(
 
 <template>
   <div v-if="todos.length" class="todo-section">
-
-    <!-- 分割线标题 -->
-    <div class="todo-divider" @click="toggleExpanded">
-
-      <div class="line"></div>
-
-      <div class="title">
-        <span class="title-text-main">待办事项 ({{ todos.length }})</span>
-
-        <component
-          :is="expanded ? ChevronsDown : ChevronsUp"
-          :size="14"
-        />
+    <div class="todo-card">
+      <div
+        class="todo-divider"
+        @click="toggleExpanded"
+      >
+        <div class="title">
+          <component
+            :is="expanded ? ChevronsDown : ChevronsUp"
+            :size="14"
+            class="title-chevron"
+          />
+          <span class="title-label">执行计划</span>
+          <span class="title-summary">{{ completedCount }}/{{ todos.length }}</span>
+        </div>
       </div>
 
-      <div class="line"></div>
-
-    </div>
-
-    <!-- 列表 -->
-    <div v-show="expanded" class="todo-list">
+      <div v-show="expanded" class="todo-list">
 
         <div
           v-for="(todo, index) in todos"
           :key="todo.id"
           class="todo-item"
-          :class="{
-            completed: todo.status === 'completed',
-            pending: todo.status === 'pending',
-            'in-progress': todo.status === 'in_progress'
-          }"
         >
 
           <div class="todo-row">
-
-            <span class="todo-index">{{ index + 1 }}.</span>
-
-            <!-- 状态按钮 -->
-            <button
-              class="indicator"
-              @click.stop="toggleTodo(todo.id)"
+            <div
+              class="todo-content"
+              :class="{
+                completed: todo.status === 'completed',
+                pending: todo.status === 'pending',
+                'in-progress': todo.status === 'in_progress'
+              }"
             >
-              <CircleDashed
-                v-if="todo.status === 'pending'"
-                :size="14"
-                class="status-icon pending-icon"
-              />
-              <CircleDotDashed
-                v-if="todo.status === 'in_progress'"
-                :size="14"
-                class="status-icon in-progress-icon"
-              />
-              <CircleCheckBig
-                v-if="todo.status === 'completed'"
-                :size="14"
-                class="status-icon completed-icon"
-              />
-            </button>
+              <span class="todo-index">{{ index + 1 }}.</span>
 
-            <!-- 标题 -->
-            <div class="title-text">
-              {{ todo.title }}
+              <span class="indicator" aria-hidden="true">
+                <CircleDashed
+                  v-if="todo.status === 'pending'"
+                  :size="14"
+                  class="status-icon pending-icon"
+                />
+                <CircleDotDashed
+                  v-if="todo.status === 'in_progress'"
+                  :size="14"
+                  class="status-icon in-progress-icon"
+                />
+                <CircleCheckBig
+                  v-if="todo.status === 'completed'"
+                  :size="14"
+                  class="status-icon completed-icon"
+                />
+              </span>
+
+              <div class="title-text">
+                {{ todo.title }}
+              </div>
             </div>
 
           </div>
 
         </div>
 
+      </div>
     </div>
-
   </div>
 </template>
 
 <style scoped>
-
-/* 整体 */
-
 .todo-section {
-  padding: 0 16px;
-  background: var(--background);
+  padding: 2px 12px 2px;
 }
 
-/* 分割线标题 */
+.todo-card {
+  border-radius: 6px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(249, 250, 251, 0.98)),
+    rgba(255, 255, 255, 0.98);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.75),
+    0 4px 14px rgba(15, 23, 42, 0.05);
+  overflow: hidden;
+}
 
 .todo-divider {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 6px 12px;
+  justify-content: space-between;
+  padding: 8px 12px 4px;
   cursor: pointer;
   user-select: none;
+  gap: 10px;
 }
-
-.todo-divider:hover .title-text-main {
-  opacity: 1;
-}
-
-/* 两侧线 */
-
-.line {
-  flex: 1;
-  height: 1px;
-  background: rgba(0,0,0,0.08);
-}
-
-/* 标题 */
 
 .title {
   display: flex;
   align-items: center;
-  gap: 6px;
-  white-space: nowrap;
+  gap: 5px;
+  flex-wrap: wrap;
 }
 
-.title-text-main {
-  font-size: 13px;
-  line-height: 1.4;
-  color: var(--foreground);
-  opacity: 0.6;
+.title-chevron {
+  color: rgba(100, 116, 139, 0.78);
 }
 
-/* 列表 */
+.title-label {
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 700;
+  color: rgba(15, 23, 42, 0.86);
+  margin-right: 4px;
+}
+
+.title-summary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  height: 20px;
+  padding: 0 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  line-height: 1;
+  font-weight: 700;
+  background: rgba(241, 245, 249, 0.96);
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  color: rgba(51, 65, 85, 0.86);
+}
 
 .todo-list {
-  padding-top: 6px;
-  max-height: 140px;
+  padding: 2px 6px 6px;
+  max-height: 180px;
   overflow-y: auto;
   overflow-x: hidden;
-  padding-right: 4px;
   scrollbar-width: thin;
-  scrollbar-color: rgba(0,0,0,0.2) transparent;
+  scrollbar-color: rgba(148, 163, 184, 0.34) transparent;
 }
 
 .todo-list::-webkit-scrollbar {
@@ -280,85 +291,79 @@ watch(
 }
 
 .todo-list::-webkit-scrollbar-thumb {
-  background: rgba(0,0,0,0.2);
+  background: rgba(148, 163, 184, 0.28);
   border-radius: 999px;
 }
 
 .todo-list::-webkit-scrollbar-thumb:hover {
-  background: rgba(0,0,0,0.3);
+  background: rgba(148, 163, 184, 0.4);
 }
-
-/* 单条 */
 
 .todo-item {
-  padding: 6px 10px;
-  border-radius: 6px;
+  padding: 4px 8px;
 }
-
-.todo-item:hover {
-  background: rgba(0,0,0,0.03);
-}
-
-.todo-item:hover .todo-index,
-.todo-item:hover .title-text {
-  opacity: 1;
-}
-
-/* 行 */
 
 .todo-row {
   display: flex;
   align-items: center;
+  gap: 0;
+}
+
+.todo-content {
+  display: inline-flex;
+  align-items: center;
   gap: 8px;
+  min-height: 24px;
+  padding: 2px 8px;
+  border-radius: 6px;
 }
 
 .todo-index {
-  min-width: 20px;
+  min-width: 14px;
   text-align: right;
   flex-shrink: 0;
 }
 
-/* indicator */
-
 .indicator {
   width: 16px;
   height: 16px;
-  border: 1px solid rgba(0,0,0,0.2);
-  border-radius: 50%;
+  border: 0;
+  border-radius: 999px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: transparent;
-  cursor: pointer;
   flex-shrink: 0;
-}
-
-.indicator:hover {
-  border-color: rgba(0,0,0,0.4);
+  padding: 0;
+  pointer-events: none;
 }
 
 .status-icon {
   display: block;
 }
 
-/* 标题 */
-
 .todo-index,
 .title-text {
   font-size: 13px;
-  line-height: 1.4;
-  color: var(--foreground);
-  opacity: 0.6;
+  line-height: 1.35;
+  color: rgba(15, 23, 42, 0.88);
 }
 
-.completed .title-text {
-  text-decoration: line-through;
+.title-text {
 }
 
-/* 绿色完成状态 */
+.todo-content.completed .title-text {
+  color: rgba(22, 101, 52, 0.92);
+  font-weight: 600;
+}
+
+.todo-index {
+  color: rgba(148, 163, 184, 0.7);
+  font-size: 11px;
+}
 
 .completed .indicator {
-  color: #16a34a;
+  color: #059669;
 }
 
 .pending .indicator {
@@ -370,7 +375,7 @@ watch(
 }
 
 .completed-icon {
-  color: #16a34a;
+  color: #059669;
 }
 
 .pending-icon {
