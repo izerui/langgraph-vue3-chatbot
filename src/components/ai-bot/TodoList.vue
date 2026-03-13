@@ -10,14 +10,15 @@ export interface TodoItem {
 }
 
 interface Props {
-  toolEvent?: ToolEventPayload | null
+  toolEvents?: ToolEventPayload[]
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  toolEvent: null
+  toolEvents: () => []
 })
 
 const todos = ref<TodoItem[]>([])
+const processedEventCount = ref(0)
 
 const expanded = ref(false)
 
@@ -97,37 +98,11 @@ function parseToolTodos(raw?: string, fallbackState: TodoItem['status'] = 'pendi
   })).filter(todo => todo.title)
 }
 
-function mergeWriteTodos(raw?: string, fallbackState: TodoItem['status'] = 'pending') {
-  const updates = parseToolTodos(raw, fallbackState)
-  if (updates.length === 0) return false
+function replaceWriteTodos(raw?: string, fallbackState: TodoItem['status'] = 'pending') {
+  const nextTodos = parseToolTodos(raw, fallbackState)
+  if (nextTodos.length === 0) return false
 
-  if (todos.value.length === 0) {
-    todos.value = updates
-    return true
-  }
-
-  let hasMatchedExisting = false
-
-  todos.value = todos.value.map(existing => {
-    const matched = updates.find(update =>
-      (update.id && update.id === existing.id)
-      || (update.title && update.title === existing.title)
-    )
-
-    if (!matched) return existing
-    hasMatchedExisting = true
-
-    return {
-      ...existing,
-      title: matched.title || existing.title,
-      status: matched.status
-    }
-  })
-
-  if (!hasMatchedExisting) {
-    todos.value = updates
-  }
-
+  todos.value = nextTodos
   return true
 }
 
@@ -137,16 +112,31 @@ function applyToolEvent(event: ToolEventPayload) {
   if (!isWriteTodosTool(event.name)) return
 
   // write_todos 的结构化数据只看 args；result 只是日志文本，不参与待办解析。
-  mergeWriteTodos(event.args, fallbackState)
+  replaceWriteTodos(event.args, fallbackState)
 }
 
 watch(
-  () => props.toolEvent,
-  (event) => {
-    if (!event) return
-    // TodoList 自己消费 todo 相关工具事件，列表状态和渲染逻辑保持在组件内部。
-    applyToolEvent(event)
-  }
+  () => props.toolEvents,
+  (events) => {
+    if (!events.length) {
+      todos.value = []
+      processedEventCount.value = 0
+      return
+    }
+
+    if (events.length < processedEventCount.value) {
+      todos.value = []
+      processedEventCount.value = 0
+    }
+
+    const nextEvents = events.slice(processedEventCount.value)
+    nextEvents.forEach((event) => {
+      // TodoList 自己消费 todo 相关工具事件，列表状态和渲染逻辑保持在组件内部。
+      applyToolEvent(event)
+    })
+    processedEventCount.value = events.length
+  },
+  { deep: true, immediate: true }
 )
 </script>
 

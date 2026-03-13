@@ -61,7 +61,7 @@ const messages = ref<ChatMessage[]>([])
 // 建议问题（支持动态更新）
 const suggestions = ref<string[]>([])
 
-const todoToolEvent = ref<ToolEventPayload | null>(null)
+const todoToolEvents = ref<ToolEventPayload[]>([])
 
 function isTodoTool(toolName?: string): boolean {
   const name = toolName || ''
@@ -79,14 +79,14 @@ function handleToolEvent(params: {
   // ChatBot 只捕获通用工具事件，按工具名把 todo 事件分发给 TodoList。
   if (!isTodoTool(params.name)) return
 
-  todoToolEvent.value = {
+  todoToolEvents.value = [...todoToolEvents.value, {
     phase: params.phase,
     id: params.id,
     name: params.name,
     args: params.rawArgs,
     result: params.result,
     state: params.state
-  }
+  }]
 }
 
 // 模型列表
@@ -109,9 +109,16 @@ onMounted(async () => {
     props.threadId ? (async () => {
       const tid = await createThread(client, props.threadId, props.userId)
       threadId.value = tid
-      messages.value = await loadThreadHistory(client, tid, (questions) => {
-        suggestions.value = questions
-      })
+      messages.value = await loadThreadHistory(
+        client,
+        tid,
+        (questions) => {
+          suggestions.value = questions
+        },
+        (events) => {
+          todoToolEvents.value = events.filter(event => isTodoTool(event.name))
+        }
+      )
     })() : Promise.resolve()
   ])
   isLoading.value = false
@@ -749,7 +756,7 @@ function handleCustomEvent(data: any) {
       </ChatMessages>
       <!-- 待办事项列表 -->
       <TodoList
-        :tool-event="todoToolEvent"
+        :tool-events="todoToolEvents"
       />
       <ChatSuggestions
         :suggestions="suggestions"

@@ -1,5 +1,6 @@
 import { Client } from '@langchain/langgraph-sdk'
 import type { ChatMessage, CustomContent } from '../lib/message-types'
+import type { ToolEventPayload } from './tool-events'
 
 // 创建线程
 export async function createThread(
@@ -25,7 +26,8 @@ export async function createThread(
 export async function loadThreadHistory(
   client: Client,
   threadId: string,
-  onSuggestedQuestions?: (questions: string[]) => void
+  onSuggestedQuestions?: (questions: string[]) => void,
+  onToolEvents?: (events: ToolEventPayload[]) => void
 ): Promise<ChatMessage[]> {
   if (!threadId) return []
 
@@ -38,6 +40,7 @@ export async function loadThreadHistory(
     }
 
     const loadedMessages: ChatMessage[] = []
+    const loadedToolEvents: ToolEventPayload[] = []
     const langgraphMessages = values.messages
 
     let i = 0
@@ -124,6 +127,14 @@ export async function loadThreadHistory(
               if (toolCall) {
                 toolCall.result = toolMsgContent
                 toolCall.state = toolState
+                loadedToolEvents.push({
+                  phase: 'tool_result',
+                  id: toolCallId,
+                  name: toolCall.name,
+                  args: toolCall.args,
+                  result: toolMsgContent,
+                  state: toolState as ToolEventPayload['state']
+                })
 
                 // 创建独立的工具消息
                 const toolMessageId = `tool-${toolCallId}-${Date.now()}`
@@ -175,6 +186,10 @@ export async function loadThreadHistory(
       if (onSuggestedQuestions) {
         onSuggestedQuestions(suggestedQuestions)
       }
+    }
+
+    if (onToolEvents && loadedToolEvents.length > 0) {
+      onToolEvents(loadedToolEvents)
     }
 
     return loadedMessages
