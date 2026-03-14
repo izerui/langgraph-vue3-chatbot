@@ -21,7 +21,23 @@ export default defineConfig({
       fileName: () => 'index.js'
     },
     rollupOptions: {
-      external: ['vue'],
+      external: [
+        'vue',
+        '@langchain/langgraph-sdk',
+        '@vueuse/core',
+        'ai',
+        'class-variance-authority',
+        'clsx',
+        'lucide-vue-next',
+        'markstream-vue',
+        'mermaid',
+        'motion-v',
+        'nanoid',
+        'reka-ui',
+        'shiki',
+        'tailwind-merge',
+        'vue-stick-to-bottom'
+      ],
       output: {
         entryFileNames: 'index.js',
         chunkFileNames: 'chunks/[name]-[hash].js',
