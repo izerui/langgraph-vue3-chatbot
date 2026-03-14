@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { PlusIcon } from 'lucide-vue-next'
 import ChatBot from '@/components/ai-bot/ChatBot.vue'
+import AskAiBot from './components/ai-bot/AskAiBot.vue'
 import GeneratedFiles from './components/ai-bot/GeneratedFiles.vue'
 import type { PromptInputAttachment } from './components/ai-bot/lib/prompt-input'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ai-bot/ui/dialog'
@@ -100,6 +101,49 @@ function confirmAttachmentSelection() {
         </ChatBot>
       </div>
     </main>
+
+    <AskAiBot
+      :api-url="apiUrl"
+      :api-key="apiKey"
+      assistant-id="research"
+      thread-id="9f31354d-b2f8-4472-8ab7-fd49cd52e558"
+      assistant-name="我的助手"
+      :system-prompt="KNOWLEDGE_GRAPH_PROMPT"
+      :show-header-actions="false"
+    >
+      <template #attachment-trigger="{ addAttachments }">
+        <button
+          type="button"
+          class="custom-attachment-trigger"
+          title="通过对话框添加附件"
+          @click="openAttachmentDialog(addAttachments)"
+        >
+          <PlusIcon class="size-4" />
+        </button>
+      </template>
+      <template #empty>
+        <div class="welcome-card">
+          <div class="ai-logo">AI</div>
+          <h2 class="welcome-title">您好，我是知识建模AI助手</h2>
+          <hr class="welcome-divider">
+          <p class="welcome-desc">
+            可以帮助您生成知识点、语义关系，并自动构建知识建模图。请点击下方的"生成知识点"按钮，我将引导您提供关键信息，为您逐步生成知识建模内容。
+          </p>
+        </div>
+      </template>
+      <template #custom="{ customContent, threadId }">
+        <GeneratedFiles
+          v-if="customContent?.type === 'generated_files'"
+          :custom-content="customContent"
+          :api-url="apiUrl"
+          :thread-id="threadId"
+        />
+        <div v-else class="custom-message">
+          <div class="custom-type-badge">{{ customContent?.type }}</div>
+          <pre class="custom-content">{{ JSON.stringify(customContent?.content, null, 2) }}</pre>
+        </div>
+      </template>
+    </AskAiBot>
 
     <Dialog v-model:open="attachmentDialogOpen">
       <DialogContent class="sm:max-w-md">
