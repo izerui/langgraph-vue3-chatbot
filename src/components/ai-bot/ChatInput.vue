@@ -390,7 +390,7 @@ function onFileChange(e: Event) {
           <div class="flex items-center gap-1">
             <InputGroupButton
               type="button"
-              class="cursor-pointer text-muted-foreground"
+              class="attachment-button cursor-pointer text-muted-foreground"
               @click="openFileDialog"
             >
               <PaperclipIcon class="size-4" />
@@ -501,5 +501,13 @@ function onFileChange(e: Event) {
   display: flex;
   flex-direction: column;
   align-items: stretch;
+}
+
+.attachment-button:hover,
+.attachment-button:focus,
+.attachment-button:focus-visible,
+.attachment-button[data-state='open'] {
+  background: transparent !important;
+  color: inherit !important;
 }
 </style>
