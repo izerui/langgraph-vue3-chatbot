@@ -7,7 +7,7 @@ import { PROMPT_INPUT_KEY, type AttachmentFile, type PromptInputContext } from '
 import { getProviderByModelName, type ModelInfo } from './lib/models'
 import PromptInputAttachmentsDisplay from './InputAttachmentsDisplay.vue'
 import ChatSuggestions from './ChatSuggestions.vue'
-import { CheckIcon, ChevronDownIcon, Loader2Icon, CornerDownLeftIcon, SquareIcon, XIcon, PlusIcon, ImageIcon } from 'lucide-vue-next'
+import { CheckIcon, ChevronDownIcon, Loader2Icon, CornerDownLeftIcon, SquareIcon, XIcon, PaperclipIcon } from 'lucide-vue-next'
 import { InputGroup, InputGroupAddon, InputGroupTextarea, InputGroupButton } from '@/components/ai-bot/ui/input-group'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuItem } from '@/components/ai-bot/ui/dropdown-menu'
 
@@ -336,20 +336,9 @@ function onFileChange(e: Event) {
         >
           <!-- 工具栏内容 (PromptInputTools) -->
           <div class="flex items-center gap-1">
-            <!-- 添加附件菜单 -->
-            <DropdownMenu>
-              <DropdownMenuTrigger as-child>
-                <InputGroupButton type="button" class="cursor-pointer">
-                  <PlusIcon class="size-4" />
-                </InputGroupButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start">
-                <DropdownMenuItem @select.prevent="openFileDialog">
-                  <ImageIcon class="mr-2 size-4" />
-                  添加照片或文件
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <InputGroupButton type="button" class="cursor-pointer" @click="openFileDialog">
+              <PaperclipIcon class="size-4" />
+            </InputGroupButton>
           </div>
 
           <!-- 右侧：模型选择器 + 发送按钮 -->
