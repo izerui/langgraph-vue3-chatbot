@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import './chatbot.css'
 import { ref, onMounted } from 'vue'
-import type { PromptInputMessage } from './lib/prompt-input'
+import type { AttachmentTriggerSlotProps, PromptInputMessage } from './lib/prompt-input'
 import type { ChatMessage, ChatStatus, ChatFile, CustomContent } from './lib/message-types'
 import { fetchModels, getDefaultModel, type ModelInfo } from './lib/models'
 import type { ToolEventPayload, ToolEventPhase, ToolEventState } from './lib/tool-events'
@@ -38,6 +38,12 @@ const props = withDefaults(defineProps<Props>(), {
   apiUrl: 'http://localhost:2024',
   apiKey: undefined
 })
+
+defineSlots<{
+  empty?: (props: { sendMessage: (message: string, files?: ChatFile[]) => void }) => any
+  custom?: (props: { customContent: CustomContent, threadId: string | null }) => any
+  'attachment-trigger'?: (props: AttachmentTriggerSlotProps) => any
+}>()
 
 // LangGraph Client
 const client = new Client({
@@ -146,25 +152,39 @@ async function handleSubmit(userMessage: string, files: ChatFile[] = []) {
 
   // 添加附件内容
   for (const file of files) {
-    if (file.url) {
-      // 将 data URL 转换为 base64（移除 data:image/png;base64, 前缀）
-      const base64Data = file.url.split(',')[1]
-      const mimeType = file.mediaType || 'application/octet-stream'
-      if (mimeType.startsWith('image/')) {
+    const mimeType = file.mediaType || 'application/octet-stream'
+    const filename = file.filename || file.id || 'unknown'
+    const rawData = file.data || file.url || ''
+    const isDataUrl = rawData.startsWith('data:')
+    const base64Data = isDataUrl ? rawData.split(',')[1] || '' : ''
+    const normalizedType = file.type || (isDataUrl ? (mimeType.startsWith('image/') ? 'image' : 'file') : 'file_url')
+
+    if ((normalizedType === 'file' || normalizedType === 'image') && base64Data) {
+      if (normalizedType === 'image') {
         contentBlocks.push({
           type: 'image',
-          mimeType: mimeType,
+          mimeType,
           data: base64Data,
-          metadata: { name: file.filename || file.id }
+          metadata: { name: filename }
         })
       } else {
         contentBlocks.push({
           type: 'file',
-          mimeType: mimeType,
+          mimeType,
           data: base64Data,
-          metadata: { filename: file.filename || file.id }
+          metadata: { filename }
         })
       }
+      continue
+    }
+
+    if (file.url) {
+      contentBlocks.push({
+        type: 'file_url',
+        url: file.url,
+        mimeType,
+        metadata: { filename }
+      })
     }
   }
 
@@ -668,7 +688,7 @@ function handleFormSubmit(message: PromptInputMessage) {
   }
 
   const text = message.text?.trim() || ''
-  handleSubmit(text || 'Sent with attachments', message.files || [])
+  handleSubmit(text || '仅发送了附件', message.files || [])
 }
 
 // 处理停止按钮点击
@@ -773,7 +793,11 @@ function handleCustomEvent(data: any) {
         @select-suggestion="handleSuggestionClick"
         @update:current-model="currentModel = $event"
         @update:use-web-search="useWebSearch = $event"
-      />
+      >
+        <template #attachment-trigger="slotProps">
+          <slot name="attachment-trigger" v-bind="slotProps" />
+        </template>
+      </ChatInput>
 
       <!-- 加载遮罩 -->
       <div v-if="isLoading" class="loading-mask">

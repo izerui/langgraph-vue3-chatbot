@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import { computed, ref, provide, onBeforeUnmount } from 'vue'
-import type { ChatStatus } from './lib/message-types'
-import type { FileUIPart } from 'ai'
+import type { ChatFileType, ChatStatus } from './lib/message-types'
 import { nanoid } from 'nanoid'
-import { PROMPT_INPUT_KEY, type AttachmentFile, type PromptInputContext } from './lib/prompt-input'
+import { PROMPT_INPUT_KEY, type AttachmentFile, type AttachmentTriggerSlotProps, type PromptInputAttachment, type PromptInputContext } from './lib/prompt-input'
 import { getProviderByModelName, type ModelInfo } from './lib/models'
 import PromptInputAttachmentsDisplay from './InputAttachmentsDisplay.vue'
 import ChatSuggestions from './ChatSuggestions.vue'
-import { CheckIcon, ChevronDownIcon, Loader2Icon, CornerDownLeftIcon, SquareIcon, XIcon, PaperclipIcon } from 'lucide-vue-next'
+import { CheckIcon, ChevronDownIcon, Loader2Icon, CornerDownLeftIcon, PaperclipIcon } from 'lucide-vue-next'
 import { InputGroup, InputGroupAddon, InputGroupTextarea, InputGroupButton } from '@/components/ai-bot/ui/input-group'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuItem } from '@/components/ai-bot/ui/dropdown-menu'
 
@@ -23,7 +22,7 @@ interface Props {
 const props = defineProps<Props>()
 
 const emit = defineEmits<{
-  submit: [message: { text: string, files: FileUIPart[] }]
+  submit: [message: { text: string, files: AttachmentFile[] }]
   stop: []
   selectSuggestion: [suggestion: string]
   'update:currentModel': [model: ModelInfo]
@@ -31,6 +30,10 @@ const emit = defineEmits<{
 }>()
 
 const modelSelectorOpen = defineModel<boolean>('modelSelectorOpen', { default: false })
+
+defineSlots<{
+  'attachment-trigger'?: (props: AttachmentTriggerSlotProps) => any
+}>()
 
 // ============== PromptInput Context ==============
 
@@ -54,18 +57,61 @@ const setTextInput = (val: string) => {
   inputText.value = val
 }
 
-const addFiles = (incoming: File[] | FileList) => {
-  const fileList = Array.from(incoming)
-  const newAttachments: AttachmentFile[] = fileList.map(file => ({
-    id: nanoid(),
-    type: 'file',
-    url: URL.createObjectURL(file),
-    mediaType: file.type,
-    filename: file.name,
-    file,
-  }))
+function resolveAttachmentType(attachment: PromptInputAttachment, file?: File, url?: string): ChatFileType {
+  if (attachment.type === 'file_url') {
+    return 'file_url'
+  }
+  if (attachment.type === 'image') {
+    return 'image'
+  }
+  if (attachment.type === 'file') {
+    return 'file'
+  }
+  if (url && !url.startsWith('blob:') && !url.startsWith('data:')) {
+    return 'file_url'
+  }
+  const mediaType = file?.type || ''
+  return mediaType.startsWith('image/') ? 'image' : 'file'
+}
+
+const addAttachments = (incoming: PromptInputAttachment[]) => {
+  const newAttachments: AttachmentFile[] = incoming.map((attachment) => {
+    if (attachment.type === 'file_url') {
+      return {
+        ...attachment,
+        id: attachment.id || nanoid(),
+        type: 'file_url',
+        url: attachment.url,
+        mediaType: attachment.mediaType || 'application/octet-stream',
+        filename: attachment.filename,
+      }
+    }
+
+    const file = attachment.file
+    const url = attachment.url || (file ? URL.createObjectURL(file) : undefined)
+    const type = resolveAttachmentType(attachment, file, url)
+
+    return {
+      ...attachment,
+      id: attachment.id || nanoid(),
+      type,
+      url,
+      mediaType: attachment.mediaType || file?.type || '',
+      filename: attachment.filename || file?.name,
+      file,
+    }
+  })
+
   files.value = [...files.value, ...newAttachments]
   hasFiles.value = files.value.length > 0
+}
+
+const addFiles = (incoming: File[] | FileList) => {
+  const fileList = Array.from(incoming)
+  addAttachments(fileList.map(file => ({
+    type: file.type.startsWith('image/') ? 'image' : 'file',
+    file,
+  })))
 }
 
 const removeFile = (id: string) => {
@@ -117,7 +163,12 @@ const sendMessage = async () => {
     files.value.map(async (item) => {
       if (item.url && item.url.startsWith('blob:')) {
         const dataUrl = await convertBlobUrlToDataUrl(item.url)
-        return { ...item, url: dataUrl ?? item.url }
+        return {
+          ...item,
+          type: item.type === 'file_url' ? 'file' : item.type,
+          data: dataUrl ?? item.data,
+          url: dataUrl ?? item.url,
+        }
       }
       return item
     }),
@@ -140,6 +191,7 @@ const context: PromptInputContext = {
   fileInputRef,
   isLoading,
   setTextInput,
+  addAttachments,
   addFiles,
   removeFile,
   clearFiles,
@@ -343,6 +395,10 @@ function onFileChange(e: Event) {
             >
               <PaperclipIcon class="size-4" />
             </InputGroupButton>
+            <slot
+              name="attachment-trigger"
+              :addAttachments="addAttachments"
+            />
           </div>
 
           <!-- 右侧：模型选择器 + 发送按钮 -->

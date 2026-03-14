@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import type { AttachmentTriggerSlotProps } from './lib/prompt-input'
+import type { ChatFile, CustomContent } from './lib/message-types'
 import ChatBot from './ChatBot.vue'
 import FloatButton from './FloatButton.vue'
 
@@ -25,6 +27,12 @@ const props = withDefaults(defineProps<Props>(), {
   apiUrl: 'http://localhost:2024',
   apiKey: undefined
 })
+
+defineSlots<{
+  empty?: (props: { sendMessage: (message: string, files?: ChatFile[]) => void }) => any
+  custom?: (props: { customContent: CustomContent, threadId: string | null }) => any
+  'attachment-trigger'?: (props: AttachmentTriggerSlotProps) => any
+}>()
 
 const isExpanded = ref(props.defaultExpanded)
 const isMaximized = ref(false)
@@ -91,6 +99,9 @@ function stopResize() {
           </template>
           <template #custom="slotProps">
             <slot name="custom" v-bind="slotProps" />
+          </template>
+          <template #attachment-trigger="slotProps">
+            <slot name="attachment-trigger" v-bind="slotProps" />
           </template>
         </ChatBot>
         <!-- 拖拽手柄 -->

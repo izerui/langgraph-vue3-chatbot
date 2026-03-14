@@ -20,12 +20,16 @@ export interface ToolCall {
   error?: string
 }
 
+export type ChatFileType = 'file' | 'image' | 'file_url'
+
 // 聊天消息附件
 export interface ChatFile {
   id?: string
+  type?: ChatFileType
   url?: string
   mediaType?: string
   filename?: string
+  data?: string
 }
 
 // 聊天消息
