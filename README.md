@@ -9,7 +9,7 @@
 
 ## 安装
 
-宿主项目需自行提供 Vue 3。
+宿主项目需自行提供 Vue 3，其余运行时依赖会随 `langgraph-vue3-chatbot` 自动安装，无需额外手动安装 `markstream-vue`、`mermaid`、`shiki` 等依赖。
 
 ```bash
 pnpm add langgraph-vue3-chatbot
