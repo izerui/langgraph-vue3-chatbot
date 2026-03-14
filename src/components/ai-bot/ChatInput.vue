@@ -409,6 +409,7 @@ function onFileChange(e: Event) {
               type="button"
               size="icon-sm"
               :variant="buttonVariant"
+              class="cursor-pointer disabled:cursor-not-allowed"
               :disabled="isDisabled"
               @click="handleSubmitClick"
             >
