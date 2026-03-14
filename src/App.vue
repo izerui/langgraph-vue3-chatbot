@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import AskAi from './components/ai-bot/AskAi.vue'
-import ChatBotExample from './components/ai-elements/examples/chatbot.vue'
-import ChatBot from "@/components/ai-bot/ChatBot.vue";
+import AskAiBot from './components/ai-bot/AskAiBot.vue'
+import ChatBot from '@/components/ai-bot/ChatBot.vue'
 import GeneratedFiles from './components/ai-bot/GeneratedFiles.vue'
 import { KNOWLEDGE_GRAPH_PROMPT } from './prompts'
 
@@ -71,7 +70,7 @@ const apiKey = import.meta.env.VITE_LANGGRAPH_API_KEY
       </div>
     </main>
 
-    <AskAi
+    <AskAiBot
       :api-url="apiUrl"
       :api-key="apiKey"
       assistant-id="research"
@@ -115,7 +114,7 @@ const apiKey = import.meta.env.VITE_LANGGRAPH_API_KEY
           <pre class="custom-content">{{ JSON.stringify(customContent?.content, null, 2) }}</pre>
         </div>
       </template>
-    </AskAi>
+    </AskAiBot>
   </div>
 </template>
 
