@@ -399,9 +399,15 @@ watch(
   --color-background: rgba(217, 119, 6, 0.92);
 }
 
+.todo-content.pending .title-text,
+.todo-content.in-progress .title-text-shimmer,
+.todo-content.completed .title-text {
+  font-size: 12px;
+  line-height: 1.35;
+}
+
 .todo-content.completed .title-text {
   color: var(--todo-completed-text);
-  font-weight: 600;
 }
 
 .todo-index {
