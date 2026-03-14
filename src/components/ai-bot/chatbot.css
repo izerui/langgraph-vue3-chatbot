@@ -30,7 +30,7 @@
   --color-ring: var(--ring);
 }
 
-:root {
+.ai-bot-root {
   --radius: 0.625rem;
   --background: #fafaf9;
   --foreground: oklch(0.145 0 0);
@@ -50,25 +50,118 @@
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
+  color: var(--foreground);
 }
 
 @layer base {
-  * {
+  .ai-bot-root,
+  .ai-bot-root * {
     @apply border-border outline-ring/50;
   }
-  body {
-    @apply bg-background text-foreground;
+
+  .ai-bot-root {
+    color: var(--foreground);
   }
 
-  /* markstream-vue 分隔线样式覆盖 */
-  .hr-node {
-    margin-top: 0.5rem !important;
-    margin-bottom: 0.5rem !important;
+  .ai-bot-root .ai-bot-markdown {
+    color: inherit;
   }
 
-  /* 覆盖 markstream-vue 默认的 hr 样式 */
-  [data-custom-id] .hr-node,
-  .hr-node {
+  .ai-bot-root .ai-bot-markdown :where(p, ul, ol, blockquote, table, pre, hr, h1, h2, h3, h4, h5, h6) {
+    margin-block: 0.75rem;
+  }
+
+  .ai-bot-root .ai-bot-markdown :where(ul, ol) {
+    padding-inline-start: 1.5rem;
+  }
+
+  .ai-bot-root .ai-bot-markdown ul {
+    list-style: disc;
+  }
+
+  .ai-bot-root .ai-bot-markdown ol {
+    list-style: decimal;
+  }
+
+  .ai-bot-root .ai-bot-markdown :where(ul ul, ol ol, ul ol, ol ul) {
+    margin-block: 0.25rem;
+  }
+
+  .ai-bot-root .ai-bot-markdown li {
+    margin-block: 0.25rem;
+  }
+
+  .ai-bot-root .ai-bot-markdown :where(h1, h2, h3, h4, h5, h6) {
+    font-weight: 600;
+    line-height: 1.35;
+  }
+
+  .ai-bot-root .ai-bot-markdown h1 {
+    font-size: 1.5rem;
+  }
+
+  .ai-bot-root .ai-bot-markdown h2 {
+    font-size: 1.25rem;
+  }
+
+  .ai-bot-root .ai-bot-markdown h3 {
+    font-size: 1.125rem;
+  }
+
+  .ai-bot-root .ai-bot-markdown :where(h4, h5, h6) {
+    font-size: 1rem;
+  }
+
+  .ai-bot-root .ai-bot-markdown pre {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: calc(var(--radius) - 2px);
+    background: color-mix(in oklab, var(--muted) 70%, white 30%);
+    padding: 0.75rem 1rem;
+  }
+
+  .ai-bot-root .ai-bot-markdown :not(pre) > code {
+    border: 1px solid var(--border);
+    border-radius: calc(var(--radius) - 4px);
+    background: var(--muted);
+    padding: 0.125rem 0.375rem;
+    font-size: 0.875em;
+  }
+
+  .ai-bot-root .ai-bot-markdown pre code {
+    background: transparent;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .ai-bot-root .ai-bot-markdown blockquote {
+    border-inline-start: 3px solid var(--border);
+    padding-inline-start: 1rem;
+    color: var(--muted-foreground);
+  }
+
+  .ai-bot-root .ai-bot-markdown table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+  }
+
+  .ai-bot-root .ai-bot-markdown :where(th, td) {
+    border: 1px solid var(--border);
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+    vertical-align: top;
+  }
+
+  .ai-bot-root .ai-bot-markdown th {
+    background: var(--muted);
+    font-weight: 600;
+  }
+
+  .ai-bot-root .ai-bot-markdown hr,
+  .ai-bot-root .ai-bot-markdown .hr-node,
+  .ai-bot-root .ai-bot-markdown [data-custom-id] .hr-node {
     margin-top: 0.5rem !important;
     margin-bottom: 0.5rem !important;
   }

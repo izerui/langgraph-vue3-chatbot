@@ -72,7 +72,7 @@ function stopResize() {
 </script>
 
 <template>
-  <div class="ask-ai-bot">
+  <div class="ai-bot-root ask-ai-bot">
     <!-- 聊天窗口 -->
     <Transition name="slide-up">
       <div
