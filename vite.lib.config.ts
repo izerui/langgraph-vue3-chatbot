@@ -41,7 +41,7 @@ export default defineConfig({
       output: {
         entryFileNames: 'index.js',
         chunkFileNames: 'chunks/[name]-[hash].js',
-        assetFileNames: (assetInfo) => assetInfo.name === 'style.css' ? 'style.css' : 'assets/[name]-[hash][extname]'
+        assetFileNames: (assetInfo) => assetInfo.name?.endsWith('.css') ? 'components/ai-bot/chatbot.css' : 'assets/[name]-[hash][extname]'
       }
     }
   }
