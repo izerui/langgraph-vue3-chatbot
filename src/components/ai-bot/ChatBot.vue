@@ -74,7 +74,7 @@ function handleToolEvent(params: {
   name?: string
   rawArgs?: string
   result?: string
-  state: 'start' | 'running' | 'completed' | 'error'
+  state: ToolEventState
 }) {
   // ChatBot 只捕获通用工具事件，按工具名把 todo 事件分发给 TodoList。
   if (!isTodoTool(params.name)) return
@@ -758,6 +758,7 @@ function handleCustomEvent(data: any) {
       <TodoList
         :initial-todos="initialTodos"
         :tool-events="todoToolEvents"
+        :chat-status="status"
       />
 
       <ChatInput

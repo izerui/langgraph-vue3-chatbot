@@ -1,4 +1,4 @@
-export type ToolEventState = 'start' | 'running' | 'completed' | 'error'
+export type ToolEventState = 'start' | 'running' | 'completed' | 'error' | 'interrupted'
 
 export type ToolEventPhase =
   | 'tool_call_started'

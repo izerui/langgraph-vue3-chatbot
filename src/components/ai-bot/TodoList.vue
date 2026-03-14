@@ -1,29 +1,32 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { ChevronsDown, ChevronsUp, Circle, CircleCheckBig, LoaderCircle } from 'lucide-vue-next'
+import { Ban, ChevronsDown, ChevronsUp, Circle, CircleCheckBig, LoaderCircle } from 'lucide-vue-next'
 import type { ToolEventPayload } from './lib/tool-events'
 import { Shimmer } from './ai-elements/shimmer'
 
 export interface TodoItem {
   id: string
   title: string
-  status: 'pending' | 'in_progress' | 'completed'
+  status: 'pending' | 'in_progress' | 'completed' | 'interrupted'
 }
 
 interface Props {
   initialTodos?: RawTodo[]
   toolEvents?: ToolEventPayload[]
+  chatStatus?: 'ready' | 'streaming'
 }
 
 const props = withDefaults(defineProps<Props>(), {
   initialTodos: () => [],
-  toolEvents: () => []
+  toolEvents: () => [],
+  chatStatus: 'ready'
 })
 
 const todos = ref<TodoItem[]>([])
 const processedEventCount = ref(0)
 const completedCount = computed(() => todos.value.filter(todo => todo.status === 'completed').length)
 const inProgressCount = computed(() => todos.value.filter(todo => todo.status === 'in_progress').length)
+const interruptedCount = computed(() => todos.value.filter(todo => todo.status === 'interrupted').length)
 const pendingCount = computed(() => todos.value.filter(todo => todo.status === 'pending').length)
 
 const expanded = ref(false)
@@ -56,11 +59,18 @@ function normalizeTodoStatus(rawStatus: unknown, fallback: TodoItem['status']): 
   if (status === 'completed') return 'completed'
   if (status === 'in_progress') return 'in_progress'
   if (status === 'pending') return 'pending'
+  if (status === 'interrupted') return 'interrupted'
   return fallback
+}
+
+function normalizeHistoricalTodoStatus(rawStatus: unknown): TodoItem['status'] {
+  const status = normalizeTodoStatus(rawStatus, 'pending')
+  return status === 'in_progress' ? 'interrupted' : status
 }
 
 function statusByPhase(event: ToolEventPayload): TodoItem['status'] {
   if (event.state === 'completed') return 'completed'
+  if (event.state === 'interrupted') return 'interrupted'
   if (event.phase === 'tool_call_started') return 'pending'
   return 'in_progress'
 }
@@ -82,6 +92,29 @@ function mapRawTodos(rawTodos: RawTodo[], fallbackState: TodoItem['status'] = 'p
     title: todo.title || todo.task || todo.content || todo.text || todo.name || '',
     status: normalizeTodoStatus(todo.status || todo.state, fallbackState)
   })).filter(todo => todo.title)
+}
+
+function mapHistoricalTodos(rawTodos: RawTodo[]): TodoItem[] {
+  return rawTodos.map((todo, index) => ({
+    id: todo.id || `todo-${index + 1}`,
+    title: todo.title || todo.task || todo.content || todo.text || todo.name || '',
+    status: normalizeHistoricalTodoStatus(todo.status || todo.state)
+  })).filter(todo => todo.title)
+}
+
+function finalizeInProgressTodos() {
+  const nextTodos = todos.value.map(todo => {
+    if (todo.status !== 'in_progress') {
+      return todo
+    }
+    return {
+      ...todo,
+      status: 'interrupted' as const
+    }
+  })
+
+  todos.value = nextTodos
+  syncExpandedWithTodos(nextTodos)
 }
 
 function parseRawTodoItems(raw?: string): RawTodo[] {
@@ -135,7 +168,7 @@ function applyToolEvent(event: ToolEventPayload) {
 watch(
   () => props.initialTodos,
   (rawTodos) => {
-    const nextTodos = mapRawTodos(rawTodos || [])
+    const nextTodos = mapHistoricalTodos(rawTodos || [])
     todos.value = nextTodos
     syncExpandedWithTodos(nextTodos)
   },
@@ -165,6 +198,15 @@ watch(
   },
   { deep: true, immediate: true }
 )
+
+watch(
+  () => props.chatStatus,
+  (next, prev) => {
+    if (prev === 'streaming' && next === 'ready') {
+      finalizeInProgressTodos()
+    }
+  }
+)
 </script>
 
 <template>
@@ -183,7 +225,7 @@ watch(
           <span class="title-label">执行计划</span>
           <span class="title-summary">{{ completedCount }}/{{ todos.length }}</span>
           <span class="title-meta">
-            {{ inProgressCount > 0 ? `进行中 ${inProgressCount}` : pendingCount > 0 ? `待处理 ${pendingCount}` : '已完成' }}
+            {{ inProgressCount > 0 ? `进行中 ${inProgressCount}` : interruptedCount > 0 ? `中断 ${interruptedCount}` : pendingCount > 0 ? `待处理 ${pendingCount}` : '已完成' }}
           </span>
         </div>
       </div>
@@ -202,6 +244,7 @@ watch(
               :class="{
                 completed: todo.status === 'completed',
                 pending: todo.status === 'pending',
+                interrupted: todo.status === 'interrupted',
                 'in-progress': todo.status === 'in_progress'
               }"
             >
@@ -217,6 +260,11 @@ watch(
                   v-if="todo.status === 'in_progress'"
                   :size="13"
                   class="status-icon in-progress-icon"
+                />
+                <Ban
+                  v-if="todo.status === 'interrupted'"
+                  :size="13"
+                  class="status-icon interrupted-icon"
                 />
                 <CircleCheckBig
                   v-if="todo.status === 'completed'"
@@ -267,6 +315,8 @@ watch(
   --todo-index: rgba(148, 163, 184, 0.9);
   --todo-pending: rgba(107, 114, 128, 0.8);
   --todo-progress: #d97706;
+  --todo-interrupted: #6b7280;
+  --todo-interrupted-text: rgba(75, 85, 99, 0.92);
   --todo-completed: #0f9f6e;
   --todo-completed-text: rgba(17, 94, 69, 0.92);
   border-radius: 6px;
@@ -420,9 +470,14 @@ watch(
 
 .todo-content.pending .title-text,
 .todo-content.in-progress .title-text-shimmer,
+.todo-content.interrupted .title-text,
 .todo-content.completed .title-text {
   font-size: 12px;
   line-height: 1.35;
+}
+
+.todo-content.interrupted .title-text {
+  color: var(--todo-interrupted-text);
 }
 
 .todo-content.completed .title-text {
@@ -446,6 +501,10 @@ watch(
   color: var(--todo-progress);
 }
 
+.interrupted .indicator {
+  color: var(--todo-interrupted);
+}
+
 .completed-icon {
   color: var(--todo-completed);
 }
@@ -457,6 +516,10 @@ watch(
 .in-progress-icon {
   color: var(--todo-progress);
   animation: todo-spin 1.4s linear infinite;
+}
+
+.interrupted-icon {
+  color: var(--todo-interrupted);
 }
 
 @keyframes todo-spin {
