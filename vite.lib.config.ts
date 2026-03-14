@@ -1,11 +1,10 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import tailwindcss from '@tailwindcss/vite'
-import { libInjectCss } from 'vite-plugin-lib-inject-css'
 import { resolve } from 'path'
 
 export default defineConfig({
-  plugins: [vue(), tailwindcss(), libInjectCss()],
+  plugins: [vue(), tailwindcss()],
   resolve: {
     alias: {
       '@': resolve(__dirname, './src')

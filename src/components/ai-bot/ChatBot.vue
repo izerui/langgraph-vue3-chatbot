@@ -740,7 +740,7 @@ function handleCustomEvent(data: any) {
 </script>
 
 <template>
-  <div class="ai-bot-root chat-bot">
+  <div class="chat-bot">
     <div class="chat-window" :class="{ maximized: isMaximized }">
       <ChatHeader
         :title="assistantName"

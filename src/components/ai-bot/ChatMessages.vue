@@ -95,7 +95,6 @@ function getMessageClass(index: number) {
               <!-- assistant 和 system 消息使用 MarkdownRender -->
               <MarkdownRender
                 v-if="message.type === 'ai' || message.type === 'system'"
-                class="ai-bot-markdown"
                 :content="message.content || ''"
                 :typewriter="true"
                 :initial-render-batch-size="12"
