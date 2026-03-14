@@ -1,4 +1,4 @@
-# izerui
+# langgraph-vue3-chatbot
 
 基于 Vue 3 的 AI 聊天组件库，当前提供两个组件：
 
@@ -12,7 +12,7 @@
 宿主项目需自行提供 Vue 3。
 
 ```bash
-pnpm add izerui
+pnpm add langgraph-vue3-chatbot
 ```
 
 ## 使用
@@ -21,7 +21,7 @@ pnpm add izerui
 
 ```vue
 <script setup lang="ts">
-import { AskAiBot } from 'izerui'
+import { AskAiBot } from 'langgraph-vue3-chatbot'
 </script>
 
 <template>
@@ -39,7 +39,7 @@ import { AskAiBot } from 'izerui'
 
 ```vue
 <script setup lang="ts">
-import { ChatBot } from 'izerui'
+import { ChatBot } from 'langgraph-vue3-chatbot'
 </script>
 
 <template>
@@ -112,7 +112,7 @@ import type {
   ChatFile,
   AttachmentTriggerSlotProps,
   PromptInputAttachment,
-} from 'izerui'
+} from 'langgraph-vue3-chatbot'
 ```
 
 ## 本地开发
