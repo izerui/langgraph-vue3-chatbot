@@ -27,9 +27,24 @@ const inProgressCount = computed(() => todos.value.filter(todo => todo.status ==
 const pendingCount = computed(() => todos.value.filter(todo => todo.status === 'pending').length)
 
 const expanded = ref(false)
+const userCollapsed = ref(false)
 
 function toggleExpanded() {
   expanded.value = !expanded.value
+  userCollapsed.value = !expanded.value
+}
+
+function syncExpandedWithTodos(nextTodos: TodoItem[]) {
+  if (nextTodos.length === 0) {
+    expanded.value = false
+    userCollapsed.value = false
+    return
+  }
+
+  // 首次出现待办或仍处于自动模式时，随着流式更新保持展开。
+  if (!userCollapsed.value) {
+    expanded.value = true
+  }
 }
 
 function isWriteTodosTool(toolName?: string): boolean {
@@ -104,6 +119,7 @@ function replaceWriteTodos(raw?: string, fallbackState: TodoItem['status'] = 'pe
   if (nextTodos.length === 0) return false
 
   todos.value = nextTodos
+  syncExpandedWithTodos(nextTodos)
   return true
 }
 
@@ -119,7 +135,9 @@ function applyToolEvent(event: ToolEventPayload) {
 watch(
   () => props.initialTodos,
   (rawTodos) => {
-    todos.value = mapRawTodos(rawTodos || [])
+    const nextTodos = mapRawTodos(rawTodos || [])
+    todos.value = nextTodos
+    syncExpandedWithTodos(nextTodos)
   },
   { deep: true, immediate: true }
 )
@@ -135,6 +153,7 @@ watch(
     if (events.length < processedEventCount.value) {
       todos.value = []
       processedEventCount.value = 0
+      syncExpandedWithTodos([])
     }
 
     const nextEvents = events.slice(processedEventCount.value)

@@ -17,9 +17,6 @@ importers:
       ai:
         specifier: ^6.0.116
         version: 6.0.116(zod@4.3.6)
-      ai-elements-vue:
-        specifier: ^1.4.0
-        version: 1.4.0
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -819,11 +816,6 @@ packages:
   acorn@8.16.0:
     resolution: {integrity: sha512-UVJyE9MttOsBQIDKw1skb9nAwQuR5wuGD3+82K6JgJlm/Y+KI92oNsMNGZCYdDsVtRHSak0pcV5Dno5+4jh9sw==}
     engines: {node: '>=0.4.0'}
-    hasBin: true
-
-  ai-elements-vue@1.4.0:
-    resolution: {integrity: sha512-ENsg9sFF3OjGQYosu8EbqIT79i5Y4yJLjaKDB2n/aw/1/I0cbUSDfvOCtwVZvm/ao3Ay/ihCJjmIrd5oF/z2iQ==}
-    engines: {node: '>=20.19.0'}
     hasBin: true
 
   ai@6.0.116:
@@ -2428,8 +2420,6 @@ snapshots:
       vue: 3.5.29(typescript@5.9.3)
 
   acorn@8.16.0: {}
-
-  ai-elements-vue@1.4.0: {}
 
   ai@6.0.116(zod@4.3.6):
     dependencies:
