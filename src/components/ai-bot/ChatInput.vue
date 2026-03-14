@@ -365,6 +365,8 @@ function onFileChange(e: Event) {
           <div class="input-attachments">
             <PromptInputAttachmentsDisplay />
           </div>
+
+          <div v-if="files.length > 0" class="attachments-divider" />
         </div>
 
         <!-- 文本输入区域 (PromptInputBody) -->
@@ -495,6 +497,12 @@ function onFileChange(e: Event) {
 .input-attachments {
   width: 100%;
   padding: 0 12px 0;
+}
+
+.attachments-divider {
+  width: calc(100% - 24px);
+  margin: 4px 12px 0;
+  border-top: 1px solid rgba(226, 232, 240, 0.9);
 }
 
 .input-group-shell {
