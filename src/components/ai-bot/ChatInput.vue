@@ -498,7 +498,25 @@ function onFileChange(e: Event) {
 
 .input-attachments {
   width: 100%;
+  max-height: 120px;
   padding: 0 12px 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(186, 196, 211, 0.5) transparent;
+}
+
+.input-attachments::-webkit-scrollbar {
+  width: 6px;
+}
+
+.input-attachments::-webkit-scrollbar-thumb {
+  background: rgba(186, 196, 211, 0.42);
+  border-radius: 999px;
+}
+
+.input-attachments::-webkit-scrollbar-thumb:hover {
+  background: rgba(160, 174, 192, 0.58);
 }
 
 .attachments-divider {
