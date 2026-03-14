@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { ChevronsDown, ChevronsUp, Circle, CircleCheckBig, LoaderCircle } from 'lucide-vue-next'
 import type { ToolEventPayload } from './lib/tool-events'
+import { Shimmer } from './ai-elements/shimmer'
 
 export interface TodoItem {
   id: string
@@ -205,7 +206,15 @@ watch(
                 />
               </span>
 
-              <div class="title-text">
+              <Shimmer
+                v-if="todo.status === 'in_progress'"
+                as="div"
+                class="title-text-base title-text-shimmer"
+              >
+                {{ todo.title }}
+              </Shimmer>
+
+              <div v-else class="title-text-base title-text">
                 {{ todo.title }}
               </div>
             </div>
@@ -225,14 +234,30 @@ watch(
 }
 
 .todo-card {
+  --todo-surface: rgba(255, 252, 247, 0.96);
+  --todo-surface-strong: rgba(255, 255, 255, 0.98);
+  --todo-border: rgba(215, 221, 232, 0.92);
+  --todo-divider: rgba(230, 234, 241, 0.9);
+  --todo-title: rgba(37, 52, 72, 0.92);
+  --todo-muted: rgba(104, 118, 138, 0.86);
+  --todo-summary-bg: rgba(243, 247, 252, 0.96);
+  --todo-summary-border: rgba(220, 228, 239, 0.96);
+  --todo-summary-text: rgba(66, 84, 108, 0.92);
+  --todo-hover: rgba(245, 248, 252, 0.88);
+  --todo-text: rgba(31, 41, 55, 0.9);
+  --todo-index: rgba(148, 163, 184, 0.9);
+  --todo-pending: rgba(107, 114, 128, 0.8);
+  --todo-progress: #d97706;
+  --todo-completed: #0f9f6e;
+  --todo-completed-text: rgba(17, 94, 69, 0.92);
   border-radius: 6px;
-  border: 1px solid rgba(148, 163, 184, 0.18);
+  border: 1px solid var(--todo-border);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(249, 250, 251, 0.98)),
-    rgba(255, 255, 255, 0.98);
+    linear-gradient(180deg, var(--todo-surface-strong), var(--todo-surface)),
+    var(--todo-surface-strong);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.75),
-    0 3px 10px rgba(15, 23, 42, 0.04);
+    inset 0 1px 0 rgba(255, 255, 255, 0.82),
+    0 4px 12px rgba(148, 163, 184, 0.08);
   overflow: hidden;
 }
 
@@ -243,6 +268,12 @@ watch(
   padding: 8px 12px;
   cursor: pointer;
   user-select: none;
+  border-bottom: 1px solid transparent;
+  transition: background-color 0.18s ease, border-color 0.18s ease;
+}
+
+.todo-divider:hover {
+  background: var(--todo-hover);
 }
 
 .title {
@@ -253,15 +284,16 @@ watch(
 }
 
 .title-chevron {
-  color: rgba(100, 116, 139, 0.78);
+  color: var(--todo-muted);
 }
 
 .title-label {
   font-size: 12px;
   line-height: 1;
   font-weight: 700;
-  color: rgba(15, 23, 42, 0.86);
+  color: var(--todo-title);
   margin-right: 4px;
+  letter-spacing: 0.01em;
 }
 
 .title-summary {
@@ -275,15 +307,15 @@ watch(
   font-size: 10px;
   line-height: 1;
   font-weight: 700;
-  background: rgba(241, 245, 249, 0.96);
-  border: 1px solid rgba(226, 232, 240, 0.95);
-  color: rgba(51, 65, 85, 0.86);
+  background: var(--todo-summary-bg);
+  border: 1px solid var(--todo-summary-border);
+  color: var(--todo-summary-text);
 }
 
 .title-meta {
   font-size: 11px;
   line-height: 1;
-  color: rgba(100, 116, 139, 0.78);
+  color: var(--todo-muted);
 }
 
 .todo-list {
@@ -292,7 +324,8 @@ watch(
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: thin;
-  scrollbar-color: rgba(148, 163, 184, 0.34) transparent;
+  scrollbar-color: rgba(186, 196, 211, 0.5) transparent;
+  border-top: 1px solid var(--todo-divider);
 }
 
 .todo-list::-webkit-scrollbar {
@@ -300,12 +333,12 @@ watch(
 }
 
 .todo-list::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.28);
+  background: rgba(186, 196, 211, 0.42);
   border-radius: 999px;
 }
 
 .todo-list::-webkit-scrollbar-thumb:hover {
-  background: rgba(148, 163, 184, 0.4);
+  background: rgba(160, 174, 192, 0.58);
 }
 
 .todo-item {
@@ -352,47 +385,52 @@ watch(
 }
 
 .todo-index,
-.title-text {
+.title-text-base {
   font-size: 13px;
   line-height: 1.35;
-  color: rgba(15, 23, 42, 0.88);
 }
 
 .title-text {
+  color: var(--todo-text);
+}
+
+.title-text-shimmer {
+  --color-muted-foreground: rgba(120, 53, 15, 0.42);
+  --color-background: rgba(217, 119, 6, 0.92);
 }
 
 .todo-content.completed .title-text {
-  color: rgba(22, 101, 52, 0.92);
+  color: var(--todo-completed-text);
   font-weight: 600;
 }
 
 .todo-index {
-  color: rgba(148, 163, 184, 0.7);
+  color: var(--todo-index);
   font-size: 11px;
 }
 
 .completed .indicator {
-  color: #059669;
+  color: var(--todo-completed);
 }
 
 .pending .indicator {
-  color: rgba(0, 0, 0, 0.5);
+  color: var(--todo-pending);
 }
 
 .in-progress .indicator {
-  color: #f59e0b;
+  color: var(--todo-progress);
 }
 
 .completed-icon {
-  color: #059669;
+  color: var(--todo-completed);
 }
 
 .pending-icon {
-  color: rgba(0, 0, 0, 0.5);
+  color: var(--todo-pending);
 }
 
 .in-progress-icon {
-  color: #f59e0b;
+  color: var(--todo-progress);
   animation: todo-spin 1.4s linear infinite;
 }
 
