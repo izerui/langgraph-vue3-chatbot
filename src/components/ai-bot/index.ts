@@ -1,6 +1,5 @@
-// ai-bot 模块入口：聚合组件、样式和对外类型。
+// ai-bot 模块入口：聚合组件和对外类型。
 
-import './chatbot.css'
 import AskAiBot from './AskAiBot.vue'
 import ChatBot from './ChatBot.vue'
 
