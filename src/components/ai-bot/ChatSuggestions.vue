@@ -34,8 +34,8 @@ const currentPageSuggestions = computed(() => {
   return props.suggestions.slice(range.start, range.end)
 })
 
-function setMeasureRef(el: Element | null, index: number) {
-  measureRefs.value[index] = el as HTMLElement | null
+function setMeasureRef(el: HTMLElement | null, index: number) {
+  measureRefs.value[index] = el
 }
 
 function stopRotation() {
@@ -162,7 +162,7 @@ onBeforeUnmount(() => {
       <Suggestion
         v-for="(suggestion, index) in suggestions"
         :key="`measure-${suggestion}-${index}`"
-        :ref="el => setMeasureRef(el, index)"
+        :ref="el => setMeasureRef((el as any)?.$el || el, index)"
         :suggestion="suggestion"
         class="suggestion-chip"
         tabindex="-1"
