@@ -211,7 +211,55 @@ npm publish
 5. 当前 npm 账号是否正确登录
 6. 网络或 npm registry 是否正常
 
-## 十、当前项目的发布命令速查
+## 十、GitHub Actions 自动发布
+
+当前仓库可配置 GitHub Actions，在推送版本 tag 时自动发布 npm。
+
+### 1. workflow 文件
+
+仓库中可使用：
+
+```text
+.github/workflows/publish.yml
+```
+
+### 2. 触发方式
+
+当推送形如以下格式的 tag 时触发发布：
+
+```bash
+git tag v0.1.2
+git push origin v0.1.2
+```
+
+### 3. 需要配置的 GitHub Secret
+
+在 GitHub 仓库的 `Settings -> Secrets and variables -> Actions` 中新增：
+
+```text
+NPM_TOKEN
+```
+
+该 token 需要具备 npm publish 权限。
+
+### 4. workflow 行为
+
+自动发布流程会执行：
+
+1. 安装依赖
+2. 执行 `pnpm check:lib`
+3. 执行 `npm publish`
+
+### 5. 使用建议
+
+建议先在本地完成以下检查后，再打 tag 触发自动发布：
+
+```bash
+pnpm check:lib
+npm pack
+```
+
+## 十一、当前项目的发布命令速查
 
 ```bash
 pnpm check:lib
