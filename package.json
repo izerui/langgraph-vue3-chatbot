@@ -1,7 +1,7 @@
 {
   "name": "langgraph-vue3-chatbot",
   "version": "0.1.0",
-  "private": true,
+  "private": false,
   "type": "module",
   "main": "./dist-lib/index.js",
   "module": "./dist-lib/index.js",
