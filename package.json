@@ -23,7 +23,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "build:lib": "vite build --config vite.lib.config.ts && vue-tsc -p tsconfig.lib.json && node ./scripts/generate-lib-types.mjs",
+    "build:lib": "vite build --config vite.lib.config.ts && vue-tsc -p tsconfig.lib.json",
     "check:lib": "node ./scripts/check-lib.mjs"
   },
   "dependencies": {

@@ -13,6 +13,7 @@
     }
   },
   "include": [
+    "src/index.ts",
     "src/components/ai-bot/**/*.ts",
     "src/components/ai-bot/**/*.vue"
   ],

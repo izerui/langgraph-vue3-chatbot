@@ -16,7 +16,7 @@ export default defineConfig({
     sourcemap: true,
     cssCodeSplit: true,
     lib: {
-      entry: resolve(__dirname, 'src/components/ai-bot/index.ts'),
+      entry: resolve(__dirname, 'src/index.ts'),
       formats: ['es'],
       fileName: () => 'index.js'
     },
