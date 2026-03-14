@@ -390,7 +390,7 @@ function onFileChange(e: Event) {
           <div class="flex items-center gap-1">
             <InputGroupButton
               type="button"
-              class="cursor-pointer text-muted-foreground transition-colors hover:text-foreground hover:bg-accent/80"
+              class="cursor-pointer text-muted-foreground"
               @click="openFileDialog"
             >
               <PaperclipIcon class="size-4" />
