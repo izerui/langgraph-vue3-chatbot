@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import './chatbot.css'
 import { ref, onMounted } from 'vue'
-import type { AttachmentTriggerSlotProps, PromptInputMessage } from './lib/prompt-input'
+import type { AttachmentTriggerSlotProps, PromptInputMessage } from './lib/input-types'
 import type { ChatMessage, ChatStatus, ChatFile, CustomContent } from './lib/message-types'
 import { fetchModels, getDefaultModel, type ModelInfo } from './lib/models'
 import type { ToolEventPayload, ToolEventPhase, ToolEventState } from './lib/tool-events'

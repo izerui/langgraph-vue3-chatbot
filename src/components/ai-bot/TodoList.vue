@@ -117,26 +117,35 @@ function finalizeInProgressTodos() {
   syncExpandedWithTodos(nextTodos)
 }
 
+type RawTodoContainer = {
+  todo?: RawTodo
+  todos?: RawTodo[]
+  item?: RawTodo
+  items?: RawTodo[]
+}
+
+function isRawTodoContainer(payload: RawTodo | RawTodoContainer): payload is RawTodoContainer {
+  return 'todo' in payload || 'todos' in payload || 'item' in payload || 'items' in payload
+}
+
 function parseRawTodoItems(raw?: string): RawTodo[] {
   if (!raw) return []
 
   try {
-    const payload = JSON.parse(raw) as
-      | RawTodo
-      | RawTodo[]
-      | { todo?: RawTodo; todos?: RawTodo[]; item?: RawTodo; items?: RawTodo[] }
+    const payload = JSON.parse(raw) as RawTodo | RawTodo[] | RawTodoContainer
 
-    return Array.isArray(payload)
-      ? payload
-      : Array.isArray(payload.todos)
-        ? payload.todos
-        : Array.isArray(payload.items)
-          ? payload.items
-          : payload.todo
-            ? [payload.todo]
-            : payload.item
-              ? [payload.item]
-              : []
+    if (Array.isArray(payload)) {
+      return payload
+    }
+
+    if (isRawTodoContainer(payload)) {
+      if (Array.isArray(payload.todos)) return payload.todos
+      if (Array.isArray(payload.items)) return payload.items
+      if (payload.todo) return [payload.todo]
+      if (payload.item) return [payload.item]
+    }
+
+    return []
   } catch {
     return []
   }

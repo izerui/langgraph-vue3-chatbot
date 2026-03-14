@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { PlusIcon } from 'lucide-vue-next'
-import ChatBot from '@/components/ai-bot/ChatBot.vue'
-import AskAiBot from './components/ai-bot/AskAiBot.vue'
+import { AskAiBot, ChatBot } from '@/components/ai-bot'
 import GeneratedFiles from './components/ai-bot/GeneratedFiles.vue'
-import type { PromptInputAttachment } from './components/ai-bot/lib/prompt-input'
+import type { PromptInputAttachment } from '@/components/ai-bot'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ai-bot/ui/dialog'
 import { KNOWLEDGE_GRAPH_PROMPT } from './prompts'
 
@@ -282,26 +281,6 @@ main {
   margin: 0 0 24px 0;
 }
 
-.welcome-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.action-btn {
-  padding: 8px 16px;
-  font-size: 13px;
-  color: #7c3aed;
-  background: #f3e8ff;
-  border: 1px solid #ddd;
-  border-radius: 9999px;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.action-btn:hover {
-  background: #e9d5ff;
-}
 
 /* custom 消息样式 */
 .custom-message {

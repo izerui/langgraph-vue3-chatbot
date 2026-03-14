@@ -13,4 +13,5 @@ yarn-error.log*
 .claude
 .idea
 dist
+dist-lib
 node_modules

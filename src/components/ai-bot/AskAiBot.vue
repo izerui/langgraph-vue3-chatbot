@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import type { AttachmentTriggerSlotProps } from './lib/prompt-input'
+import type { AttachmentTriggerSlotProps } from './lib/input-types'
 import type { ChatFile, CustomContent } from './lib/message-types'
 import ChatBot from './ChatBot.vue'
 import FloatButton from './FloatButton.vue'

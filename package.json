@@ -1,12 +1,30 @@
 {
-  "name": "langgraph-vue3-chatbot",
-  "version": "1.0.0",
+  "name": "izerui",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
+  "main": "./dist-lib/index.js",
+  "module": "./dist-lib/index.js",
+  "types": "./dist-lib/index.d.ts",
+  "files": [
+    "dist-lib"
+  ],
+  "sideEffects": [
+    "*.css",
+    "dist-lib/*.css"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist-lib/index.d.ts",
+      "import": "./dist-lib/index.js"
+    }
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "build:lib": "vite build --config vite.lib.config.ts && vue-tsc -p tsconfig.lib.json && node ./scripts/generate-lib-types.mjs",
+    "check:lib": "node ./scripts/check-lib.mjs"
   },
   "dependencies": {
     "@langchain/langgraph-sdk": "^1.6.5",
@@ -22,8 +40,10 @@
     "reka-ui": "^2.9.1",
     "shiki": "^3.23.0",
     "tailwind-merge": "^3.5.0",
-    "vue": "^3.4.21",
     "vue-stick-to-bottom": "^1.0.0"
+  },
+  "peerDependencies": {
+    "vue": "^3.4.0"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.2.1",

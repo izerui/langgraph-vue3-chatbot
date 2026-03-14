@@ -6,9 +6,15 @@ import {
   AttachmentRemove,
   Attachments,
 } from '@/components/ai-bot/ai-elements/attachments'
+import type { AttachmentData } from '@/components/ai-bot/ai-elements/attachments/types'
+import type { AttachmentFile } from '@/components/ai-bot/lib/input-types'
 import { usePromptInput } from '@/components/ai-bot/lib/prompt-input'
 
 const { files, removeFile } = usePromptInput()
+
+function asAttachmentData(file: AttachmentFile): AttachmentData {
+  return file as unknown as AttachmentData
+}
 </script>
 
 <template>
@@ -20,7 +26,7 @@ const { files, removeFile } = usePromptInput()
     <Attachment
       v-for="attachment in files"
       :key="attachment.id"
-      :data="attachment"
+      :data="asAttachmentData(attachment)"
       :title="attachment.filename"
       @remove="removeFile(attachment.id)"
     >

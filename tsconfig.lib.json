@@ -1,0 +1,24 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "declarationMap": true,
+    "outDir": "./dist-lib",
+    "rootDir": "./src",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": [
+    "src/components/ai-bot/**/*.ts",
+    "src/components/ai-bot/**/*.vue"
+  ],
+  "exclude": [
+    "src/App.vue",
+    "src/main.ts",
+    "node_modules"
+  ]
+}
