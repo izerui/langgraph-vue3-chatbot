@@ -5,7 +5,6 @@ import type { AttachmentTriggerSlotProps, PromptInputMessage } from './lib/promp
 import type { ChatMessage, ChatStatus, ChatFile, CustomContent } from './lib/message-types'
 import { fetchModels, getDefaultModel, type ModelInfo } from './lib/models'
 import type { ToolEventPayload, ToolEventPhase, ToolEventState } from './lib/tool-events'
-import { KNOWLEDGE_GRAPH_PROMPT } from '@/prompts'
 import { Client } from '@langchain/langgraph-sdk'
 import { createThread, loadThreadHistory } from './lib/thread'
 
@@ -31,7 +30,7 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   assistantId: 'research',
   assistantName: 'Chat',
-  systemPrompt: KNOWLEDGE_GRAPH_PROMPT,
+  systemPrompt: '你是一个有用的助手，帮用户解决各种问题。',
   userId: 'user001',
   showHeaderActions: true,
   suggestions: () => [],
