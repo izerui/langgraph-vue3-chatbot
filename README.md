@@ -58,31 +58,31 @@ import { ChatBot } from 'langgraph-vue3-chatbot'
 
 ### AskAiBot
 
-| prop | 默认值 |
-| --- | --- |
-| `assistantId` | `'research'` |
-| `assistantName` | `'Chat'` |
-| `defaultExpanded` | `false` |
-| `systemPrompt` | `'用中文回答'` |
-| `threadId` | `undefined` |
-| `userId` | `'user001'` |
-| `suggestions` | `[]` |
-| `apiUrl` | `'http://localhost:2024'` |
-| `apiKey` | `undefined` |
+| prop | 用途 | 默认值 |
+| --- | --- | --- |
+| `assistantId` | 指定 LangGraph 侧的 assistant 标识 | `'research'` |
+| `assistantName` | 设置组件头部展示的助手名称 | `'Chat'` |
+| `defaultExpanded` | 控制悬浮聊天窗首次渲染时是否默认展开 | `false` |
+| `systemPrompt` | 设置发送给模型的系统提示词 | `'用中文回答'` |
+| `threadId` | 指定已有会话线程 id；不传时由组件内部创建线程 | `undefined` |
+| `userId` | 标识当前用户，用于请求上下文区分 | `'user001'` |
+| `suggestions` | 配置输入区上方的建议问题列表 | `[]` |
+| `apiUrl` | 指定 LangGraph 服务地址 | `'http://localhost:2024'` |
+| `apiKey` | 指定 LangGraph 服务访问凭证 | `undefined` |
 
 ### ChatBot
 
-| prop | 默认值 |
-| --- | --- |
-| `assistantId` | `'research'` |
-| `assistantName` | `'Chat'` |
-| `systemPrompt` | `'你是一个有用的助手，帮用户解决各种问题。'` |
-| `threadId` | `undefined` |
-| `userId` | `'user001'` |
-| `showHeaderActions` | `true` |
-| `suggestions` | `[]` |
-| `apiUrl` | `'http://localhost:2024'` |
-| `apiKey` | `undefined` |
+| prop | 用途 | 默认值 |
+| --- | --- | --- |
+| `assistantId` | 指定 LangGraph 侧的 assistant 标识 | `'research'` |
+| `assistantName` | 设置聊天面板头部展示的助手名称 | `'Chat'` |
+| `systemPrompt` | 设置发送给模型的系统提示词 | `'你是一个有用的助手，帮用户解决各种问题。'` |
+| `threadId` | 指定已有会话线程 id；不传时由组件内部创建线程 | `undefined` |
+| `userId` | 标识当前用户，用于请求上下文区分 | `'user001'` |
+| `showHeaderActions` | 控制是否显示头部操作区，例如模型选择、工具开关等 | `true` |
+| `suggestions` | 配置输入区上方的建议问题列表 | `[]` |
+| `apiUrl` | 指定 LangGraph 服务地址 | `'http://localhost:2024'` |
+| `apiKey` | 指定 LangGraph 服务访问凭证 | `undefined` |
 
 ## Slots
 
