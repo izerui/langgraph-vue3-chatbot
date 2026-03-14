@@ -42,7 +42,7 @@ function handleClick(e: Event) {
           ],
         variant === 'inline'
           && [
-            'size-5 rounded p-0',
+            'size-5 rounded-sm p-0 cursor-pointer min-w-0',
             'opacity-0 transition-opacity group-hover:opacity-100',
             '[&>svg]:size-2.5',
           ],
