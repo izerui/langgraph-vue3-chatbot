@@ -336,7 +336,11 @@ function onFileChange(e: Event) {
         >
           <!-- 工具栏内容 (PromptInputTools) -->
           <div class="flex items-center gap-1">
-            <InputGroupButton type="button" class="cursor-pointer" @click="openFileDialog">
+            <InputGroupButton
+              type="button"
+              class="cursor-pointer text-muted-foreground transition-colors hover:text-foreground hover:bg-accent/80"
+              @click="openFileDialog"
+            >
               <PaperclipIcon class="size-4" />
             </InputGroupButton>
           </div>
