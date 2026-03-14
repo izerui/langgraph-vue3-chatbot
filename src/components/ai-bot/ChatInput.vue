@@ -75,31 +75,51 @@ function resolveAttachmentType(attachment: PromptInputAttachment, file?: File, u
 }
 
 const addAttachments = (incoming: PromptInputAttachment[]) => {
-  const newAttachments: AttachmentFile[] = incoming.map((attachment) => {
-    if (attachment.type === 'file_url') {
-      return {
-        ...attachment,
-        id: attachment.id || nanoid(),
-        type: 'file_url',
-        url: attachment.url,
-        mediaType: attachment.mediaType || 'application/octet-stream',
-        filename: attachment.filename,
+  const existingFilenames = new Set(
+    files.value
+      .map(file => file.filename?.trim())
+      .filter((name): name is string => !!name),
+  )
+
+  const newAttachments: AttachmentFile[] = incoming.flatMap((attachment) => {
+    const normalized = attachment.type === 'file_url'
+      ? {
+          ...attachment,
+          id: attachment.id || nanoid(),
+          type: 'file_url' as const,
+          url: attachment.url,
+          mediaType: attachment.mediaType || 'application/octet-stream',
+          filename: attachment.filename,
+        }
+      : (() => {
+          const file = attachment.file
+          const url = attachment.url || (file ? URL.createObjectURL(file) : undefined)
+          const type = resolveAttachmentType(attachment, file, url)
+
+          return {
+            ...attachment,
+            id: attachment.id || nanoid(),
+            type,
+            url,
+            mediaType: attachment.mediaType || file?.type || '',
+            filename: attachment.filename || file?.name,
+            file,
+          }
+        })()
+
+    const normalizedName = normalized.filename?.trim()
+    if (normalizedName && existingFilenames.has(normalizedName)) {
+      if (normalized.url?.startsWith('blob:')) {
+        URL.revokeObjectURL(normalized.url)
       }
+      return []
     }
 
-    const file = attachment.file
-    const url = attachment.url || (file ? URL.createObjectURL(file) : undefined)
-    const type = resolveAttachmentType(attachment, file, url)
-
-    return {
-      ...attachment,
-      id: attachment.id || nanoid(),
-      type,
-      url,
-      mediaType: attachment.mediaType || file?.type || '',
-      filename: attachment.filename || file?.name,
-      file,
+    if (normalizedName) {
+      existingFilenames.add(normalizedName)
     }
+
+    return [normalized]
   })
 
   files.value = [...files.value, ...newAttachments]
