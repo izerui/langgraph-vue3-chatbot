@@ -44,8 +44,8 @@ function syncExpandedWithTodos(nextTodos: TodoItem[]) {
     return
   }
 
-  // 首次出现待办或仍处于自动模式时，随着流式更新保持展开。
-  if (!userCollapsed.value) {
+  // 仅在对话进行中且仍处于自动模式时，随着流式更新保持展开。
+  if (!userCollapsed.value && props.chatStatus === 'streaming') {
     expanded.value = true
   }
 }
