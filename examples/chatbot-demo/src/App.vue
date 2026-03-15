@@ -82,6 +82,7 @@ function formatCustomContent(content: unknown) {
         system-prompt="你是一个有用的AI助手"
         :assistant-name="assistantName"
         :suggestions="suggestions"
+        :show-header-actions="false"
       >
         <template #attachment-trigger="{ addAttachments }">
           <button
