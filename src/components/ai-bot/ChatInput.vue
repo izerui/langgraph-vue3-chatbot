@@ -447,14 +447,14 @@ function onFileChange(e: Event) {
 
               <DropdownMenuContent align="start">
                 <template v-for="provider in providers" :key="provider">
-                  <div class="px-2 py-1.5 text-sm font-semibold text-muted-foreground">
+                  <div class="px-2 py-1.5 text-xs font-semibold text-[var(--ai-menu-heading)]">
                     请选择模型
                   </div>
                   <DropdownMenuItem
                     v-for="model in groupedModels[provider]"
                     :key="model.name"
                     @select="() => handleModelSelect(model.name)"
-                    class="cursor-pointer gap-1 text-muted-foreground"
+                    class="cursor-pointer gap-1 text-[13px] text-[var(--ai-menu-text)]"
                   >
                     <img
                       :src="`https://models.dev/logos/${getProviderByModelName(model.name)}.svg`"
@@ -464,7 +464,7 @@ function onFileChange(e: Event) {
                     >
                     <span class="flex-1 truncate">
                       {{ model.name }}
-                      <span v-if="model.is_default" class="ml-1.5 text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                      <span v-if="model.is_default" class="ml-1.5 rounded bg-[var(--ai-muted-surface)] px-1.5 py-0.5 text-[11px] text-[var(--ai-menu-heading)]">
                         默认
                       </span>
                     </span>

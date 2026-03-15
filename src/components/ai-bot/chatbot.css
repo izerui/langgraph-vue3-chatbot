@@ -58,6 +58,7 @@
    * - Brand emphasis and submit button: --ai-accent / --ai-accent-foreground / --ai-accent-soft
    * - Input area: --ai-input-panel-bg / --ai-input-bg / --ai-input-text / --ai-input-placeholder
    * - Floating layers (dropdown / dialog / hover-card / command): --ai-layer-bg / --ai-layer-border / --ai-layer-shadow
+   * - Menu text: --ai-menu-text / --ai-menu-heading
    * - Hover and weak text: --ai-control-muted / --ai-control-hover-bg / --ai-control-hover-text
    * - Suggestion chips and file pills: --ai-chip-* / --ai-file-pill-*
    * - User bubble: --ai-user-bubble-bg / --ai-user-bubble-text
@@ -95,6 +96,8 @@
   --ai-layer-border: #e5e7eb;
   --ai-layer-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
   --ai-layer-heading: #6b7280;
+  --ai-menu-text: #4b5563;
+  --ai-menu-heading: #6b7280;
 
   /* Interactive control states */
   --ai-control-muted: #6b7280;

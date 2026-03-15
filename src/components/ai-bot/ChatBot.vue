@@ -817,6 +817,7 @@ function handleCustomEvent(data: any) {
 
 <style scoped>
 .chat-bot {
+  position: relative;
   width: 100%;
   height: 100%;
 }
@@ -824,8 +825,13 @@ function handleCustomEvent(data: any) {
 .chat-bot-portal-host {
   position: absolute;
   inset: 0;
+  z-index: 30;
   pointer-events: none;
   isolation: isolate;
+}
+
+.chat-bot-portal-host > * {
+  pointer-events: auto;
 }
 
 .chat-window {
