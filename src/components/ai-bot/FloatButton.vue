@@ -28,20 +28,20 @@ const emit = defineEmits<{
   width: 42px;
   height: 42px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--ai-fab-bg) 0%, var(--ai-fab-bg-strong) 100%);
   border: none;
   cursor: pointer;
-  color: white;
+  color: var(--primary-foreground);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 14px rgba(102, 126, 234, 0.4);
+  box-shadow: var(--ai-fab-shadow);
   transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s;
 }
 
 .float-button:hover {
   transform: scale(1.05);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+  box-shadow: var(--ai-fab-shadow-hover);
 }
 
 .float-button:active {

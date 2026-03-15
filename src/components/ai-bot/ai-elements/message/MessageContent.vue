@@ -14,7 +14,7 @@ const props = defineProps<Props>()
     :class="
       cn(
         'is-user:dark flex w-fit flex-col overflow-hidden text-sm',
-        'group-[.is-user]:ml-auto group-[.is-user]:rounded-lg group-[.is-user]:bg-[#f0eee6] group-[.is-user]:px-4 group-[.is-user]:py-3 group-[.is-user]:text-foreground',
+        'group-[.is-user]:ml-auto group-[.is-user]:rounded-lg group-[.is-user]:bg-[var(--ai-user-bubble-bg)] group-[.is-user]:px-4 group-[.is-user]:py-3 group-[.is-user]:text-[var(--ai-user-bubble-text)]',
         'group-[.is-assistant]:bg-transparent group-[.is-assistant]:p-0 group-[.is-assistant]:text-foreground',
         props.class,
       )

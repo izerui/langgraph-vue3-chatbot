@@ -45,8 +45,8 @@ const files = props.customContent?.type === 'generated_files'
   gap: 4px;
   padding: 4px 10px;
   font-size: 13px;
-  color: #374151;
-  background: #f3f4f6;
+  color: var(--ai-file-pill-text);
+  background: var(--ai-file-pill-bg);
   border-radius: 9999px;
   text-decoration: none;
   cursor: pointer;
@@ -54,7 +54,7 @@ const files = props.customContent?.type === 'generated_files'
 }
 
 .file-item:hover {
-  background: #e5e7eb;
+  background: var(--ai-file-pill-hover-bg);
 }
 
 .file-item .file-icon {

@@ -15,7 +15,7 @@ export const badgeVariants = cva(
         destructive:
          "border-transparent bg-destructive text-white [a&]:hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
         outline:
-          "text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground",
+          "text-[var(--ai-layer-text)] [a&]:hover:bg-[var(--ai-control-hover-bg)] [a&]:hover:text-[var(--ai-control-hover-text)]",
       },
     },
     defaultVariants: {

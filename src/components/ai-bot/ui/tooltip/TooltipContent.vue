@@ -4,6 +4,7 @@ import type { HTMLAttributes } from "vue"
 import { reactiveOmit } from "@vueuse/core"
 import { TooltipArrow, TooltipContent, TooltipPortal, useForwardPropsEmits } from "reka-ui"
 import { cn } from "@/components/ai-bot/lib/utils"
+import { usePortalHost } from '@/components/ai-bot/lib/portal-host'
 
 defineOptions({
   inheritAttrs: false,
@@ -17,10 +18,11 @@ const emits = defineEmits<TooltipContentEmits>()
 
 const delegatedProps = reactiveOmit(props, "class")
 const forwarded = useForwardPropsEmits(delegatedProps, emits)
+const { portalHost } = usePortalHost()
 </script>
 
 <template>
-  <TooltipPortal>
+  <TooltipPortal :to="portalHost || undefined">
     <TooltipContent
       data-slot="tooltip-content"
       v-bind="{ ...forwarded, ...$attrs }"

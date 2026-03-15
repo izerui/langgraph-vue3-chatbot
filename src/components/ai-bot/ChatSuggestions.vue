@@ -197,12 +197,12 @@ onBeforeUnmount(() => {
 
 .suggestions-viewport.has-fade::before {
   left: 0;
-  background: linear-gradient(90deg, white 5%, rgba(255, 255, 255, 0));
+  background: linear-gradient(90deg, var(--ai-surface) 5%, transparent);
 }
 
 .suggestions-viewport.has-fade::after {
   right: 0;
-  background: linear-gradient(270deg, white 5%, rgba(255, 255, 255, 0));
+  background: linear-gradient(270deg, var(--ai-surface) 5%, transparent);
 }
 
 .suggestions-row {
@@ -232,9 +232,9 @@ onBeforeUnmount(() => {
   max-width: 100%;
   height: 24px;
   padding: 0 9px;
-  border-color: rgba(226, 232, 240, 0.72);
-  background: rgba(248, 250, 252, 0.55);
-  color: rgba(100, 116, 139, 0.92);
+  border-color: var(--ai-chip-border);
+  background: var(--ai-chip-bg);
+  color: var(--ai-chip-text);
   font-size: 11px;
   line-height: 1;
   font-weight: 500;
@@ -244,8 +244,8 @@ onBeforeUnmount(() => {
 }
 
 :deep(.suggestion-chip:hover) {
-  background: rgba(241, 245, 249, 0.78);
-  border-color: rgba(203, 213, 225, 0.78);
+  background: var(--ai-chip-hover-bg);
+  border-color: var(--ai-chip-border);
 }
 
 .suggestion-slide-enter-active,

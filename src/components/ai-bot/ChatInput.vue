@@ -374,7 +374,7 @@ function onFileChange(e: Event) {
     >
 
     <div class="w-full">
-      <InputGroup class="input-group-shell overflow-hidden" style="background-color: white;">
+      <InputGroup class="input-group-shell overflow-hidden">
         <div class="input-top">
           <div v-if="props.suggestions.length > 0" class="input-suggestions">
             <ChatSuggestions
@@ -499,8 +499,8 @@ function onFileChange(e: Event) {
 <style scoped>
 .input-wrapper {
   padding: 4px 12px 8px;
-  border-top: 1px solid var(--border);
-  background: var(--background);
+  border-top: 1px solid var(--ai-border-subtle);
+  background: var(--ai-input-panel-bg);
   flex-shrink: 0;
 }
 
@@ -524,7 +524,7 @@ function onFileChange(e: Event) {
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: thin;
-  scrollbar-color: rgba(186, 196, 211, 0.5) transparent;
+  scrollbar-color: var(--ai-border-subtle) transparent;
 }
 
 .input-attachments::-webkit-scrollbar {
@@ -532,18 +532,18 @@ function onFileChange(e: Event) {
 }
 
 .input-attachments::-webkit-scrollbar-thumb {
-  background: rgba(186, 196, 211, 0.42);
+  background: var(--ai-border-subtle);
   border-radius: 999px;
 }
 
 .input-attachments::-webkit-scrollbar-thumb:hover {
-  background: rgba(160, 174, 192, 0.58);
+  background: var(--ai-chip-border);
 }
 
 .attachments-divider {
   width: calc(100% - 24px);
   margin: 4px 12px 0;
-  border-top: 1px solid rgba(226, 232, 240, 0.9);
+  border-top: 1px solid var(--ai-border-subtle);
 }
 
 .input-group-shell {

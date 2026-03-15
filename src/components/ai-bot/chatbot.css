@@ -30,7 +30,8 @@
   --color-ring: var(--ring);
 }
 
-:root {
+.chat-bot,
+.ask-ai-bot {
   --radius: 0.625rem;
   --background: #fafaf9;
   --foreground: oklch(0.145 0 0);
@@ -50,25 +51,133 @@
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
+  --ai-surface: #ffffff;
+  --ai-surface-subtle: #f9fafb;
+  --ai-border-subtle: #e5e7eb;
+  --ai-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  --ai-overlay: rgba(0, 0, 0, 0.05);
+  --ai-accent: #c96442;
+  --ai-accent-foreground: #ffffff;
+  --ai-accent-soft: #eef2ff;
+  --ai-accent-soft-foreground: var(--primary);
+  --ai-chip-bg: rgba(248, 250, 252, 0.55);
+  --ai-chip-border: rgba(226, 232, 240, 0.72);
+  --ai-chip-text: rgba(100, 116, 139, 0.92);
+  --ai-chip-hover-bg: #f3f4f6;
+  --ai-input-panel-bg: #fafaf9;
+  --ai-input-bg: #ffffff;
+  --ai-input-text: #1f2937;
+  --ai-input-placeholder: #6b7280;
+  --ai-input-border: #e5e7eb;
+  --ai-input-border-focus: #c7d2fe;
+  --ai-input-ring: rgba(99, 102, 241, 0.18);
+  --ai-input-icon: #6b7280;
+  --ai-control-muted: #6b7280;
+  --ai-control-hover-bg: #f3f4f6;
+  --ai-control-hover-text: #374151;
+  --ai-layer-bg: #ffffff;
+  --ai-layer-text: #1f2937;
+  --ai-layer-border: #e5e7eb;
+  --ai-layer-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
+  --ai-layer-heading: #6b7280;
+  --ai-tabs-list-bg: #f3f4f6;
+  --ai-tabs-list-text: #6b7280;
+  --ai-tabs-trigger-text: #374151;
+  --ai-tabs-trigger-active-bg: #ffffff;
+  --ai-tabs-trigger-active-text: #111827;
+  --ai-tabs-trigger-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --ai-muted-surface: #f3f4f6;
+  --ai-muted-surface-text: #374151;
+  --ai-user-bubble-bg: #f0eee6;
+  --ai-user-bubble-text: var(--foreground);
+  --ai-fab-bg: #667eea;
+  --ai-fab-bg-strong: #764ba2;
+  --ai-fab-shadow: 0 4px 14px rgba(102, 126, 234, 0.4);
+  --ai-fab-shadow-hover: 0 6px 20px rgba(102, 126, 234, 0.5);
+  --ai-plan-bg: rgba(255, 252, 247, 0.96);
+  --ai-plan-bg-strong: rgba(255, 255, 255, 0.98);
+  --ai-plan-border: rgba(215, 221, 232, 0.92);
+  --ai-plan-hover: rgba(245, 248, 252, 0.88);
+  --ai-plan-muted: rgba(104, 118, 138, 0.86);
+  --ai-plan-progress: #d97706;
+  --ai-plan-complete: #0f9f6e;
+  --ai-plan-interrupted: #6b7280;
+  --ai-file-pill-bg: #f3f4f6;
+  --ai-file-pill-hover-bg: #e5e7eb;
+  --ai-file-pill-text: #374151;
+  color: var(--foreground);
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 @layer base {
-  * {
+  .chat-bot,
+  .chat-bot *,
+  .ask-ai-bot,
+  .ask-ai-bot * {
+    box-sizing: border-box;
     @apply border-border outline-ring/50;
   }
-  body {
-    @apply bg-background text-foreground;
+
+  .chat-bot button,
+  .ask-ai-bot button {
+    font: inherit;
+    color: inherit;
+  }
+
+  .chat-bot input,
+  .chat-bot textarea,
+  .chat-bot select,
+  .ask-ai-bot input,
+  .ask-ai-bot textarea,
+  .ask-ai-bot select {
+    font: inherit;
+    color: inherit;
+  }
+
+  .chat-bot img,
+  .ask-ai-bot img {
+    display: block;
+    max-width: 100%;
+  }
+
+  .chat-bot .markdown-body,
+  .ask-ai-bot .markdown-body {
+    color: var(--foreground);
+    line-height: 1.7;
+    word-break: break-word;
+  }
+
+  .chat-bot .markdown-body :where(p, ul, ol, pre, blockquote, table),
+  .ask-ai-bot .markdown-body :where(p, ul, ol, pre, blockquote, table) {
+    margin: 0.75rem 0;
+  }
+
+  .chat-bot .markdown-body :where(h1, h2, h3, h4, h5, h6),
+  .ask-ai-bot .markdown-body :where(h1, h2, h3, h4, h5, h6) {
+    margin: 1rem 0 0.5rem;
+    color: var(--foreground);
+    font-weight: 600;
+    line-height: 1.35;
+  }
+
+  .chat-bot .markdown-body :where(code, pre),
+  .ask-ai-bot .markdown-body :where(code, pre) {
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  }
+
+  .chat-bot .markdown-body a,
+  .ask-ai-bot .markdown-body a {
+    color: var(--primary);
   }
 
   /* markstream-vue 分隔线样式覆盖 */
-  .hr-node {
-    margin-top: 0.5rem !important;
-    margin-bottom: 0.5rem !important;
-  }
-
-  /* 覆盖 markstream-vue 默认的 hr 样式 */
-  [data-custom-id] .hr-node,
-  .hr-node {
+  .chat-bot .hr-node,
+  .chat-bot [data-custom-id] .hr-node,
+  .ask-ai-bot .hr-node,
+  .ask-ai-bot [data-custom-id] .hr-node {
     margin-top: 0.5rem !important;
     margin-bottom: 0.5rem !important;
   }

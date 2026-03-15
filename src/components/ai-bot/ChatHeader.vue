@@ -40,10 +40,10 @@ const emit = defineEmits<{
   align-items: center;
   justify-content: space-between;
   padding: 6px 16px;
-  background: #f9fafb;
-  color: #1f2937;
+  background: var(--ai-surface-subtle);
+  color: var(--foreground);
   flex-shrink: 0;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--ai-border-subtle);
 }
 
 .chat-title {
@@ -64,12 +64,13 @@ const emit = defineEmits<{
 }
 
 .action-btn {
+  appearance: none;
   background: transparent;
   border: none;
   border-radius: 6px;
   padding: 6px;
   cursor: pointer;
-  color: #6b7280;
+  color: var(--muted-foreground);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -77,7 +78,7 @@ const emit = defineEmits<{
 }
 
 .action-btn:hover {
-  color: #374151;
-  background: #f3f4f6;
+  color: var(--foreground);
+  background: var(--ai-chip-hover-bg);
 }
 </style>

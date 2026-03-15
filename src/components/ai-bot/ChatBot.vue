@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, provide } from 'vue'
 import type { AttachmentTriggerSlotProps, PromptInputMessage } from './lib/input-types'
 import type { ChatMessage, ChatStatus, ChatFile, CustomContent } from './lib/message-types'
 import { fetchModels, getDefaultModel, type ModelInfo } from './lib/models'
 import type { ToolEventPayload, ToolEventPhase, ToolEventState } from './lib/tool-events'
 import { Client } from '@langchain/langgraph-sdk'
 import { createThread, loadThreadHistory } from './lib/thread'
+import { PORTAL_HOST_KEY } from './lib/portal-host'
 
 import ChatHeader from './ChatHeader.vue'
 import ChatMessages from './ChatMessages.vue'
@@ -52,6 +53,8 @@ const client = new Client({
 // 状态
 const isMaximized = ref(false)
 const threadId = ref<string | null>(null)
+const portalHost = ref<HTMLElement | null>(null)
+provide(PORTAL_HOST_KEY, { portalHost })
 const status = ref<ChatStatus>('ready')
 const runId = ref<string>('')
 const useWebSearch = ref(false)
@@ -741,6 +744,7 @@ function handleCustomEvent(data: any) {
 
 <template>
   <div class="chat-bot">
+    <div ref="portalHost" class="chat-bot-portal-host" />
     <div class="chat-window" :class="{ maximized: isMaximized }">
       <ChatHeader
         :title="assistantName"
@@ -817,22 +821,29 @@ function handleCustomEvent(data: any) {
   height: 100%;
 }
 
+.chat-bot-portal-host {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  isolation: isolate;
+}
+
 .chat-window {
   width: 100%;
   height: 100%;
   display: flex;
   flex-direction: column;
-  background: var(--background);
+  background: var(--ai-surface);
   border-radius: 8px;
-  border: 1px solid var(--border);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  border: 1px solid var(--ai-border-subtle);
+  box-shadow: var(--ai-shadow);
   overflow: hidden;
   position: relative;
 }
 
 .chat-window.maximized {
   border-radius: 8px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--ai-border-subtle);
 }
 
 .default-empty-state {
@@ -851,8 +862,8 @@ function handleCustomEvent(data: any) {
   height: 56px;
   place-items: center;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--primary) 12%, white);
-  color: var(--primary);
+  background: var(--ai-accent-soft);
+  color: var(--ai-accent-soft-foreground);
   font-size: 18px;
   font-weight: 700;
 }
@@ -874,7 +885,7 @@ function handleCustomEvent(data: any) {
 .loading-mask {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.05);
+  background: var(--ai-overlay);
   display: flex;
   flex-direction: column;
   align-items: center;

@@ -310,23 +310,23 @@ watch(
 }
 
 .todo-card {
-  --todo-surface: rgba(255, 252, 247, 0.96);
-  --todo-surface-strong: rgba(255, 255, 255, 0.98);
-  --todo-border: rgba(215, 221, 232, 0.92);
-  --todo-divider: rgba(230, 234, 241, 0.9);
+  --todo-surface: var(--ai-plan-bg);
+  --todo-surface-strong: var(--ai-plan-bg-strong);
+  --todo-border: var(--ai-plan-border);
+  --todo-divider: var(--ai-plan-border);
   --todo-title: rgba(37, 52, 72, 0.92);
-  --todo-muted: rgba(104, 118, 138, 0.86);
+  --todo-muted: var(--ai-plan-muted);
   --todo-summary-bg: rgba(243, 247, 252, 0.96);
   --todo-summary-border: rgba(220, 228, 239, 0.96);
   --todo-summary-text: rgba(66, 84, 108, 0.92);
-  --todo-hover: rgba(245, 248, 252, 0.88);
+  --todo-hover: var(--ai-plan-hover);
   --todo-text: rgba(31, 41, 55, 0.9);
   --todo-index: rgba(148, 163, 184, 0.9);
   --todo-pending: rgba(107, 114, 128, 0.8);
-  --todo-progress: #d97706;
-  --todo-interrupted: #6b7280;
+  --todo-progress: var(--ai-plan-progress);
+  --todo-interrupted: var(--ai-plan-interrupted);
   --todo-interrupted-text: rgba(75, 85, 99, 0.92);
-  --todo-completed: #0f9f6e;
+  --todo-completed: var(--ai-plan-complete);
   --todo-completed-text: rgba(17, 94, 69, 0.92);
   border-radius: 6px;
   border: 1px solid var(--todo-border);
@@ -402,7 +402,7 @@ watch(
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: thin;
-  scrollbar-color: rgba(186, 196, 211, 0.5) transparent;
+  scrollbar-color: var(--todo-border) transparent;
   border-top: 1px solid var(--todo-divider);
 }
 
@@ -411,12 +411,12 @@ watch(
 }
 
 .todo-list::-webkit-scrollbar-thumb {
-  background: rgba(186, 196, 211, 0.42);
+  background: var(--todo-border);
   border-radius: 999px;
 }
 
 .todo-list::-webkit-scrollbar-thumb:hover {
-  background: rgba(160, 174, 192, 0.58);
+  background: var(--todo-muted);
 }
 
 .todo-item {

@@ -44,7 +44,7 @@ function getMessageClass(index: number) {
 .dot {
   width: 6px;
   height: 6px;
-  background-color: #9ca3af;
+  background-color: var(--muted-foreground);
   border-radius: 50%;
   animation: bounce 1.4s infinite ease-in-out both;
 }
@@ -95,6 +95,7 @@ function getMessageClass(index: number) {
               <!-- assistant 和 system 消息使用 MarkdownRender -->
               <MarkdownRender
                 v-if="message.type === 'ai' || message.type === 'system'"
+                class="markdown-body"
                 :content="message.content || ''"
                 :typewriter="true"
                 :initial-render-batch-size="12"
