@@ -21,6 +21,10 @@
 
 组件内部已集成：流式消息渲染、工具调用展示、附件能力、建议问题、模型选择等常见 AI 聊天能力。
 
+## 预览
+
+![langgraph-vue3-chatbot preview](https://raw.githubusercontent.com/izerui/langgraph-vue3-chatbot/main/docs/img.png)
+
 ## 特性
 
 - 开箱即用的 Vue 3 AI 聊天组件
