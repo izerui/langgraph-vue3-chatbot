@@ -412,7 +412,7 @@ watch(
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: thin;
-  scrollbar-color: var(--todo-border) transparent;
+  scrollbar-color: var(--ai-scrollbar-thumb) transparent;
   border-top: 1px solid var(--todo-divider);
 }
 
@@ -421,12 +421,12 @@ watch(
 }
 
 .todo-list::-webkit-scrollbar-thumb {
-  background: var(--todo-border);
+  background: var(--ai-scrollbar-thumb);
   border-radius: 999px;
 }
 
 .todo-list::-webkit-scrollbar-thumb:hover {
-  background: var(--todo-muted);
+  background: var(--ai-scrollbar-thumb-hover);
 }
 
 .todo-item {

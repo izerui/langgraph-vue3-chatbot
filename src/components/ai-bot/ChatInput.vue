@@ -524,7 +524,7 @@ function onFileChange(e: Event) {
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: thin;
-  scrollbar-color: var(--ai-border-subtle) transparent;
+  scrollbar-color: var(--ai-scrollbar-thumb) transparent;
 }
 
 .input-attachments::-webkit-scrollbar {
@@ -532,12 +532,12 @@ function onFileChange(e: Event) {
 }
 
 .input-attachments::-webkit-scrollbar-thumb {
-  background: var(--ai-border-subtle);
+  background: var(--ai-scrollbar-thumb);
   border-radius: 999px;
 }
 
 .input-attachments::-webkit-scrollbar-thumb:hover {
-  background: var(--ai-chip-border);
+  background: var(--ai-scrollbar-thumb-hover);
 }
 
 .attachments-divider {

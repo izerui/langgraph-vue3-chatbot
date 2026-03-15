@@ -143,6 +143,8 @@
   --ai-plan-progress: #d97706;
   --ai-plan-complete: #0f9f6e;
   --ai-plan-interrupted: #6b7280;
+  --ai-scrollbar-thumb: rgba(203, 213, 225, 0.9);
+  --ai-scrollbar-thumb-hover: rgba(148, 163, 184, 0.96);
   color: var(--foreground);
   font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   line-height: 1.5;
@@ -236,6 +238,8 @@
   --ai-plan-progress: #6ab2ff;
   --ai-plan-complete: #34d399;
   --ai-plan-interrupted: #98acc7;
+  --ai-scrollbar-thumb: rgba(74, 144, 255, 0.22);
+  --ai-scrollbar-thumb-hover: rgba(74, 144, 255, 0.4);
 }
 
 @layer base {
