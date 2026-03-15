@@ -145,6 +145,7 @@ function formatCustomContent(content: unknown) {
       :api-key="apiKey"
       :assistant-id="assistantId"
       :assistant-name="assistantName"
+      thread-id="b63ba396-aad9-4f38-8454-b9ec2287f67b"
       system-prompt="你是一个有用的AI助手"
       :suggestions="suggestions"
     >
