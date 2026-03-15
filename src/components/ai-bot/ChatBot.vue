@@ -38,7 +38,7 @@ const props = withDefaults(defineProps<Props>(), {
   suggestions: () => [],
   apiUrl: 'http://localhost:2024',
   apiKey: undefined,
-  theme: 'default'
+  theme: 'light'
 })
 
 defineSlots<{

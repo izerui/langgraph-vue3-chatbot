@@ -32,7 +32,7 @@ const props = withDefaults(defineProps<Props>(), {
   apiKey: undefined,
   width: 400,
   height: 'calc(100vh - 90px)',
-  theme: 'default'
+  theme: 'light'
 })
 
 defineSlots<{

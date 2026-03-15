@@ -1,1 +1,1 @@
-export type AiBotTheme = 'default' | 'blue' | 'glass' | 'dark'
+export type AiBotTheme = 'light' | 'dark'
