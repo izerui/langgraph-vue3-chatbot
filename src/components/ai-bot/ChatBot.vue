@@ -752,7 +752,13 @@ function handleCustomEvent(data: any) {
 
       <!-- 空状态：messages 为空时显示 -->
       <div v-if="!isLoading && messages.length === 0" class="flex-1 overflow-y-hidden flex flex-col items-center justify-center">
-        <slot name="empty" :send-message="handleSubmit" />
+        <slot name="empty" :send-message="handleSubmit">
+          <div class="default-empty-state">
+            <div class="default-empty-badge">AI</div>
+            <h2 class="default-empty-title">欢迎使用 {{ assistantName }}</h2>
+            <p class="default-empty-desc">请输入你的问题，开始一段新的对话。</p>
+          </div>
+        </slot>
       </div>
       <!-- 有消息时显示 ChatMessages -->
       <ChatMessages
@@ -827,6 +833,42 @@ function handleCustomEvent(data: any) {
 .chat-window.maximized {
   border-radius: 8px;
   border: 1px solid var(--border);
+}
+
+.default-empty-state {
+  display: flex;
+  min-height: 400px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 24px;
+  text-align: center;
+}
+
+.default-empty-badge {
+  display: grid;
+  width: 56px;
+  height: 56px;
+  place-items: center;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--primary) 12%, white);
+  color: var(--primary);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.default-empty-title {
+  margin: 16px 0 8px;
+  font-size: 28px;
+  line-height: 1.2;
+  color: var(--foreground);
+}
+
+.default-empty-desc {
+  max-width: 520px;
+  margin: 0;
+  line-height: 1.6;
+  color: var(--muted-foreground);
 }
 
 .loading-mask {
