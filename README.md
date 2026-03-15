@@ -178,7 +178,7 @@ const suggestions = [
 | `systemPrompt` | 设置发送给模型的系统提示词 | `'你是一个有用的助手，帮用户解决各种问题。'` |
 | `threadId` | 指定已有会话线程 id；不传时由组件内部创建线程 | `undefined` |
 | `userId` | 标识当前用户，用于请求上下文区分 | `'user001'` |
-| `showHeaderActions` | 控制是否显示头部操作区，例如模型选择、工具开关等 | `true` |
+| `showHeaderActions` | 控制是否显示聊天面板头部右侧操作按钮，例如关闭、最大化等 | `true` |
 | `suggestions` | 配置输入区上方的建议问题列表 | `[]` |
 | `apiUrl` | 指定 LangGraph 服务地址 | `'http://localhost:2024'` |
 | `apiKey` | 指定 LangGraph 服务访问凭证 | `undefined` |
