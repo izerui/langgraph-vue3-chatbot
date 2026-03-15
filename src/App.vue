@@ -1,10 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { PlusIcon } from 'lucide-vue-next'
-import { AskAiBot, ChatBot } from '@/components/ai-bot'
-import GeneratedFiles from './components/ai-bot/GeneratedFiles.vue'
+import { AskAiBot, ChatBot, GeneratedFiles } from '@/components/ai-bot'
 import type { PromptInputAttachment } from '@/components/ai-bot'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ai-bot/ui/dialog'
 import { KNOWLEDGE_GRAPH_PROMPT } from './prompts'
 
 const apiUrl = import.meta.env.VITE_LANGGRAPH_API_URL || 'http://localhost:2024'
@@ -24,14 +22,36 @@ function openAttachmentDialog(addAttachments: (attachments: PromptInputAttachmen
   attachmentDialogOpen.value = true
 }
 
+function closeAttachmentDialog() {
+  attachmentDialogOpen.value = false
+  pendingAddAttachments.value = null
+}
+
 function confirmAttachmentSelection() {
   if (!pendingAddAttachments.value) {
-    attachmentDialogOpen.value = false
+    closeAttachmentDialog()
     return
   }
 
   pendingAddAttachments.value([demoAttachment])
-  attachmentDialogOpen.value = false
+  closeAttachmentDialog()
+}
+
+function formatCustomContent(content: unknown) {
+  if (content == null) {
+    return '无内容'
+  }
+
+  if (typeof content === 'string') {
+    return content
+  }
+
+  try {
+    return JSON.stringify(content, null, 2)
+  }
+  catch {
+    return String(content)
+  }
 }
 </script>
 
@@ -93,8 +113,9 @@ function confirmAttachmentSelection() {
               :thread-id="threadId"
             />
             <div v-else class="custom-message">
-              <div class="custom-type-badge">{{ customContent?.type }}</div>
-              <pre class="custom-content">{{ JSON.stringify(customContent?.content, null, 2) }}</pre>
+              <div class="custom-type-badge">{{ customContent?.type || 'custom' }}</div>
+              <div v-if="threadId" class="custom-thread-id">thread: {{ threadId }}</div>
+              <pre class="custom-content">{{ formatCustomContent(customContent?.content) }}</pre>
             </div>
           </template>
         </ChatBot>
@@ -138,20 +159,21 @@ function confirmAttachmentSelection() {
           :thread-id="threadId"
         />
         <div v-else class="custom-message">
-          <div class="custom-type-badge">{{ customContent?.type }}</div>
-          <pre class="custom-content">{{ JSON.stringify(customContent?.content, null, 2) }}</pre>
+          <div class="custom-type-badge">{{ customContent?.type || 'custom' }}</div>
+          <div v-if="threadId" class="custom-thread-id">thread: {{ threadId }}</div>
+          <pre class="custom-content">{{ formatCustomContent(customContent?.content) }}</pre>
         </div>
       </template>
     </AskAiBot>
 
-    <Dialog v-model:open="attachmentDialogOpen">
-      <DialogContent class="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>添加 URL 附件</DialogTitle>
-          <DialogDescription>
+    <div v-if="attachmentDialogOpen" class="dialog-mask" @click.self="closeAttachmentDialog">
+      <div class="dialog-card" role="dialog" aria-modal="true" aria-labelledby="attachment-dialog-title">
+        <div class="dialog-header">
+          <h3 id="attachment-dialog-title">添加 URL 附件</h3>
+          <p>
             这是最小化的 file_url 示例。点击确认后，会把一个远程 PDF 链接通过 addAttachments 回填到当前聊天输入框。
-          </DialogDescription>
-        </DialogHeader>
+          </p>
+        </div>
 
         <div class="dialog-options">
           <div class="dialog-option selected">
@@ -160,16 +182,16 @@ function confirmAttachmentSelection() {
           </div>
         </div>
 
-        <DialogFooter>
-          <button type="button" class="dialog-secondary-btn" @click="attachmentDialogOpen = false">
+        <div class="dialog-actions">
+          <button type="button" class="dialog-secondary-btn" @click="closeAttachmentDialog">
             取消
           </button>
           <button type="button" class="dialog-primary-btn" @click="confirmAttachmentSelection">
             添加到输入框
           </button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -309,6 +331,12 @@ main {
   word-break: break-all;
 }
 
+.custom-thread-id {
+  margin-bottom: 8px;
+  font-size: 12px;
+  color: #6b7280;
+}
+
 .custom-attachment-trigger {
   width: 32px;
   height: 32px;
@@ -328,10 +356,43 @@ main {
   color: hsl(var(--foreground));
 }
 
+.dialog-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.dialog-card {
+  width: 100%;
+  max-width: 520px;
+  border-radius: 18px;
+  background: #fff;
+  padding: 20px;
+  box-shadow: 0 24px 80px rgba(15, 23, 42, 0.24);
+}
+
+.dialog-header h3 {
+  margin: 0 0 8px;
+  font-size: 20px;
+  color: #111827;
+}
+
+.dialog-header p {
+  margin: 0;
+  color: #6b7280;
+  line-height: 1.7;
+}
+
 .dialog-options {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  margin-top: 18px;
 }
 
 .dialog-option {
@@ -369,6 +430,13 @@ main {
   font-size: 12px;
   line-height: 1.5;
   color: #6b7280;
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 20px;
 }
 
 .dialog-primary-btn,

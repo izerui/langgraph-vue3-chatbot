@@ -3,6 +3,7 @@
 import './chatbot.css'
 import AskAiBot from './AskAiBot.vue'
 import ChatBot from './ChatBot.vue'
+import GeneratedFiles from './GeneratedFiles.vue'
 
 import type {
   AttachmentFile,
@@ -24,7 +25,7 @@ import type {
   ToolCall,
 } from './lib/message-types'
 
-export { AskAiBot, ChatBot }
+export { AskAiBot, ChatBot, GeneratedFiles }
 export type {
   AttachmentFile,
   AttachmentTriggerSlotProps,
