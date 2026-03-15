@@ -29,6 +29,8 @@ import { AskAiBot } from 'langgraph-vue3-chatbot'
     assistant-id="research"
     assistant-name="AI 助手"
     api-url="http://localhost:2024"
+    :width="400"
+    height="calc(100vh - 120px)"
   />
 </template>
 ```
@@ -69,6 +71,8 @@ import { ChatBot } from 'langgraph-vue3-chatbot'
 | `suggestions` | 配置输入区上方的建议问题列表 | `[]` |
 | `apiUrl` | 指定 LangGraph 服务地址 | `'http://localhost:2024'` |
 | `apiKey` | 指定 LangGraph 服务访问凭证 | `undefined` |
+| `width` | 设置悬浮聊天窗打开后的宽度，支持 `number` 或 CSS 尺寸字符串 | `400` |
+| `height` | 设置悬浮聊天窗打开后的高度，支持 `number` 或 CSS 尺寸字符串 | `'calc(100vh - 90px)'` |
 
 ### ChatBot
 
@@ -101,43 +105,6 @@ import { ChatBot } from 'langgraph-vue3-chatbot'
 | `empty` | 自定义空状态内容 | `{ sendMessage }` |
 | `custom` | 自定义 custom 消息渲染 | `{ customContent, threadId }` |
 | `attachment-trigger` | 自定义附件触发器 | `{ addAttachments }` |
-
-## 类型
-
-可直接从主入口引入类型：
-
-```ts
-import type {
-  ChatMessage,
-  ChatFile,
-  AttachmentTriggerSlotProps,
-  PromptInputAttachment,
-} from 'langgraph-vue3-chatbot'
-```
-
-## 本地开发
-
-```bash
-pnpm dev
-```
-
-## 构建 demo
-
-```bash
-pnpm build
-```
-
-## 构建组件库
-
-```bash
-pnpm build:lib
-```
-
-## 检查组件库产物
-
-```bash
-pnpm check:lib
-```
 
 ## 说明
 

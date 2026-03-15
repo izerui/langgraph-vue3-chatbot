@@ -15,6 +15,8 @@ interface Props {
   suggestions?: string[]
   apiUrl?: string
   apiKey?: string
+  width?: number | string
+  height?: number | string
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -25,7 +27,9 @@ const props = withDefaults(defineProps<Props>(), {
   userId: 'user001',
   suggestions: () => [],
   apiUrl: 'http://localhost:2024',
-  apiKey: undefined
+  apiKey: undefined,
+  width: 400,
+  height: 'calc(100vh - 90px)'
 })
 
 defineSlots<{
@@ -36,7 +40,7 @@ defineSlots<{
 
 const isExpanded = ref(props.defaultExpanded)
 const isMaximized = ref(false)
-const chatWidth = ref(600)
+const chatWidth = ref(typeof props.width === 'number' ? props.width : 500)
 const isResizing = ref(false)
 
 function toggleExpanded() {
@@ -79,7 +83,10 @@ function stopResize() {
         v-show="isExpanded"
         class="chat-window-container"
         :class="{ maximized: isMaximized }"
-        :style="!isMaximized ? { width: chatWidth + 'px' } : {}"
+        :style="!isMaximized ? {
+          width: typeof props.width === 'number' ? `${chatWidth}px` : props.width,
+          height: typeof props.height === 'number' ? `${props.height}px` : props.height
+        } : {}"
       >
         <ChatBot
           :api-url="apiUrl"
@@ -132,8 +139,6 @@ function stopResize() {
   position: fixed;
   top: 20px;
   right: 20px;
-  width: 500px;
-  height: calc(100vh - 90px);
   transition: height 0.3s ease;
 }
 
