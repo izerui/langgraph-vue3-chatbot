@@ -223,6 +223,7 @@ watch(
     <div class="todo-card">
       <div
         class="todo-divider"
+        :class="{ collapsed: !expanded }"
         @click="toggleExpanded"
       >
         <div class="title">
@@ -343,11 +344,16 @@ watch(
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  padding: 8px 12px;
+  padding: 6px 12px;
   cursor: pointer;
   user-select: none;
   border-bottom: 1px solid transparent;
-  transition: background-color 0.18s ease, border-color 0.18s ease;
+  transition: background-color 0.18s ease, border-color 0.18s ease, padding 0.18s ease;
+}
+
+.todo-divider.collapsed {
+  padding-top: 6px;
+  padding-bottom: 6px;
 }
 
 .todo-divider:hover {
@@ -359,6 +365,10 @@ watch(
   align-items: center;
   gap: 5px;
   flex-wrap: wrap;
+}
+
+.todo-divider.collapsed .title {
+  gap: 4px;
 }
 
 .title-chevron {
@@ -378,9 +388,9 @@ watch(
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 34px;
-  height: 18px;
-  padding: 0 7px;
+  min-width: 32px;
+  height: 17px;
+  padding: 0 6px;
   border-radius: 999px;
   font-size: 10px;
   line-height: 1;
@@ -391,7 +401,7 @@ watch(
 }
 
 .title-meta {
-  font-size: 11px;
+  font-size: 10px;
   line-height: 1;
   color: var(--todo-muted);
 }

@@ -246,7 +246,7 @@ onBeforeUnmount(() => {
 :deep(.suggestion-chip:hover) {
   background: var(--ai-control-hover-bg);
   border-color: var(--ai-chip-border);
-  color: var(--ai-control-hover-text);
+  color: var(--ai-chip-hover-text);
 }
 
 .suggestion-slide-enter-active,
