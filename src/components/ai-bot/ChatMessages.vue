@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ChatMessage, CustomContent } from './lib/message-types'
+import type { AiBotTheme } from './lib/theme'
 import ToolCall from './ToolCall.vue'
 import {
   Conversation,
@@ -16,11 +17,15 @@ import 'markstream-vue/index.css'
 interface Props {
   messages: ChatMessage[]
   isStreaming?: boolean
+  theme?: AiBotTheme
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  isStreaming: false
+  isStreaming: false,
+  theme: 'light'
 })
+
+const markdownThemes = ['vitesse-dark', 'vitesse-light']
 
 function getMessageClass(index: number) {
   if (index === 0) return ''
@@ -97,6 +102,10 @@ function getMessageClass(index: number) {
                 v-if="message.type === 'ai' || message.type === 'system'"
                 class="markdown-body"
                 :content="message.content || ''"
+                :is-dark="props.theme === 'dark'"
+                code-block-dark-theme="vitesse-dark"
+                code-block-light-theme="vitesse-light"
+                :themes="markdownThemes"
                 :typewriter="true"
                 :initial-render-batch-size="12"
                 :render-batch-size="24"

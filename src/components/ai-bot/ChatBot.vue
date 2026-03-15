@@ -772,6 +772,7 @@ function handleCustomEvent(data: any) {
         v-else
         :messages="messages"
         :is-streaming="status === 'streaming'"
+        :theme="props.theme"
       >
         <!-- custom 消息：透传插槽 -->
         <template #custom="{ customContent }">
