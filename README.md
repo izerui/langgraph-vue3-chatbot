@@ -19,7 +19,7 @@
 - `AskAiBot`：悬浮按钮 + 展开聊天窗，适合挂在页面右下角快速唤起
 - `ChatBot`：可直接嵌入页面的聊天面板，适合详情页、工作台、后台系统等场景
 
-组件内部已集成：流式消息渲染、工具调用展示、附件能力、建议问题、模型选择等常见 AI 聊天能力。
+组件内部已集成：流式消息渲染、工具调用展示、附件能力、建议问题、模型选择、浅色/深色主题切换等常见 AI 聊天能力。
 
 ## 预览
 
@@ -79,6 +79,7 @@ import { AskAiBot } from 'langgraph-vue3-chatbot'
     assistant-id="research"
     assistant-name="AI 助手"
     api-url="http://localhost:2024"
+    theme="light"
     :width="400"
     height="calc(100vh - 120px)"
   />
@@ -100,6 +101,7 @@ import { ChatBot } from 'langgraph-vue3-chatbot'
       assistant-id="research"
       assistant-name="AI 助手"
       api-url="http://localhost:2024"
+      theme="dark"
       :show-header-actions="false"
     />
   </div>
@@ -129,6 +131,7 @@ const suggestions = [
     :api-url="apiUrl"
     :assistant-id="assistantId"
     :assistant-name="assistantName"
+    theme="light"
   />
 
   <AskAiBot
@@ -136,6 +139,7 @@ const suggestions = [
     :assistant-id="assistantId"
     :assistant-name="assistantName"
     :suggestions="suggestions"
+    theme="dark"
   />
 </template>
 ```
@@ -155,6 +159,7 @@ const suggestions = [
 | `suggestions` | 配置输入区上方的建议问题列表 | `[]` |
 | `apiUrl` | 指定 LangGraph 服务地址 | `'http://localhost:2024'` |
 | `apiKey` | 指定 LangGraph 服务访问凭证 | `undefined` |
+| `theme` | 设置组件主题，可选 `light` / `dark` | `'light'` |
 | `width` | 设置悬浮聊天窗打开后的宽度，支持 `number` 或 CSS 尺寸字符串 | `400` |
 | `height` | 设置悬浮聊天窗打开后的高度，支持 `number` 或 CSS 尺寸字符串 | `'calc(100vh - 90px)'` |
 
@@ -171,6 +176,7 @@ const suggestions = [
 | `suggestions` | 配置输入区上方的建议问题列表 | `[]` |
 | `apiUrl` | 指定 LangGraph 服务地址 | `'http://localhost:2024'` |
 | `apiKey` | 指定 LangGraph 服务访问凭证 | `undefined` |
+| `theme` | 设置组件主题，可选 `light` / `dark` | `'light'` |
 
 ## Slots
 
@@ -195,6 +201,11 @@ const suggestions = [
 - 组件通过主入口导出
 - 主入口会自动带出组件样式
 - 使用时无需额外单独引入样式文件
+- 当前内置两套主题：`light`（浅色，默认）与 `dark`（深色）
+- `AskAiBot` 的 `theme` 会同时作用于外层悬浮按钮、内部 `ChatBot` 与 portal 浮层
+- 内部 markdown 渲染基于 `markstream-vue`，代码高亮会随主题自动切换：
+  - `light` -> `vitesse-light`
+  - `dark` -> `vitesse-dark`
 
 ## 使用建议
 
