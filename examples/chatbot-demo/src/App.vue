@@ -4,7 +4,7 @@ import { AskAiBot, ChatBot } from 'langgraph-vue3-chatbot'
 import type { PromptInputAttachment } from 'langgraph-vue3-chatbot'
 
 const fallbackApiUrl = 'http://localhost:2024'
-const fallbackAssistantId = 'demo-assistant'
+const fallbackAssistantId = 'research'
 const fallbackAssistantName = 'LangGraph Demo Assistant'
 
 const apiUrl = import.meta.env.VITE_LANGGRAPH_API_URL?.trim() || fallbackApiUrl
@@ -70,34 +70,8 @@ function formatCustomContent(content: unknown) {
 
 <template>
   <div class="page">
-    <section class="hero">
-      <p class="eyebrow">Vue 3 Demo</p>
-      <h1>langgraph-vue3-chatbot 插槽演示</h1>
-      <p class="description">
-        这个示例展示如何只通过 <strong>基础 HTML + CSS</strong> 来自定义
-        <code>empty</code>、<code>custom</code>、<code>attachment-trigger</code>
-        等插槽，而不依赖 <code>langgraph-vue3-chatbot</code> 内部提供的 UI 组件。
-      </p>
-
-      <div class="config-card">
-        <p><strong>apiUrl:</strong> {{ apiUrl }}</p>
-        <p><strong>assistantId:</strong> {{ assistantId }}</p>
-        <p><strong>assistantName:</strong> {{ assistantName }}</p>
-        <p><strong>apiKey:</strong> {{ apiKey ? '已配置' : '未配置' }}</p>
-      </div>
-
-      <p v-if="isPlaceholderConfig" class="notice">
-        当前使用占位配置。你可以在 <code>.env.local</code> 中设置
-        <code>VITE_LANGGRAPH_API_URL</code>、<code>VITE_LANGGRAPH_ASSISTANT_ID</code>、
-        <code>VITE_LANGGRAPH_ASSISTANT_NAME</code> 与 <code>VITE_LANGGRAPH_API_KEY</code>。
-      </p>
-    </section>
-
-    <section class="section-header">
-      <div>
-        <h2>ChatBot 示例</h2>
-        <p>展示嵌入式聊天面板，并覆盖 empty / custom / attachment-trigger 插槽。</p>
-      </div>
+    <section class="section-header compact-header">
+      <h2>ChatBot 示例</h2>
     </section>
 
     <section class="chat-panel">
@@ -105,6 +79,7 @@ function formatCustomContent(content: unknown) {
         :api-url="apiUrl"
         :api-key="apiKey"
         :assistant-id="assistantId"
+        system-prompt="你是一个有用的AI助手"
         :assistant-name="assistantName"
         :suggestions="suggestions"
       >
@@ -169,6 +144,7 @@ function formatCustomContent(content: unknown) {
       :api-key="apiKey"
       :assistant-id="assistantId"
       :assistant-name="assistantName"
+      system-prompt="你是一个有用的AI助手"
       :suggestions="suggestions"
     >
       <template #attachment-trigger="{ addAttachments }">
@@ -261,68 +237,30 @@ function formatCustomContent(content: unknown) {
   padding: 32px 20px 96px;
 }
 
-.hero {
-  margin-bottom: 28px;
-}
-
-.eyebrow {
-  margin: 0 0 8px;
-  color: #2563eb;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.hero h1 {
-  margin: 0 0 12px;
-  font-size: 34px;
-  line-height: 1.2;
-  color: #111827;
-}
-
-.description {
-  max-width: 860px;
-  margin: 0 0 18px;
-  color: #4b5563;
-  line-height: 1.7;
-}
-
-.config-card {
-  display: grid;
-  gap: 10px;
-  padding: 18px 20px;
-  border: 1px solid #dbeafe;
-  border-radius: 16px;
-  background: #f8fbff;
-}
-
-.config-card p,
-.notice {
-  margin: 0;
-  line-height: 1.6;
-}
-
-.notice {
-  margin-top: 16px;
-  padding: 14px 16px;
-  border: 1px solid #fed7aa;
-  border-radius: 14px;
-  background: #fff7ed;
-  color: #9a3412;
-}
-
 .section-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin: 28px 0 14px;
+  margin: 12px 0 10px;
+}
+
+.section-header h2,
+.section-header p {
+  margin: 0;
 }
 
 .section-header h2 {
-  margin: 0 0 6px;
   font-size: 20px;
   color: #111827;
+}
+
+.compact-header {
+  gap: 12px;
+}
+
+.compact-header p {
+  color: #6b7280;
+  line-height: 1.4;
 }
 
 .section-header p {
