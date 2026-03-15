@@ -315,28 +315,28 @@ watch(
   --todo-surface-strong: var(--ai-plan-bg-strong);
   --todo-border: var(--ai-plan-border);
   --todo-divider: var(--ai-plan-border);
-  --todo-title: rgba(37, 52, 72, 0.92);
+  --todo-title: var(--foreground);
   --todo-muted: var(--ai-plan-muted);
-  --todo-summary-bg: rgba(243, 247, 252, 0.96);
-  --todo-summary-border: rgba(220, 228, 239, 0.96);
-  --todo-summary-text: rgba(66, 84, 108, 0.92);
+  --todo-summary-bg: color-mix(in srgb, var(--ai-plan-bg-strong) 82%, var(--ai-plan-border));
+  --todo-summary-border: var(--ai-plan-border);
+  --todo-summary-text: color-mix(in srgb, var(--foreground) 72%, var(--ai-plan-muted));
   --todo-hover: var(--ai-plan-hover);
-  --todo-text: rgba(31, 41, 55, 0.9);
-  --todo-index: rgba(148, 163, 184, 0.9);
-  --todo-pending: rgba(107, 114, 128, 0.8);
+  --todo-text: color-mix(in srgb, var(--foreground) 88%, transparent);
+  --todo-index: color-mix(in srgb, var(--ai-plan-muted) 88%, transparent);
+  --todo-pending: color-mix(in srgb, var(--ai-plan-muted) 84%, transparent);
   --todo-progress: var(--ai-plan-progress);
   --todo-interrupted: var(--ai-plan-interrupted);
-  --todo-interrupted-text: rgba(75, 85, 99, 0.92);
+  --todo-interrupted-text: color-mix(in srgb, var(--foreground) 74%, var(--ai-plan-interrupted));
   --todo-completed: var(--ai-plan-complete);
-  --todo-completed-text: rgba(17, 94, 69, 0.92);
+  --todo-completed-text: color-mix(in srgb, var(--foreground) 62%, var(--ai-plan-complete));
   border-radius: 6px;
   border: 1px solid var(--todo-border);
   background:
     linear-gradient(180deg, var(--todo-surface-strong), var(--todo-surface)),
     var(--todo-surface-strong);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.82),
-    0 4px 12px rgba(148, 163, 184, 0.08);
+    inset 0 1px 0 color-mix(in srgb, var(--foreground) 8%, transparent),
+    0 4px 12px color-mix(in srgb, var(--ai-plan-border) 36%, transparent);
   overflow: hidden;
 }
 
@@ -483,8 +483,8 @@ watch(
 }
 
 .title-text-shimmer {
-  --color-muted-foreground: rgba(120, 53, 15, 0.42);
-  --color-background: rgba(217, 119, 6, 0.92);
+  --color-muted-foreground: color-mix(in srgb, var(--ai-plan-progress) 36%, transparent);
+  --color-background: var(--ai-plan-progress);
 }
 
 .todo-content.pending .title-text,
