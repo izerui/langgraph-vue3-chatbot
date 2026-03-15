@@ -389,7 +389,7 @@ function onFileChange(e: Event) {
             <PromptInputAttachmentsDisplay />
           </div>
 
-          <div v-if="files.length > 0" class="attachments-divider" />
+<!--          <div v-if="files.length > 0" class="attachments-divider" />-->
         </div>
 
         <!-- 文本输入区域 (PromptInputBody) -->
@@ -520,7 +520,7 @@ function onFileChange(e: Event) {
 .input-attachments {
   width: 100%;
   max-height: 120px;
-  padding: 0 12px 0;
+  padding: 4px 12px;
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: thin;
