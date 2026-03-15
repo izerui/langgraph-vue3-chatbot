@@ -23,7 +23,10 @@
 
 ## 预览
 
-![langgraph-vue3-chatbot preview](https://raw.githubusercontent.com/izerui/langgraph-vue3-chatbot/main/docs/img.png)
+<p align="center">
+  <img src="https://raw.githubusercontent.com/izerui/langgraph-vue3-chatbot/main/docs/img.png" alt="langgraph-vue3-chatbot preview 1" width="48%" />
+  <img src="https://raw.githubusercontent.com/izerui/langgraph-vue3-chatbot/main/docs/img_1.png" alt="langgraph-vue3-chatbot preview 2" width="48%" />
+</p>
 
 ## 特性
 
