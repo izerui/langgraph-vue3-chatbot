@@ -385,7 +385,7 @@ function onFileChange(e: Event) {
 
           <div v-if="props.suggestions.length > 0" class="attachments-divider" />
 
-          <div class="input-attachments">
+          <div v-if="files.length > 0" class="input-attachments">
             <PromptInputAttachmentsDisplay />
           </div>
 
