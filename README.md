@@ -24,8 +24,12 @@
 ## 预览
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/izerui/langgraph-vue3-chatbot/main/docs/img.png" alt="langgraph-vue3-chatbot preview 1" width="48%" />
-  <img src="https://raw.githubusercontent.com/izerui/langgraph-vue3-chatbot/main/docs/img_1.png" alt="langgraph-vue3-chatbot preview 2" width="48%" />
+  <img src="https://raw.githubusercontent.com/izerui/langgraph-vue3-chatbot/main/docs/img.png" alt="langgraph-vue3-chatbot light theme preview" width="48%" />
+  <img src="https://raw.githubusercontent.com/izerui/langgraph-vue3-chatbot/main/docs/img_1.png" alt="langgraph-vue3-chatbot dark theme preview" width="48%" />
+</p>
+
+<p align="center">
+  左图为浅色主题（<code>light</code>），右图为深色主题（<code>dark</code>）。
 </p>
 
 ## 特性
@@ -114,11 +118,13 @@ import { ChatBot } from 'langgraph-vue3-chatbot'
 
 ```vue
 <script setup lang="ts">
-import { AskAiBot, ChatBot } from 'langgraph-vue3-chatbot'
+import { AskAiBot, ChatBot, type AiBotTheme } from 'langgraph-vue3-chatbot'
 
 const apiUrl = import.meta.env.VITE_LANGGRAPH_API_URL || 'http://localhost:2024'
 const assistantId = import.meta.env.VITE_LANGGRAPH_ASSISTANT_ID || 'demo-assistant'
 const assistantName = import.meta.env.VITE_LANGGRAPH_ASSISTANT_NAME || 'AI 助手'
+const chatbotTheme: AiBotTheme = 'light'
+const askAiBotTheme: AiBotTheme = 'dark'
 
 const suggestions = [
   '这个 demo 怎么接入真实服务？',
@@ -131,7 +137,7 @@ const suggestions = [
     :api-url="apiUrl"
     :assistant-id="assistantId"
     :assistant-name="assistantName"
-    theme="light"
+    :theme="chatbotTheme"
   />
 
   <AskAiBot
@@ -139,7 +145,7 @@ const suggestions = [
     :assistant-id="assistantId"
     :assistant-name="assistantName"
     :suggestions="suggestions"
-    theme="dark"
+    :theme="askAiBotTheme"
   />
 </template>
 ```
