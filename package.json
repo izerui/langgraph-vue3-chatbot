@@ -1,6 +1,6 @@
 {
   "name": "langgraph-vue3-chatbot",
-  "version": "0.1.7",
+  "version": "0.1.10",
   "private": false,
   "type": "module",
   "main": "./dist-lib/index.js",
@@ -28,7 +28,7 @@
     "preview": "vite preview",
     "build:lib": "vite build --config vite.lib.config.ts && vue-tsc -p tsconfig.lib.json",
     "check:lib": "node ./scripts/check-lib.mjs",
-    "prepublishOnly": "pnpm check:lib"
+    "prepublishOnly": "npm version patch --no-git-tag-version && pnpm check:lib"
   },
   "dependencies": {
     "@langchain/langgraph-sdk": "^1.6.5",
