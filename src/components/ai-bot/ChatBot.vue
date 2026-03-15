@@ -2,6 +2,7 @@
 import { ref, onMounted, provide } from 'vue'
 import type { AttachmentTriggerSlotProps, PromptInputMessage } from './lib/input-types'
 import type { ChatMessage, ChatStatus, ChatFile, CustomContent } from './lib/message-types'
+import type { AiBotTheme } from './lib/theme'
 import { fetchModels, getDefaultModel, type ModelInfo } from './lib/models'
 import type { ToolEventPayload, ToolEventPhase, ToolEventState } from './lib/tool-events'
 import { Client } from '@langchain/langgraph-sdk'
@@ -25,6 +26,7 @@ interface Props {
   suggestions?: string[]
   apiUrl?: string
   apiKey?: string
+  theme?: AiBotTheme
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -35,7 +37,8 @@ const props = withDefaults(defineProps<Props>(), {
   showHeaderActions: true,
   suggestions: () => [],
   apiUrl: 'http://localhost:2024',
-  apiKey: undefined
+  apiKey: undefined,
+  theme: 'default'
 })
 
 defineSlots<{
@@ -743,7 +746,7 @@ function handleCustomEvent(data: any) {
 </script>
 
 <template>
-  <div class="chat-bot">
+  <div class="chat-bot" :data-ai-theme="props.theme">
     <div ref="portalHost" class="chat-bot-portal-host" />
     <div class="chat-window" :class="{ maximized: isMaximized }">
       <ChatHeader

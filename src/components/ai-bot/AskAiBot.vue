@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import type { AttachmentTriggerSlotProps } from './lib/input-types'
 import type { ChatFile, CustomContent } from './lib/message-types'
+import type { AiBotTheme } from './lib/theme'
 import ChatBot from './ChatBot.vue'
 import FloatButton from './FloatButton.vue'
 
@@ -17,6 +18,7 @@ interface Props {
   apiKey?: string
   width?: number | string
   height?: number | string
+  theme?: AiBotTheme
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -29,7 +31,8 @@ const props = withDefaults(defineProps<Props>(), {
   apiUrl: 'http://localhost:2024',
   apiKey: undefined,
   width: 400,
-  height: 'calc(100vh - 90px)'
+  height: 'calc(100vh - 90px)',
+  theme: 'default'
 })
 
 defineSlots<{
@@ -76,7 +79,7 @@ function stopResize() {
 </script>
 
 <template>
-  <div class="ask-ai-bot">
+  <div class="ask-ai-bot" :data-ai-theme="props.theme">
     <!-- 聊天窗口 -->
     <Transition name="slide-up">
       <div
@@ -97,6 +100,7 @@ function stopResize() {
           :thread-id="threadId"
           :user-id="userId"
           :suggestions="suggestions"
+          :theme="props.theme"
           @close="toggleExpanded"
           @update:is-maximized="handleMaximizeChange"
         >

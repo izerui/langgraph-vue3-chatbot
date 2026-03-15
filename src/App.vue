@@ -69,7 +69,7 @@ function formatCustomContent(content: unknown) {
       </div>
 
       <div class="demo-container">
-        <ChatBot
+        <ChatBot theme="default"
           :api-url="apiUrl"
           :api-key="apiKey"
           assistant-id="research"

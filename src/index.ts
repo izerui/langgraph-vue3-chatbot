@@ -5,6 +5,7 @@ import './components/ai-bot/chatbot.css'
 export { AskAiBot, ChatBot } from './components/ai-bot'
 
 export type {
+  AiBotTheme,
   AttachmentFile,
   AttachmentTriggerSlotProps,
   ChatFile,

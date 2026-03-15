@@ -24,9 +24,11 @@ import type {
   MessageType,
   ToolCall,
 } from './lib/message-types'
+import type { AiBotTheme } from './lib/theme'
 
 export { AskAiBot, ChatBot, GeneratedFiles }
 export type {
+  AiBotTheme,
   AttachmentFile,
   AttachmentTriggerSlotProps,
   ChatFile,
