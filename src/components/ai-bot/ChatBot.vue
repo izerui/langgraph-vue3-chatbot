@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, provide } from 'vue'
-import type { AttachmentTriggerSlotProps, PromptInputMessage } from './lib/input-types'
+import type { AiBotInputApi, AiBotPublicApi, AttachmentTriggerSlotProps, PromptInputMessage } from './lib/input-types'
 import type { ChatMessage, ChatStatus, ChatFile, CustomContent } from './lib/message-types'
 import type { AiBotTheme } from './lib/theme'
 import { fetchModels, getDefaultModel, type ModelInfo } from './lib/models'
@@ -15,6 +15,8 @@ import ChatInput from './ChatInput.vue'
 import { Loader } from './ai-elements/loader'
 import GeneratedFiles from './GeneratedFiles.vue'
 import TodoList from './TodoList.vue'
+
+const chatInputRef = ref<AiBotInputApi | null>(null)
 
 interface Props {
   assistantId?: string
@@ -743,6 +745,24 @@ function handleCustomEvent(data: any) {
 
   console.log('Custom event received:', data)
 }
+
+const setTextInput: AiBotPublicApi['setTextInput'] = (text) => {
+  chatInputRef.value?.setTextInput(text)
+}
+
+const addAttachments: AiBotPublicApi['addAttachments'] = (attachments) => {
+  chatInputRef.value?.addAttachments(attachments)
+}
+
+const sendMessage: AiBotPublicApi['sendMessage'] = async () => {
+  await chatInputRef.value?.sendMessage()
+}
+
+defineExpose<AiBotPublicApi>({
+  setTextInput,
+  addAttachments,
+  sendMessage,
+})
 </script>
 
 <template>
@@ -794,6 +814,7 @@ function handleCustomEvent(data: any) {
       />
 
       <ChatInput
+        ref="chatInputRef"
         :status="status"
         :current-model="currentModel"
         :models="models"

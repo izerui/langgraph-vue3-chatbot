@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import type { AttachmentTriggerSlotProps } from './lib/input-types'
+import { nextTick, ref } from 'vue'
+import type { AiBotPublicApi, AskAiBotPublicApi, AttachmentTriggerSlotProps } from './lib/input-types'
 import type { ChatFile, CustomContent } from './lib/message-types'
 import type { AiBotTheme } from './lib/theme'
 import ChatBot from './ChatBot.vue'
 import FloatButton from './FloatButton.vue'
+
+const chatBotRef = ref<AiBotPublicApi | null>(null)
 
 interface Props {
   assistantId?: string
@@ -76,6 +78,33 @@ function stopResize() {
   document.removeEventListener('mousemove', handleResize)
   document.removeEventListener('mouseup', stopResize)
 }
+
+async function ensureExpanded() {
+  if (isExpanded.value) {
+    return
+  }
+  isExpanded.value = true
+  await nextTick()
+}
+
+const setTextInput: AskAiBotPublicApi['setTextInput'] = (text) => {
+  chatBotRef.value?.setTextInput(text)
+}
+
+const addAttachments: AskAiBotPublicApi['addAttachments'] = (attachments) => {
+  chatBotRef.value?.addAttachments(attachments)
+}
+
+const sendMessage: AskAiBotPublicApi['sendMessage'] = async () => {
+  await ensureExpanded()
+  await chatBotRef.value?.sendMessage()
+}
+
+defineExpose<AskAiBotPublicApi>({
+  setTextInput,
+  addAttachments,
+  sendMessage,
+})
 </script>
 
 <template>
@@ -92,6 +121,7 @@ function stopResize() {
         } : {}"
       >
         <ChatBot
+          ref="chatBotRef"
           :api-url="apiUrl"
           :api-key="apiKey"
           :assistant-id="assistantId"

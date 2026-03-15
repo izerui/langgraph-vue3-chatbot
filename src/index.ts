@@ -5,7 +5,11 @@ import './components/ai-bot/chatbot.css'
 export { AskAiBot, ChatBot } from './components/ai-bot'
 
 export type {
+  AiBotInputApi,
+  AiBotPublicApi,
   AiBotTheme,
+  AiBotVisibilityOptions,
+  AskAiBotPublicApi,
   AttachmentFile,
   AttachmentTriggerSlotProps,
   ChatFile,

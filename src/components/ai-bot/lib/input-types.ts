@@ -48,6 +48,20 @@ export interface AttachmentTriggerSlotProps {
   addAttachments: (attachments: PromptInputAttachment[]) => void
 }
 
+export interface AiBotVisibilityOptions {
+  ensureVisible?: boolean
+}
+
+export interface AiBotInputApi {
+  setTextInput: (text: string) => void
+  addAttachments: (attachments: PromptInputAttachment[]) => void
+  sendMessage: (options?: AiBotVisibilityOptions) => Promise<void>
+}
+
+export interface AiBotPublicApi extends AiBotInputApi {}
+
+export interface AskAiBotPublicApi extends AiBotPublicApi {}
+
 export interface PromptInputContext {
   textInput: Ref<string>
   files: Ref<AttachmentFile[]>

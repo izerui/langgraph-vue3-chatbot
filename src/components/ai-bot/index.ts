@@ -6,6 +6,10 @@ import ChatBot from './ChatBot.vue'
 import GeneratedFiles from './GeneratedFiles.vue'
 
 import type {
+  AiBotInputApi,
+  AiBotPublicApi,
+  AiBotVisibilityOptions,
+  AskAiBotPublicApi,
   AttachmentFile,
   AttachmentTriggerSlotProps,
   PromptInputAttachment,
@@ -28,7 +32,11 @@ import type { AiBotTheme } from './lib/theme'
 
 export { AskAiBot, ChatBot, GeneratedFiles }
 export type {
+  AiBotInputApi,
+  AiBotPublicApi,
   AiBotTheme,
+  AiBotVisibilityOptions,
+  AskAiBotPublicApi,
   AttachmentFile,
   AttachmentTriggerSlotProps,
   ChatFile,

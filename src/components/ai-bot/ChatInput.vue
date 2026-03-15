@@ -3,7 +3,7 @@ import { computed, ref, provide, onBeforeUnmount } from 'vue'
 import type { ChatFileType, ChatStatus } from './lib/message-types'
 import { nanoid } from 'nanoid'
 import { PROMPT_INPUT_KEY } from './lib/prompt-input'
-import type { AttachmentFile, AttachmentTriggerSlotProps, PromptInputAttachment, PromptInputContext } from './lib/input-types'
+import type { AiBotInputApi, AttachmentFile, AttachmentTriggerSlotProps, PromptInputAttachment, PromptInputContext } from './lib/input-types'
 import { getProviderByModelName, type ModelInfo } from './lib/models'
 import PromptInputAttachmentsDisplay from './InputAttachmentsDisplay.vue'
 import ChatSuggestions from './ChatSuggestions.vue'
@@ -178,7 +178,11 @@ const convertBlobUrlToDataUrl = async (url: string): Promise<string | null> => {
   }
 }
 
-const sendMessage = async () => {
+const sendMessage: AiBotInputApi['sendMessage'] = async () => {
+  if (props.status === 'streaming') {
+    return
+  }
+
   // Process files (convert blobs to base64 if needed for AI SDK)
   const processedFiles = await Promise.all(
     files.value.map(async (item) => {
@@ -204,6 +208,12 @@ const sendMessage = async () => {
   clearInput()
   clearFiles()
 }
+
+defineExpose<AiBotInputApi>({
+  setTextInput,
+  addAttachments,
+  sendMessage,
+})
 
 // 提供 context 给子组件
 const context: PromptInputContext = {
