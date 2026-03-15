@@ -51,6 +51,21 @@
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
+
+  /*
+   * AI theme override guide
+   * - Overall panel tone: --ai-surface / --ai-surface-subtle / --ai-border-subtle
+   * - Brand emphasis and submit button: --ai-accent / --ai-accent-foreground / --ai-accent-soft
+   * - Input area: --ai-input-panel-bg / --ai-input-bg / --ai-input-text / --ai-input-placeholder
+   * - Floating layers (dropdown / dialog / hover-card / command): --ai-layer-bg / --ai-layer-border / --ai-layer-shadow
+   * - Hover and weak text: --ai-control-muted / --ai-control-hover-bg / --ai-control-hover-text
+   * - Suggestion chips and file pills: --ai-chip-* / --ai-file-pill-*
+   * - User bubble: --ai-user-bubble-bg / --ai-user-bubble-text
+   * - Floating button: --ai-fab-bg / --ai-fab-bg-strong / --ai-fab-shadow
+   * - Tabs: --ai-tabs-*
+   * - Todo / plan list: --ai-plan-*
+   */
+
   /* Core surfaces and overlays */
   --ai-surface: #ffffff;
   --ai-surface-subtle: #f9fafb;
