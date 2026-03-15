@@ -184,6 +184,90 @@ const suggestions = [
 | `apiKey` | 指定 LangGraph 服务访问凭证 | `undefined` |
 | `theme` | 设置组件主题，可选 `light` / `dark` | `'light'` |
 
+## 组件实例 API
+
+`ChatBot` 和 `AskAiBot` 都支持通过 `ref` 调用少量公开实例方法，目前只暴露以下 3 个能力：
+
+- `setTextInput(text: string)`：设置输入框文本
+- `addAttachments(attachments: PromptInputAttachment[])`：添加附件
+- `sendMessage()`：触发现有发送流程
+
+其中：
+
+- `ChatBot` 会直接调用内部输入区现有逻辑
+- `AskAiBot` 在折叠状态下调用 `sendMessage()` 时，会先自动展开再发送
+
+### `ChatBot` 示例
+
+```vue
+<script setup lang="ts">
+import { ref } from 'vue'
+import { ChatBot, type AiBotPublicApi, type PromptInputAttachment } from 'langgraph-vue3-chatbot'
+
+const chatBotRef = ref<AiBotPublicApi | null>(null)
+
+function askWithAttachment() {
+  chatBotRef.value?.setTextInput('请帮我分析这个附件')
+
+  const attachments: PromptInputAttachment[] = [
+    {
+      type: 'file_url',
+      url: 'https://example.com/report.pdf',
+      filename: 'report.pdf',
+      mediaType: 'application/pdf'
+    }
+  ]
+
+  chatBotRef.value?.addAttachments(attachments)
+  chatBotRef.value?.sendMessage()
+}
+</script>
+
+<template>
+  <button @click="askWithAttachment">
+    发送预设问题
+  </button>
+
+  <div style="height: 600px; margin-top: 12px;">
+    <ChatBot
+      ref="chatBotRef"
+      assistant-id="research"
+      assistant-name="AI 助手"
+      api-url="http://localhost:2024"
+    />
+  </div>
+</template>
+```
+
+### `AskAiBot` 示例
+
+```vue
+<script setup lang="ts">
+import { ref } from 'vue'
+import { AskAiBot, type AskAiBotPublicApi } from 'langgraph-vue3-chatbot'
+
+const askAiBotRef = ref<AskAiBotPublicApi | null>(null)
+
+function quickAsk() {
+  askAiBotRef.value?.setTextInput('帮我总结今天的待办')
+  askAiBotRef.value?.sendMessage()
+}
+</script>
+
+<template>
+  <button @click="quickAsk">
+    唤起并发送
+  </button>
+
+  <AskAiBot
+    ref="askAiBotRef"
+    assistant-id="research"
+    assistant-name="AI 助手"
+    api-url="http://localhost:2024"
+  />
+</template>
+```
+
 ## Slots
 
 ### AskAiBot
