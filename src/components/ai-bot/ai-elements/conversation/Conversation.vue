@@ -26,6 +26,26 @@ const props = withDefaults(defineProps<Props>(), {
 const delegatedProps = reactiveOmit(props, 'class')
 </script>
 
+<style scoped>
+:deep(> div) {
+  scrollbar-width: thin;
+  scrollbar-color: var(--ai-scrollbar-thumb) transparent;
+}
+
+:deep(> div::-webkit-scrollbar) {
+  width: 6px;
+}
+
+:deep(> div::-webkit-scrollbar-thumb) {
+  background: var(--ai-scrollbar-thumb);
+  border-radius: 999px;
+}
+
+:deep(> div::-webkit-scrollbar-thumb:hover) {
+  background: var(--ai-scrollbar-thumb-hover);
+}
+</style>
+
 <template>
   <StickToBottom
     v-bind="delegatedProps"
