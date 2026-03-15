@@ -232,7 +232,7 @@ onBeforeUnmount(() => {
   max-width: 100%;
   height: 24px;
   padding: 0 9px;
-  border-color: var(--ai-chip-border);
+  border-color: transparent;
   background: var(--ai-chip-bg);
   color: var(--ai-chip-text);
   font-size: 11px;
@@ -245,7 +245,7 @@ onBeforeUnmount(() => {
 
 :deep(.suggestion-chip:hover) {
   background: var(--ai-control-hover-bg);
-  border-color: var(--ai-chip-border);
+  border-color: transparent;
   color: var(--ai-chip-hover-text);
 }
 

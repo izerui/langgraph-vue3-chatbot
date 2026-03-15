@@ -10,7 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "langgraph-vue3-chatbot": "^0.1.13",
+    "langgraph-vue3-chatbot": "^0.1.18",
     "vue": "^3.5.13"
   },
   "devDependencies": {
