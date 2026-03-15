@@ -1,0 +1,22 @@
+{
+  "name": "langgraph-vue3-chatbot-demo",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "predev": "npm install langgraph-vue3-chatbot@latest",
+    "dev": "vite",
+    "build": "vue-tsc --noEmit && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "langgraph-vue3-chatbot": "^0.1.13",
+    "vue": "^3.5.13"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^6.0.1",
+    "typescript": "^5.9.2",
+    "vite": "^7.1.3",
+    "vue-tsc": "^3.0.5"
+  }
+}
