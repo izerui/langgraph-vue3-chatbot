@@ -174,7 +174,7 @@ defineExpose<AskAiBotPublicApi>({
 
 .chat-window-container {
   position: fixed;
-  top: 20px;
+  bottom: 74px;
   right: 20px;
   transition: height 0.3s ease;
 }
@@ -182,9 +182,10 @@ defineExpose<AskAiBotPublicApi>({
 .chat-window-container.maximized {
   top: 20px;
   right: 20px;
+  bottom: 20px;
   left: 20px;
   width: auto;
-  height: calc(100vh - 40px);
+  height: auto;
 }
 
 /* 拖拽手柄 */

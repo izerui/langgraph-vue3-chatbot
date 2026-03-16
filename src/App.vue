@@ -157,6 +157,7 @@ function formatCustomContent(content: unknown) {
       thread-id="9f31354d-b2f8-4472-8ab7-fd49cd52e558"
       assistant-name="我的助手"
       :system-prompt="KNOWLEDGE_GRAPH_PROMPT"
+      :height="'calc(100vh - 220px)'"
     >
       <template #attachment-trigger="{ addAttachments }">
         <button
