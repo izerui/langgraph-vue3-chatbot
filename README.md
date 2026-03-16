@@ -86,6 +86,7 @@ import { AskAiBot } from 'langgraph-vue3-chatbot'
     theme="light"
     :width="400"
     height="calc(100vh - 120px)"
+    :allow-model-switch="false"
   />
 </template>
 ```
@@ -107,6 +108,7 @@ import { ChatBot } from 'langgraph-vue3-chatbot'
       api-url="http://localhost:2024"
       theme="dark"
       :show-header-actions="false"
+      :allow-model-switch="false"
     />
   </div>
 </template>
@@ -168,6 +170,7 @@ const suggestions = [
 | `theme` | 设置组件主题，可选 `light` / `dark` | `'light'` |
 | `width` | 设置悬浮聊天窗打开后的宽度，支持 `number` 或 CSS 尺寸字符串 | `400` |
 | `height` | 设置悬浮聊天窗打开后的高度，支持 `number` 或 CSS 尺寸字符串 | `'calc(100vh - 90px)'` |
+| `allowModelSwitch` | 控制是否显示输入区右下角的模型选择器 | `true` |
 
 ### ChatBot
 
@@ -183,6 +186,7 @@ const suggestions = [
 | `apiUrl` | 指定 LangGraph 服务地址 | `'http://localhost:2024'` |
 | `apiKey` | 指定 LangGraph 服务访问凭证 | `undefined` |
 | `theme` | 设置组件主题，可选 `light` / `dark` | `'light'` |
+| `allowModelSwitch` | 控制是否显示输入区右下角的模型选择器 | `true` |
 
 ## 组件实例 API
 

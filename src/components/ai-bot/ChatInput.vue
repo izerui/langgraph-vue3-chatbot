@@ -18,9 +18,12 @@ interface Props {
   models: ModelInfo[]
   suggestions: string[]
   useWebSearch: boolean
+  allowModelSwitch?: boolean
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  allowModelSwitch: true,
+})
 
 const emit = defineEmits<{
   submit: [message: { text: string, files: AttachmentFile[] }]
@@ -439,7 +442,7 @@ function onFileChange(e: Event) {
           <!-- 右侧：模型选择器 + 发送按钮 -->
           <div class="flex items-center gap-1">
             <!-- 模型选择器 -->
-            <DropdownMenu v-model:open="modelSelectorOpen">
+            <DropdownMenu v-if="props.allowModelSwitch" v-model:open="modelSelectorOpen">
               <DropdownMenuTrigger as-child>
                 <InputGroupButton type="button" class="flex items-center gap-1 cursor-pointer">
                   <img

@@ -21,6 +21,7 @@ interface Props {
   width?: number | string
   height?: number | string
   theme?: AiBotTheme
+  allowModelSwitch?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -34,7 +35,8 @@ const props = withDefaults(defineProps<Props>(), {
   apiKey: undefined,
   width: 400,
   height: 'calc(100vh - 90px)',
-  theme: 'light'
+  theme: 'light',
+  allowModelSwitch: true,
 })
 
 defineSlots<{
@@ -131,6 +133,7 @@ defineExpose<AskAiBotPublicApi>({
           :user-id="userId"
           :suggestions="suggestions"
           :theme="props.theme"
+          :allow-model-switch="props.allowModelSwitch"
           @close="toggleExpanded"
           @update:is-maximized="handleMaximizeChange"
         >

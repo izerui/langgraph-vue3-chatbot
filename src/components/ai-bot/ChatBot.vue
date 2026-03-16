@@ -29,6 +29,7 @@ interface Props {
   apiUrl?: string
   apiKey?: string
   theme?: AiBotTheme
+  allowModelSwitch?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -40,7 +41,8 @@ const props = withDefaults(defineProps<Props>(), {
   suggestions: () => [],
   apiUrl: 'http://localhost:2024',
   apiKey: undefined,
-  theme: 'light'
+  theme: 'light',
+  allowModelSwitch: true,
 })
 
 defineSlots<{
@@ -820,6 +822,7 @@ defineExpose<AiBotPublicApi>({
         :models="models"
         :suggestions="suggestions"
         :use-web-search="useWebSearch"
+        :allow-model-switch="props.allowModelSwitch"
         v-model:modelSelectorOpen="modelSelectorOpen"
         @submit="handleFormSubmit"
         @stop="handleStop"
