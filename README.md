@@ -3,7 +3,7 @@
 [![npm version](https://img.shields.io/npm/v/langgraph-vue3-chatbot)](https://www.npmjs.com/package/langgraph-vue3-chatbot)
 [![npm downloads](https://img.shields.io/npm/dw/langgraph-vue3-chatbot)](https://www.npmjs.com/package/langgraph-vue3-chatbot)
 [![npm types](https://img.shields.io/npm/types/langgraph-vue3-chatbot)](https://www.npmjs.com/package/langgraph-vue3-chatbot)
-[![license](https://img.shields.io/npm/l/langgraph-vue3-chatbot)](https://github.com/izerui/langgraph-vue3-chatbot/blob/main/LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/izerui/langgraph-vue3-chatbot?style=social)](https://github.com/izerui/langgraph-vue3-chatbot)
 [![GitHub last commit](https://img.shields.io/github/last-commit/izerui/langgraph-vue3-chatbot)](https://github.com/izerui/langgraph-vue3-chatbot/commits/main)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/izerui/langgraph-vue3-chatbot/pulls)

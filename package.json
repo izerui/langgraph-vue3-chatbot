@@ -10,6 +10,7 @@
     "type": "git",
     "url": "git+https://github.com/izerui/langgraph-vue3-chatbot.git"
   },
+  "license": "MIT",
   "files": [
     "dist-lib"
   ],
