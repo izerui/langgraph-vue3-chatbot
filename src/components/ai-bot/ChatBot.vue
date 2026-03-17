@@ -162,24 +162,21 @@ async function handleSubmit(userMessage: string, files: ChatFile[] = []) {
   for (const file of files) {
     const mimeType = file.mediaType || 'application/octet-stream'
     const filename = file.filename || file.id || 'unknown'
-    const rawData = file.data || file.url || ''
-    const isDataUrl = rawData.startsWith('data:')
-    const base64Data = isDataUrl ? rawData.split(',')[1] || '' : ''
-    const normalizedType = file.type || (isDataUrl ? (mimeType.startsWith('image/') ? 'image' : 'file') : 'file_url')
+    const normalizedType = file.type || (file.data ? (mimeType.startsWith('image/') ? 'image' : 'file') : 'file_url')
 
-    if ((normalizedType === 'file' || normalizedType === 'image') && base64Data) {
+    if ((normalizedType === 'file' || normalizedType === 'image') && file.data) {
       if (normalizedType === 'image') {
         contentBlocks.push({
           type: 'image',
           mimeType,
-          data: base64Data,
+          data: file.data,
           metadata: { name: filename }
         })
       } else {
         contentBlocks.push({
           type: 'file',
           mimeType,
-          data: base64Data,
+          data: file.data,
           metadata: { filename }
         })
       }

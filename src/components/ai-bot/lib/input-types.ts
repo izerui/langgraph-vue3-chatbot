@@ -11,25 +11,38 @@ export interface AttachmentFile extends ChatFile {
   file?: File
 }
 
-export type PromptInputFileAttachment = {
+export type PromptInputBase64Attachment = {
   id?: string
-  type: 'file'
-  file?: File
-  filename?: string
-  mediaType?: string
-  data?: string
-  url?: string
+  filename: string
+  mediaType: string
+  data: string
 }
 
-export type PromptInputImageAttachment = {
-  id?: string
-  type: 'image'
-  file?: File
-  filename?: string
-  mediaType?: string
-  data?: string
-  url?: string
-}
+export type PromptInputFileAttachment =
+  | {
+      id?: string
+      type: 'file'
+      file: File
+      filename?: string
+      mediaType?: string
+    }
+  | ({
+      id?: string
+      type: 'file'
+    } & PromptInputBase64Attachment)
+
+export type PromptInputImageAttachment =
+  | {
+      id?: string
+      type: 'image'
+      file: File
+      filename?: string
+      mediaType?: string
+    }
+  | ({
+      id?: string
+      type: 'image'
+    } & PromptInputBase64Attachment)
 
 export type PromptInputFileUrlAttachment = {
   id?: string

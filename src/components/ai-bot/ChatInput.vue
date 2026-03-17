@@ -61,21 +61,10 @@ const setTextInput = (val: string) => {
   inputText.value = val
 }
 
-function resolveAttachmentType(attachment: PromptInputAttachment, file?: File, url?: string): ChatFileType {
-  if (attachment.type === 'file_url') {
-    return 'file_url'
-  }
-  if (attachment.type === 'image') {
-    return 'image'
-  }
-  if (attachment.type === 'file') {
-    return 'file'
-  }
-  if (url && !url.startsWith('blob:') && !url.startsWith('data:')) {
-    return 'file_url'
-  }
-  const mediaType = file?.type || ''
-  return mediaType.startsWith('image/') ? 'image' : 'file'
+function normalizeBase64Data(data: string): string {
+  return data.startsWith('data:')
+    ? (data.split(',')[1] || '')
+    : data
 }
 
 const addAttachments = (incoming: PromptInputAttachment[]) => {
@@ -95,21 +84,21 @@ const addAttachments = (incoming: PromptInputAttachment[]) => {
           mediaType: attachment.mediaType || 'application/octet-stream',
           filename: attachment.filename,
         }
-      : (() => {
-          const file = attachment.file
-          const url = attachment.url || (file ? URL.createObjectURL(file) : undefined)
-          const type = resolveAttachmentType(attachment, file, url)
-
-          return {
+      : 'file' in attachment
+        ? {
             ...attachment,
             id: attachment.id || nanoid(),
-            type,
-            url,
-            mediaType: attachment.mediaType || file?.type || '',
-            filename: attachment.filename || file?.name,
-            file,
+            url: URL.createObjectURL(attachment.file),
+            mediaType: attachment.mediaType || attachment.file.type || '',
+            filename: attachment.filename || attachment.file.name,
           }
-        })()
+        : {
+            ...attachment,
+            id: attachment.id || nanoid(),
+            mediaType: attachment.mediaType,
+            filename: attachment.filename,
+            data: normalizeBase64Data(attachment.data),
+          }
 
     const normalizedName = normalized.filename?.trim()
     if (normalizedName && existingFilenames.has(normalizedName)) {
@@ -165,13 +154,18 @@ const openFileDialog = () => {
   fileInputRef.value?.click()
 }
 
-const convertBlobUrlToDataUrl = async (url: string): Promise<string | null> => {
+const convertBlobUrlToBase64 = async (url: string): Promise<string | null> => {
   try {
     const response = await fetch(url)
     const blob = await response.blob()
     return new Promise((resolve) => {
       const reader = new FileReader()
-      reader.onloadend = () => resolve(reader.result as string)
+      reader.onloadend = () => {
+        const result = typeof reader.result === 'string'
+          ? normalizeBase64Data(reader.result)
+          : null
+        resolve(result)
+      }
       reader.onerror = () => resolve(null)
       reader.readAsDataURL(blob)
     })
@@ -186,16 +180,14 @@ const sendMessage: AiBotInputApi['sendMessage'] = async () => {
     return
   }
 
-  // Process files (convert blobs to base64 if needed for AI SDK)
+  // Process files (convert blob urls to base64 if needed for AI SDK)
   const processedFiles = await Promise.all(
     files.value.map(async (item) => {
       if (item.url && item.url.startsWith('blob:')) {
-        const dataUrl = await convertBlobUrlToDataUrl(item.url)
+        const data = await convertBlobUrlToBase64(item.url)
         return {
           ...item,
-          type: item.type === 'file_url' ? 'file' : item.type,
-          data: dataUrl ?? item.data,
-          url: dataUrl ?? item.url,
+          data: data ?? item.data,
         }
       }
       return item

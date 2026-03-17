@@ -25,12 +25,20 @@ const suggestions = [
 const attachmentDialogOpen = ref(false)
 const pendingAddAttachments = ref<((attachments: PromptInputAttachment[]) => void) | null>(null)
 
-const demoAttachment: PromptInputAttachment = {
-  type: 'file_url',
-  url: 'https://example.com/files/langgraph-demo-guide.pdf',
-  filename: 'langgraph-demo-guide.pdf',
-  mediaType: 'application/pdf',
-}
+const demoAttachments: PromptInputAttachment[] = [
+  {
+    type: 'file_url',
+    url: 'https://example.com/files/langgraph-demo-guide.pdf',
+    filename: 'langgraph-demo-guide.pdf',
+    mediaType: 'application/pdf',
+  },
+  {
+    type: 'image',
+    filename: 'langgraph-flowchart.png',
+    mediaType: 'image/png',
+    data: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4////fwAJ+wP9KobjigAAAABJRU5ErkJggg==',
+  },
+]
 
 function openAttachmentDialog(addAttachments: (attachments: PromptInputAttachment[]) => void) {
   pendingAddAttachments.value = addAttachments
@@ -44,7 +52,7 @@ function closeAttachmentDialog() {
 
 function confirmAttachmentSelection() {
   if (pendingAddAttachments.value) {
-    pendingAddAttachments.value([demoAttachment])
+    pendingAddAttachments.value(demoAttachments)
   }
 
   closeAttachmentDialog()

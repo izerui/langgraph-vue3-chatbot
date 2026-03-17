@@ -195,7 +195,7 @@ const suggestions = [
 公共能力：
 
 - `setTextInput(text: string)`：设置输入框文本
-- `addAttachments(attachments: PromptInputAttachment[])`：添加附件
+- `addAttachments(attachments: PromptInputAttachment[])`：添加附件，支持 `file`、`data + mediaType`、`file_url` 三种模式
 - `sendMessage()`：触发现有发送流程
 
 其中：
@@ -210,6 +210,12 @@ const suggestions = [
 
 ### `ChatBot` 示例
 
+`PromptInputAttachment` 推荐按以下三种模式传入：
+
+- `file`：传浏览器原生 `File`
+- `image` / `file` + `data`：传纯 base64 内容，`data` 不要带 `data:image/png;base64,` 前缀
+- `file_url`：传远程文件地址
+
 ```vue
 <script setup lang="ts">
 import { ref } from 'vue'
@@ -218,7 +224,7 @@ import { ChatBot, type AiBotPublicApi, type PromptInputAttachment } from 'langgr
 const chatBotRef = ref<AiBotPublicApi | null>(null)
 
 function askWithAttachment() {
-  chatBotRef.value?.setTextInput('请帮我分析这个附件')
+  chatBotRef.value?.setTextInput('请帮我分析这些附件')
 
   const attachments: PromptInputAttachment[] = [
     {
@@ -226,6 +232,12 @@ function askWithAttachment() {
       url: 'https://example.com/report.pdf',
       filename: 'report.pdf',
       mediaType: 'application/pdf'
+    },
+    {
+      type: 'image',
+      filename: 'architecture.png',
+      mediaType: 'image/png',
+      data: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4////fwAJ+wP9KobjigAAAABJRU5ErkJggg=='
     }
   ]
 
