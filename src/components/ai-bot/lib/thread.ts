@@ -155,19 +155,26 @@ export async function loadThreadHistory(
       i++
     }
 
-    // 处理 generated_files 自定义消息
+    // 处理 generated_files 自定义消息，插入到最后一个 AI 消息后面
     const generatedFiles = values.generated_files
     if (generatedFiles && Array.isArray(generatedFiles) && generatedFiles.length > 0) {
       const customContent: CustomContent = {
         type: 'generated_files',
         content: generatedFiles
       }
-      loadedMessages.push({
+      const generatedFilesMessage: ChatMessage = {
         key: `custom-generated_files-${Date.now()}-${Math.random()}`,
         type: 'custom',
         content: '',
         customContent
-      })
+      }
+
+      const lastAiMessageIndex = loadedMessages.map(message => message.type).lastIndexOf('ai')
+      if (lastAiMessageIndex >= 0) {
+        loadedMessages.splice(lastAiMessageIndex + 1, 0, generatedFilesMessage)
+      } else {
+        loadedMessages.push(generatedFilesMessage)
+      }
     }
 
     // 处理 suggested_questions 通过 callback 返回，不 push 到消息列表
