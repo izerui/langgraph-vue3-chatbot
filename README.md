@@ -190,7 +190,9 @@ const suggestions = [
 
 ## 组件实例 API
 
-`ChatBot` 和 `AskAiBot` 都支持通过 `ref` 调用少量公开实例方法，目前只暴露以下 3 个能力：
+`ChatBot` 和 `AskAiBot` 都支持通过 `ref` 调用少量公开实例方法。
+
+公共能力：
 
 - `setTextInput(text: string)`：设置输入框文本
 - `addAttachments(attachments: PromptInputAttachment[])`：添加附件
@@ -200,6 +202,11 @@ const suggestions = [
 
 - `ChatBot` 会直接调用内部输入区现有逻辑
 - `AskAiBot` 在折叠状态下调用 `sendMessage()` 时，会先自动展开再发送
+
+`AskAiBot` 额外支持：
+
+- `open()`：打开悬浮聊天窗
+- `close()`：关闭悬浮聊天窗；如果当前处于最大化状态，会一并退出最大化
 
 ### `ChatBot` 示例
 
@@ -252,6 +259,14 @@ import { AskAiBot, type AskAiBotPublicApi } from 'langgraph-vue3-chatbot'
 
 const askAiBotRef = ref<AskAiBotPublicApi | null>(null)
 
+function openBot() {
+  askAiBotRef.value?.open()
+}
+
+function closeBot() {
+  askAiBotRef.value?.close()
+}
+
 function quickAsk() {
   askAiBotRef.value?.setTextInput('帮我总结今天的待办')
   askAiBotRef.value?.sendMessage()
@@ -259,9 +274,17 @@ function quickAsk() {
 </script>
 
 <template>
-  <button @click="quickAsk">
-    唤起并发送
-  </button>
+  <div style="display: flex; gap: 8px;">
+    <button @click="openBot">
+      打开助手
+    </button>
+    <button @click="closeBot">
+      关闭助手
+    </button>
+    <button @click="quickAsk">
+      唤起并发送
+    </button>
+  </div>
 
   <AskAiBot
     ref="askAiBotRef"
