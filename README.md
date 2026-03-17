@@ -212,9 +212,33 @@ const suggestions = [
 
 `PromptInputAttachment` 推荐按以下三种模式传入：
 
-- `file`：传浏览器原生 `File`
-- `image` / `file` + `data`：传纯 base64 内容，`data` 不要带 `data:image/png;base64,` 前缀
-- `file_url`：传远程文件地址
+### 1. 本地文件
+
+```ts
+{ type: 'file' | 'image', file: File, filename?: string, mediaType?: string }
+```
+
+- `file`：浏览器原生 `File` 对象
+- `filename` / `mediaType`：可选覆盖默认文件名和 MIME 类型
+
+### 2. 内联内容
+
+```ts
+{ type: 'file' | 'image', filename: string, mediaType: string, data: string }
+```
+
+- `data`：纯 base64 内容
+- `data` 不要带 `data:image/png;base64,` 这类前缀
+- `mediaType`：文件 MIME 类型，例如 `image/png`、`application/pdf`
+
+### 3. 远程地址
+
+```ts
+{ type: 'file_url', url: string, filename?: string, mediaType?: string }
+```
+
+- `url`：远程文件地址
+- `filename` / `mediaType`：可选补充展示信息
 
 ```vue
 <script setup lang="ts">
