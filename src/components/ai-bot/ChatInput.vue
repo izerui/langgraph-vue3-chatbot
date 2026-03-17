@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, provide, onBeforeUnmount } from 'vue'
-import type { ChatFileType, ChatStatus } from './lib/message-types'
+import type { ChatStatus } from './lib/message-types'
 import { nanoid } from 'nanoid'
 import { PROMPT_INPUT_KEY } from './lib/prompt-input'
 import type { AiBotInputApi, AttachmentFile, AttachmentTriggerSlotProps, PromptInputAttachment, PromptInputContext } from './lib/input-types'
@@ -67,6 +67,12 @@ function normalizeBase64Data(data: string): string {
     : data
 }
 
+function revokeBlobUrl(file: { url?: string }) {
+  if (file.url?.startsWith('blob:')) {
+    URL.revokeObjectURL(file.url)
+  }
+}
+
 const addAttachments = (incoming: PromptInputAttachment[]) => {
   const existingFilenames = new Set(
     files.value
@@ -102,8 +108,8 @@ const addAttachments = (incoming: PromptInputAttachment[]) => {
 
     const normalizedName = normalized.filename?.trim()
     if (normalizedName && existingFilenames.has(normalizedName)) {
-      if (normalized.url?.startsWith('blob:')) {
-        URL.revokeObjectURL(normalized.url)
+      if ('url' in normalized) {
+        revokeBlobUrl(normalized)
       }
       return []
     }
@@ -121,10 +127,21 @@ const addAttachments = (incoming: PromptInputAttachment[]) => {
 
 const addFiles = (incoming: File[] | FileList) => {
   const fileList = Array.from(incoming)
-  addAttachments(fileList.map(file => ({
-    type: file.type.startsWith('image/') ? 'image' : 'file',
-    file,
-  })))
+  const attachments: PromptInputAttachment[] = fileList.map((file) => {
+    if (file.type.startsWith('image/')) {
+      return {
+        type: 'image',
+        file,
+      }
+    }
+
+    return {
+      type: 'file',
+      file,
+    }
+  })
+
+  addAttachments(attachments)
 }
 
 const removeFile = (id: string) => {
