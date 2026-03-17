@@ -60,7 +60,10 @@ export interface AiBotInputApi {
 
 export interface AiBotPublicApi extends AiBotInputApi {}
 
-export interface AskAiBotPublicApi extends AiBotPublicApi {}
+export interface AskAiBotPublicApi extends AiBotPublicApi {
+  open: () => void
+  close: () => void
+}
 
 export interface PromptInputContext {
   textInput: Ref<string>

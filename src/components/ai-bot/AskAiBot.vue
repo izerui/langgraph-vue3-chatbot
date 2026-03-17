@@ -57,6 +57,15 @@ function toggleExpanded() {
   }
 }
 
+const open: AskAiBotPublicApi['open'] = () => {
+  isExpanded.value = true
+}
+
+const close: AskAiBotPublicApi['close'] = () => {
+  isExpanded.value = false
+  isMaximized.value = false
+}
+
 function handleMaximizeChange(value: boolean) {
   isMaximized.value = value
 }
@@ -103,6 +112,8 @@ const sendMessage: AskAiBotPublicApi['sendMessage'] = async () => {
 }
 
 defineExpose<AskAiBotPublicApi>({
+  open,
+  close,
   setTextInput,
   addAttachments,
   sendMessage,
