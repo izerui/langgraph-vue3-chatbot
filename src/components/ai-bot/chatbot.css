@@ -348,6 +348,101 @@
   --ai-scrollbar-thumb-hover: rgba(15, 123, 225, 0.38);
 }
 
+.chat-bot[data-ai-theme="dianshanglv"],
+.ask-ai-bot[data-ai-theme="dianshanglv"] {
+  --background: #faf9cb;
+  --foreground: #111111;
+  --card: #fefef2;
+  --card-foreground: #111111;
+  --popover: #fefef2;
+  --popover-foreground: #111111;
+  --primary: #088178;
+  --primary-foreground: #fefef2;
+  --secondary: #faf9cb;
+  --secondary-foreground: #111111;
+  --muted: #f7f5d8;
+  --muted-foreground: #5f5f5f;
+  --accent: #f2d07b;
+  --accent-foreground: #111111;
+  --border: #e6dfb3;
+  --input: #e6dfb3;
+  --ring: #088178;
+
+  --ai-surface: #ffffff;
+  --ai-surface-subtle: #306350;
+  --ai-border-subtle: #d8d4aa;
+  --ai-shadow: 0 20px 44px rgba(48, 99, 80, 0.14);
+  --ai-overlay: rgba(48, 99, 80, 0.08);
+
+  --ai-accent: #088178;
+  --ai-accent-foreground: #fefef2;
+  --ai-accent-soft: rgba(8, 129, 120, 0.12);
+  --ai-accent-soft-foreground: #306350;
+
+  --ai-input-panel-bg: #fafaf9;
+  --ai-input-bg: #ffffff;
+  --ai-input-text: #111111;
+  --ai-input-placeholder: #6b7280;
+  --ai-input-border: #d8d4aa;
+  --ai-input-border-focus: #088178;
+  --ai-input-ring: rgba(8, 129, 120, 0.18);
+  --ai-input-icon: #306350;
+
+  --ai-layer-bg: #fefef2;
+  --ai-layer-text: #111111;
+  --ai-layer-border: #d8d4aa;
+  --ai-layer-shadow: 0 18px 40px rgba(48, 99, 80, 0.16);
+  --ai-layer-heading: #6b7280;
+  --ai-menu-text: #374151;
+  --ai-menu-heading: #6b7280;
+
+  --ai-control-muted: #6b7280;
+  --ai-control-hover-bg: #faf9cb;
+  --ai-control-hover-text: #111111;
+
+  --ai-header-text: #ffffff;
+  --ai-header-action: rgba(255, 255, 255, 0.78);
+  --ai-header-action-hover: #ffffff;
+  --ai-header-action-hover-bg: rgba(255, 255, 255, 0.12);
+
+  --ai-chip-bg: rgba(8, 129, 120, 0.08);
+  --ai-chip-border: rgba(48, 99, 80, 0.14);
+  --ai-chip-text: rgba(17, 17, 17, 0.88);
+  --ai-chip-hover-bg: #faf9cb;
+  --ai-chip-hover-text: #111111;
+  --ai-file-pill-bg: #faf9cb;
+  --ai-file-pill-hover-bg: #f2d07b;
+  --ai-file-pill-text: #374151;
+  --ai-muted-surface: #faf9cb;
+  --ai-muted-surface-text: #374151;
+
+  --ai-user-bubble-bg: #f2d07b;
+  --ai-user-bubble-text: #111111;
+
+  --ai-fab-bg: #088178;
+  --ai-fab-bg-strong: #306350;
+  --ai-fab-shadow: 0 12px 30px rgba(8, 129, 120, 0.28);
+  --ai-fab-shadow-hover: 0 16px 36px rgba(48, 99, 80, 0.32);
+
+  --ai-tabs-list-bg: #f7f2c5;
+  --ai-tabs-list-text: #6b7280;
+  --ai-tabs-trigger-text: #374151;
+  --ai-tabs-trigger-active-bg: #fefef2;
+  --ai-tabs-trigger-active-text: #111111;
+  --ai-tabs-trigger-shadow: 0 6px 14px rgba(48, 99, 80, 0.1);
+
+  --ai-plan-bg: rgba(254, 254, 242, 0.96);
+  --ai-plan-bg-strong: rgba(255, 255, 248, 0.98);
+  --ai-plan-border: rgba(216, 212, 170, 0.8);
+  --ai-plan-hover: rgba(250, 249, 203, 0.9);
+  --ai-plan-muted: rgba(55, 65, 81, 0.76);
+  --ai-plan-progress: #088178;
+  --ai-plan-complete: #306350;
+  --ai-plan-interrupted: #6b7280;
+  --ai-scrollbar-thumb: rgba(8, 129, 120, 0.18);
+  --ai-scrollbar-thumb-hover: rgba(8, 129, 120, 0.32);
+}
+
 @layer base {
   .chat-bot,
   .chat-bot *,

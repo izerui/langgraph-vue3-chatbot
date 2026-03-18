@@ -14,7 +14,8 @@ const currentTheme = ref<AiBotTheme>('light')
 const themeOptions: Array<{ value: AiBotTheme, label: string, description: string }> = [
   { value: 'light', label: '浅色', description: '默认主题' },
   { value: 'dark', label: '深色', description: '暗黑主题' },
-  { value: 'hailan', label: '海蓝', description: '海蓝主题' }
+  { value: 'hailan', label: '海蓝', description: '海蓝主题' },
+  { value: 'dianshanglv', label: '电商绿', description: '电商感绿色主题' }
 ]
 
 const demoAttachment: PromptInputAttachment = {
