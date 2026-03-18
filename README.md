@@ -24,18 +24,26 @@
 ## 预览
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/izerui/langgraph-vue3-chatbot/main/docs/img.png" alt="langgraph-vue3-chatbot light theme preview" width="32%" />
-  <img src="https://raw.githubusercontent.com/izerui/langgraph-vue3-chatbot/main/docs/img_1.png" alt="langgraph-vue3-chatbot dark theme preview" width="32%" />
-  <img src="https://raw.githubusercontent.com/izerui/langgraph-vue3-chatbot/main/docs/img_2.png" alt="langgraph-vue3-chatbot hailan theme preview" width="32%" />
+  <img src="https://raw.githubusercontent.com/izerui/langgraph-vue3-chatbot/main/docs/img.png" alt="langgraph-vue3-chatbot light theme preview" width="48%" />
+  <img src="https://raw.githubusercontent.com/izerui/langgraph-vue3-chatbot/main/docs/img_1.png" alt="langgraph-vue3-chatbot dark theme preview" width="48%" />
 </p>
 
-<p align="center">
-  <img src="https://raw.githubusercontent.com/izerui/langgraph-vue3-chatbot/main/docs/img_3.png" alt="langgraph-vue3-chatbot dianshanglv theme preview" width="32%" />
-  <img src="https://raw.githubusercontent.com/izerui/langgraph-vue3-chatbot/main/docs/img_4.png" alt="langgraph-vue3-chatbot gaojizi theme preview" width="32%" />
-</p>
+<details>
+  <summary>展开查看更多主题预览</summary>
+
+  <p align="center">
+    <img src="https://raw.githubusercontent.com/izerui/langgraph-vue3-chatbot/main/docs/img_2.png" alt="langgraph-vue3-chatbot hailan theme preview" width="32%" />
+    <img src="https://raw.githubusercontent.com/izerui/langgraph-vue3-chatbot/main/docs/img_3.png" alt="langgraph-vue3-chatbot dianshanglv theme preview" width="32%" />
+    <img src="https://raw.githubusercontent.com/izerui/langgraph-vue3-chatbot/main/docs/img_4.png" alt="langgraph-vue3-chatbot gaojizi theme preview" width="32%" />
+  </p>
+
+  <p align="center">
+    海蓝主题（<code>hailan</code>）、电商绿主题（<code>dianshanglv</code>）和高级紫主题（<code>gaojizi</code>）。
+  </p>
+</details>
 
 <p align="center">
-  依次为浅色主题（<code>light</code>）、深色主题（<code>dark</code>）、海蓝主题（<code>hailan</code>）、电商绿主题（<code>dianshanglv</code>）和高级紫主题（<code>gaojizi</code>）。
+  默认展示浅色主题（<code>light</code>）和深色主题（<code>dark</code>）。
 </p>
 
 ## 特性
