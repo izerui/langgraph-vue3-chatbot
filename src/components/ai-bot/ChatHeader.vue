@@ -41,7 +41,7 @@ const emit = defineEmits<{
   justify-content: space-between;
   padding: 6px 16px;
   background: var(--ai-surface-subtle);
-  color: var(--foreground);
+  color: var(--ai-header-text);
   flex-shrink: 0;
   border-bottom: 1px solid var(--ai-border-subtle);
 }
@@ -70,7 +70,7 @@ const emit = defineEmits<{
   border-radius: 6px;
   padding: 6px;
   cursor: pointer;
-  color: var(--muted-foreground);
+  color: var(--ai-header-action);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -78,7 +78,7 @@ const emit = defineEmits<{
 }
 
 .action-btn:hover {
-  color: var(--foreground);
-  background: var(--ai-chip-hover-bg);
+  color: var(--ai-header-action-hover);
+  background: var(--ai-header-action-hover-bg);
 }
 </style>

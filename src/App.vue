@@ -13,7 +13,8 @@ const currentTheme = ref<AiBotTheme>('light')
 
 const themeOptions: Array<{ value: AiBotTheme, label: string, description: string }> = [
   { value: 'light', label: '浅色', description: '默认主题' },
-  { value: 'dark', label: '深色', description: '暗黑主题' }
+  { value: 'dark', label: '深色', description: '暗黑主题' },
+  { value: 'hailan', label: '海蓝', description: '按新配色定义' }
 ]
 
 const demoAttachment: PromptInputAttachment = {
@@ -65,7 +66,7 @@ function formatCustomContent(content: unknown) {
   <div class="app-container">
     <header>
       <h1>AI ChatBot</h1>
-      <p>Vue 3 + LangGraph 聊天组件示例，支持浅色 / 深色主题切换、流式响应、工具调用与推理过程展示</p>
+      <p>Vue 3 + LangGraph 聊天组件示例，支持浅色 / 深色 / 海蓝主题切换、流式响应、工具调用与推理过程展示</p>
     </header>
 
     <main>
