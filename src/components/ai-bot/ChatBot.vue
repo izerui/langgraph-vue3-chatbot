@@ -6,7 +6,7 @@ import type { AiBotTheme } from './lib/theme'
 import { fetchModels, getDefaultModel, type ModelInfo } from './lib/models'
 import type { ToolEventPayload, ToolEventPhase, ToolEventState } from './lib/tool-events'
 import { Client } from '@langchain/langgraph-sdk'
-import { createThread, loadThreadHistory } from './lib/thread'
+import { createThread, findActiveRun, loadThreadHistory } from './lib/thread'
 import { PORTAL_HOST_KEY } from './lib/portal-host'
 
 import ChatHeader from './ChatHeader.vue'
@@ -76,6 +76,36 @@ const suggestions = ref<string[]>([])
 
 const initialTodos = ref<any[]>([])
 const todoToolEvents = ref<ToolEventPayload[]>([])
+const STREAM_MODE = ['messages-tuple', 'custom'] as const
+
+function getLastAssistantIndex() {
+  for (let i = messages.value.length - 1; i >= 0; i--) {
+    if (messages.value[i].type === 'ai') {
+      return i
+    }
+  }
+  return -1
+}
+
+function getLastAssistantContent() {
+  const lastAssistantIndex = getLastAssistantIndex()
+  return lastAssistantIndex >= 0 ? messages.value[lastAssistantIndex].content || '' : ''
+}
+
+function ensureTrailingAssistantMessage() {
+  const lastMessage = messages.value[messages.value.length - 1]
+  if (lastMessage?.type === 'ai') return
+
+  messages.value = [
+    ...messages.value,
+    {
+      key: `ai-resume-${Date.now()}`,
+      type: 'ai',
+      content: '',
+      batchId: runId.value
+    }
+  ]
+}
 
 function isTodoTool(toolName?: string): boolean {
   const name = toolName || ''
@@ -136,6 +166,28 @@ onMounted(async () => {
     })() : Promise.resolve()
   ])
   isLoading.value = false
+
+  if (threadId.value) {
+    const activeRun = await findActiveRun(client, threadId.value)
+    if (activeRun) {
+      runId.value = activeRun.run_id
+      status.value = 'streaming'
+      ensureTrailingAssistantMessage()
+      const rejoinPromise = consumeStream(
+        client.runs.joinStream(threadId.value, activeRun.run_id, {
+          streamMode: [...STREAM_MODE]
+        }),
+        {
+          appendToExistingAssistant: true
+        }
+      )
+      void rejoinPromise.catch((error) => {
+        console.error('Failed to rejoin active run:', error)
+      }).finally(() => {
+        runId.value = ''
+      })
+    }
+  }
 })
 
 // 切换最大化状态
@@ -244,7 +296,7 @@ async function handleSubmit(userMessage: string, files: ChatFile[] = []) {
           user_id: props.userId,
           name: userMessage.slice(0, 50)
         },
-        streamMode: ['messages-tuple', 'custom'],
+        streamMode: [...STREAM_MODE],
         stream_resumable: false,
         on_disconnect: 'cancel'
       } as any
@@ -262,44 +314,104 @@ async function handleSubmit(userMessage: string, files: ChatFile[] = []) {
       }
     ]
 
-    let assistantContent = ''
-    // 使用 message.id + index 跟踪同一条流式工具调用，避免 chunks 的空 id / 空 name 无法匹配。
-    const assistantToolCalls = new Map<string, { id: string; name: string; args: string; messageKey?: string }>()
-    let needNewAssistantMessage = false // 是否需要创建新的 assistant 消息
+    await consumeStream(streamResponse)
 
-    // 辅助函数：创建工具消息
-    function createToolMessage(toolCallId: string, name: string, args: string, state: string): ChatMessage {
-      return {
-        key: `tool-${toolCallId}-${Date.now()}`,
-        type: 'tool',
-        content: '',
-        batchId: runId.value,
-        toolCalls: [{
-          id: toolCallId,
-          name: name,
-          args: args,
-          result: '',
-          state: state
-        }]
+    const lastIndex = messages.value.length - 1
+    if (lastIndex >= 0) {
+      messages.value[lastIndex].batchId = runId.value
+    }
+
+    runId.value = ''
+    status.value = 'ready'
+  } catch (error: any) {
+    console.error('Error sending message:', error)
+
+    // 提取错误信息
+    let errorDisplayMessage = '抱歉，发生了一些错误，请稍后重试。'
+    if (error) {
+      // 尝试从 error 对象中提取详细信息
+      const errorMsg = error.message || error.error?.message || String(error)
+      const errorType = error.error?.error || error.name || 'APIError'
+
+      // 如果是 API 错误，显示更友好的信息
+      if (errorMsg && errorMsg !== '[object Object]') {
+        if (errorType === 'APIError' && errorMsg.includes('internal error')) {
+          errorDisplayMessage = '服务内部错误，请稍后重试。'
+        } else if (errorMsg.includes('timeout') || errorMsg.includes('Timeout')) {
+          errorDisplayMessage = '请求超时，请稍后重试。'
+        } else if (errorMsg.includes('network') || errorMsg.includes('Network')) {
+          errorDisplayMessage = '网络连接失败，请检查网络后重试。'
+        } else if (errorMsg.includes('401') || errorMsg.includes('unauthorized')) {
+          errorDisplayMessage = '认证失败，请重新登录。'
+        } else if (errorMsg.includes('403') || errorMsg.includes('forbidden')) {
+          errorDisplayMessage = '没有权限执行此操作。'
+        } else if (errorMsg.includes('429') || errorMsg.includes('rate limit')) {
+          errorDisplayMessage = '请求过于频繁，请稍后再试。'
+        } else {
+          errorDisplayMessage = `抱歉，发生错误: ${errorMsg}`
+        }
       }
     }
 
-    // 辅助函数：更新工具消息
-    function updateToolMessage(messageKey: string, updates: { args?: string; result?: string; state?: string }) {
-      const msg = messages.value[messageKey]
-      if (msg && msg.toolCalls && msg.toolCalls.length > 0) {
-        if (updates.args !== undefined) {
-          msg.toolCalls[0].args = updates.args
-        }
-        if (updates.result !== undefined) {
-          msg.toolCalls[0].result = updates.result
-        }
-        if (updates.state !== undefined) {
-          msg.toolCalls[0].state = updates.state
-        }
+    const errorMessageId = `error-${Date.now()}`
+    messages.value = [
+      ...messages.value,
+      {
+        key: errorMessageId,
+        type: 'ai',
+        content: errorDisplayMessage,
+        batchId: errorMessageId
+      }
+    ]
+    status.value = 'ready'
+  }
+}
+
+async function consumeStream(
+  streamResponse: AsyncIterable<any>,
+  options: {
+    appendToExistingAssistant?: boolean
+  } = {}
+) {
+  let assistantContent = options.appendToExistingAssistant ? getLastAssistantContent() : ''
+  // 使用 message.id + index 跟踪同一条流式工具调用，避免 chunks 的空 id / 空 name 无法匹配。
+  const assistantToolCalls = new Map<string, { id: string; name: string; args: string; messageKey?: string }>()
+  let needNewAssistantMessage = false // 是否需要创建新的 assistant 消息
+
+  // 辅助函数：创建工具消息
+  function createToolMessage(toolCallId: string, name: string, args: string, state: string): ChatMessage {
+    return {
+      key: `tool-${toolCallId}-${Date.now()}`,
+      type: 'tool',
+      content: '',
+      batchId: runId.value,
+      toolCalls: [{
+        id: toolCallId,
+        name: name,
+        args: args,
+        result: '',
+        state: state
+      }]
+    }
+  }
+
+  // 辅助函数：更新工具消息
+  function updateToolMessage(messageKey: string, updates: { args?: string; result?: string; state?: string }) {
+    const msg = messages.value[Number(messageKey)]
+    if (msg && msg.toolCalls && msg.toolCalls.length > 0) {
+      if (updates.args !== undefined) {
+        msg.toolCalls[0].args = updates.args
+      }
+      if (updates.result !== undefined) {
+        msg.toolCalls[0].result = updates.result
+      }
+      if (updates.state !== undefined) {
+        msg.toolCalls[0].state = updates.state
       }
     }
+  }
 
+  try {
     // 流式处理 LangGraph SDK 返回的消息
     for await (const chunk of streamResponse) {
       const chunkEvent = chunk.event as string
@@ -618,13 +730,7 @@ async function handleSubmit(userMessage: string, files: ChatFile[] = []) {
           }
 
           // 找到最后一条 ai 消息并更新
-          let lastAssistantIndex = -1
-          for (let i = messages.value.length - 1; i >= 0; i--) {
-            if (messages.value[i].type === 'ai') {
-              lastAssistantIndex = i
-              break
-            }
-          }
+          const lastAssistantIndex = getLastAssistantIndex()
           if (lastAssistantIndex >= 0) {
             messages.value[lastAssistantIndex].content = assistantContent
             messages.value[lastAssistantIndex].batchId = runId.value
@@ -632,53 +738,7 @@ async function handleSubmit(userMessage: string, files: ChatFile[] = []) {
         }
       }
     }
-
-    const lastIndex = messages.value.length - 1
-    if (lastIndex >= 0) {
-      messages.value[lastIndex].batchId = runId.value
-    }
-
-    status.value = 'ready'
-  } catch (error: any) {
-    console.error('Error sending message:', error)
-
-    // 提取错误信息
-    let errorDisplayMessage = '抱歉，发生了一些错误，请稍后重试。'
-    if (error) {
-      // 尝试从 error 对象中提取详细信息
-      const errorMsg = error.message || error.error?.message || String(error)
-      const errorType = error.error?.error || error.name || 'APIError'
-
-      // 如果是 API 错误，显示更友好的信息
-      if (errorMsg && errorMsg !== '[object Object]') {
-        if (errorType === 'APIError' && errorMsg.includes('internal error')) {
-          errorDisplayMessage = '服务内部错误，请稍后重试。'
-        } else if (errorMsg.includes('timeout') || errorMsg.includes('Timeout')) {
-          errorDisplayMessage = '请求超时，请稍后重试。'
-        } else if (errorMsg.includes('network') || errorMsg.includes('Network')) {
-          errorDisplayMessage = '网络连接失败，请检查网络后重试。'
-        } else if (errorMsg.includes('401') || errorMsg.includes('unauthorized')) {
-          errorDisplayMessage = '认证失败，请重新登录。'
-        } else if (errorMsg.includes('403') || errorMsg.includes('forbidden')) {
-          errorDisplayMessage = '没有权限执行此操作。'
-        } else if (errorMsg.includes('429') || errorMsg.includes('rate limit')) {
-          errorDisplayMessage = '请求过于频繁，请稍后再试。'
-        } else {
-          errorDisplayMessage = `抱歉，发生错误: ${errorMsg}`
-        }
-      }
-    }
-
-    const errorMessageId = `error-${Date.now()}`
-    messages.value = [
-      ...messages.value,
-      {
-        key: errorMessageId,
-        type: 'ai',
-        content: errorDisplayMessage,
-        batchId: errorMessageId
-      }
-    ]
+  } finally {
     status.value = 'ready'
   }
 }

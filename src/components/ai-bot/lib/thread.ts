@@ -196,3 +196,31 @@ export async function loadThreadHistory(
     return []
   }
 }
+
+// 查找线程中最近一个仍在执行的 run，用于刷新后续流。
+export async function findActiveRun(
+  client: Client,
+  threadId: string
+): Promise<{ run_id: string, status: string } | null> {
+  if (!threadId) return null
+
+  try {
+    const runs = await client.runs.list(threadId, {
+      limit: 20
+    })
+
+    const activeRun = runs
+      .filter(run => run.status === 'pending' || run.status === 'running')
+      .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())[0]
+
+    return activeRun
+      ? {
+          run_id: activeRun.run_id,
+          status: activeRun.status
+        }
+      : null
+  } catch (error) {
+    console.error('Failed to find active run:', error)
+    return null
+  }
+}
