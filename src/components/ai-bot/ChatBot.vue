@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, provide } from 'vue'
+import { computed, ref, onMounted, provide } from 'vue'
 import type { AiBotInputApi, AiBotPublicApi, AttachmentTriggerSlotProps, PromptInputMessage } from './lib/input-types'
 import type { ChatMessage, ChatStatus, ChatFile, CustomContent } from './lib/message-types'
 import type { AiBotTheme } from './lib/theme'
@@ -67,9 +67,14 @@ const runId = ref<string>('')
 const useWebSearch = ref(false)
 const modelSelectorOpen = ref(false)
 const isLoading = ref(true)
+const isRejoiningStream = ref(false)
 
 // 消息
 const messages = ref<ChatMessage[]>([])
+const visibleMessages = computed(() => {
+  if (!isRejoiningStream.value) return messages.value
+  return messages.value.filter(message => message.type !== 'custom')
+})
 
 // 建议问题（支持动态更新）
 const suggestions = ref<string[]>([])
@@ -182,6 +187,7 @@ onMounted(async () => {
     if (activeRun) {
       runId.value = activeRun.run_id
       status.value = 'streaming'
+      isRejoiningStream.value = true
       const rejoinPromise = consumeStream(
         client.runs.joinStream(threadId.value, activeRun.run_id, {
           streamMode: [...STREAM_MODE]
@@ -190,6 +196,7 @@ onMounted(async () => {
       void rejoinPromise.catch((error) => {
         console.error('Failed to rejoin active run:', error)
       }).finally(() => {
+        isRejoiningStream.value = false
         runId.value = ''
       })
     }
@@ -820,7 +827,7 @@ defineExpose<AiBotPublicApi>({
       <!-- 有消息时显示 ChatMessages -->
       <ChatMessages
         v-else
-        :messages="messages"
+        :messages="visibleMessages"
         :is-streaming="status === 'streaming'"
         :theme="props.theme"
       >
