@@ -3,7 +3,7 @@ import { ref } from 'vue'
 import { PlusIcon } from 'lucide-vue-next'
 import { AskAiBot, ChatBot, GeneratedFiles } from '@/components/ai-bot'
 import type { AiBotTheme, PromptInputAttachment } from '@/components/ai-bot'
-import { KNOWLEDGE_GRAPH_PROMPT } from './prompts'
+import { GENERAL_TOOL_PROMPT } from './prompts'
 
 const apiUrl = import.meta.env.VITE_LANGGRAPH_API_URL || 'http://localhost:2024'
 const apiKey = import.meta.env.VITE_LANGGRAPH_API_KEY
@@ -21,8 +21,8 @@ const themeOptions: Array<{ value: AiBotTheme, label: string, description: strin
 
 const demoAttachment: PromptInputAttachment = {
   type: 'file_url',
-  url: 'https://example.com/files/knowledge-modeling-manual.pdf',
-  filename: '知识建模操作手册.pdf',
+  url: 'https://example.com/files/tool-operation-manual.pdf',
+  filename: '工具操作手册.pdf',
   mediaType: 'application/pdf',
 }
 
@@ -106,9 +106,9 @@ function formatCustomContent(content: unknown) {
               :api-url="apiUrl"
               :api-key="apiKey"
               assistant-id="research"
-              thread-id="9f31354d-b2f8-4472-8ab7-fd49cd52e376"
+              thread-id="9f31354d-b2f8-4472-8ab7-fd49cd52e377"
               assistant-name="我的助手"
-              :system-prompt="KNOWLEDGE_GRAPH_PROMPT"
+              :system-prompt="GENERAL_TOOL_PROMPT"
               :show-header-actions="false"
             >
               <template #attachment-trigger="{ addAttachments }">
@@ -125,10 +125,10 @@ function formatCustomContent(content: unknown) {
               <template #empty>
                 <div class="welcome-card">
                   <div class="ai-logo">AI</div>
-                  <h2 class="welcome-title">您好，我是知识建模AI助手</h2>
+                  <h2 class="welcome-title">您好，我是AI工具助手</h2>
                   <hr class="welcome-divider">
                   <p class="welcome-desc">
-                    可以帮助您生成知识点、语义关系，并自动构建知识建模图。请切换左侧主题，观察整体视觉、输入框和消息区域表现。
+                    可以帮助您处理各种任务、生成内容和执行工具操作。请切换左侧主题，观察整体视觉、输入框和消息区域表现。
                   </p>
                 </div>
               </template>
@@ -157,9 +157,9 @@ function formatCustomContent(content: unknown) {
       :api-url="apiUrl"
       :api-key="apiKey"
       assistant-id="research"
-      thread-id="9f31354d-b2f8-4472-8ab7-fd49cd52e558"
+      thread-id="9f31354d-b2f8-4472-8ab7-fd49cd52e559"
       assistant-name="我的助手"
-      :system-prompt="KNOWLEDGE_GRAPH_PROMPT"
+      :system-prompt="GENERAL_TOOL_PROMPT"
       :height="'calc(100vh - 220px)'"
     >
       <template #attachment-trigger="{ addAttachments }">
@@ -176,10 +176,10 @@ function formatCustomContent(content: unknown) {
       <template #empty>
         <div class="welcome-card">
           <div class="ai-logo">AI</div>
-          <h2 class="welcome-title">您好，我是知识建模AI助手</h2>
+          <h2 class="welcome-title">您好，我是AI工具助手</h2>
           <hr class="welcome-divider">
           <p class="welcome-desc">
-            可以帮助您生成知识点、语义关系，并自动构建知识建模图。请切换左侧主题，观察浮动按钮、展开面板与浮层是否同步。
+            可以帮助您处理各种任务、生成内容和执行工具操作。请切换左侧主题，观察浮动按钮、展开面板与浮层是否同步。
           </p>
         </div>
       </template>
@@ -210,8 +210,8 @@ function formatCustomContent(content: unknown) {
 
         <div class="dialog-options">
           <div class="dialog-option selected">
-            <span class="dialog-option-title">知识建模操作手册.pdf</span>
-            <span class="dialog-option-desc">https://example.com/files/knowledge-modeling-manual.pdf</span>
+            <span class="dialog-option-title">工具操作手册.pdf</span>
+            <span class="dialog-option-desc">https://example.com/files/tool-operation-manual.pdf</span>
           </div>
         </div>
 
