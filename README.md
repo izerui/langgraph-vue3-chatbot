@@ -176,7 +176,7 @@ const suggestions = [
 | `assistantName` | 设置组件头部展示的助手名称 | `'Chat'` |
 | `defaultExpanded` | 控制悬浮聊天窗首次渲染时是否默认展开 | `false` |
 | `systemPrompt` | 设置发送给模型的系统提示词 | `'用中文回答'` |
-| `threadId` | 指定已有会话线程 id；不传时由组件内部创建线程 | `undefined` |
+| `threadId` | 指定已有会话线程 id；不传时由组件内部创建线程。传固定值时可复用历史，并在刷新后自动尝试加入该线程最近的活跃对话流 | `undefined` |
 | `userId` | 标识当前用户，用于请求上下文区分 | `'user001'` |
 | `suggestions` | 配置输入区上方的建议问题列表 | `[]` |
 | `apiUrl` | 指定 LangGraph 服务地址 | `'http://localhost:2024'` |
@@ -193,7 +193,7 @@ const suggestions = [
 | `assistantId` | 指定 LangGraph 侧的 assistant 标识 | `'research'` |
 | `assistantName` | 设置聊天面板头部展示的助手名称 | `'Chat'` |
 | `systemPrompt` | 设置发送给模型的系统提示词 | `'你是一个有用的助手，帮用户解决各种问题。'` |
-| `threadId` | 指定已有会话线程 id；不传时由组件内部创建线程 | `undefined` |
+| `threadId` | 指定已有会话线程 id；不传时由组件内部创建线程。传固定值时可复用历史，并在刷新后自动尝试加入该线程最近的活跃对话流 | `undefined` |
 | `userId` | 标识当前用户，用于请求上下文区分 | `'user001'` |
 | `showHeaderActions` | 控制是否显示聊天面板头部右侧操作按钮，例如关闭、最大化等 | `true` |
 | `suggestions` | 配置输入区上方的建议问题列表 | `[]` |
@@ -379,7 +379,12 @@ function quickAsk() {
 - 页面内主聊天区域优先使用 `ChatBot`
 - 作为全局 AI 助手入口优先使用 `AskAiBot`
 - 如果你已经有 thread id，可通过 `threadId` 复用已有会话
+- 当传入固定 `threadId` 时，组件会先恢复线程历史；如果该线程存在 `pending` / `running` 的最近 run，会在页面刷新后自动重新加入流式对话
+- 当前续流是基于线程最近活跃 run 的恢复，不是严格的事件级断点续传；极短时间窗口里的部分中间 chunk 仍可能丢失
+- 续流阶段会临时隐藏 `custom` 消息，等流结束后自动恢复显示，避免旧的自定义事件插在正在打字的 AI 消息中间
 - 如果需要区分用户上下文，可传入 `userId`
+
+如需了解续流实现细节、边界和维护注意事项，可参考 [docs/stream-resume.md](./docs/stream-resume.md)。
 
 ## 本地开发
 
