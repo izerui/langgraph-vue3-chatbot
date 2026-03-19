@@ -78,33 +78,43 @@ const initialTodos = ref<any[]>([])
 const todoToolEvents = ref<ToolEventPayload[]>([])
 const STREAM_MODE = ['messages-tuple', 'custom'] as const
 
-function getLastAssistantIndex() {
+function getMessageIndexByKey(messageKey: string) {
+  return messages.value.findIndex(message => message.key === messageKey)
+}
+
+function getPendingAssistantIndex() {
   for (let i = messages.value.length - 1; i >= 0; i--) {
-    if (messages.value[i].type === 'ai') {
+    const message = messages.value[i]
+    if (message.type === 'ai' && message.key.startsWith('pending-ai-') && !message.content) {
       return i
     }
   }
   return -1
 }
 
-function getLastAssistantContent() {
-  const lastAssistantIndex = getLastAssistantIndex()
-  return lastAssistantIndex >= 0 ? messages.value[lastAssistantIndex].content || '' : ''
-}
+function ensureAssistantMessageByStreamId(messageKey?: string) {
+  if (messageKey) {
+    const existingIndex = getMessageIndexByKey(messageKey)
+    if (existingIndex >= 0) return existingIndex
+  }
 
-function ensureTrailingAssistantMessage() {
-  const lastMessage = messages.value[messages.value.length - 1]
-  if (lastMessage?.type === 'ai') return
-
-  messages.value = [
-    ...messages.value,
-    {
-      key: `ai-resume-${Date.now()}`,
-      type: 'ai',
-      content: '',
-      batchId: runId.value
+  const pendingIndex = getPendingAssistantIndex()
+  if (pendingIndex >= 0) {
+    if (messageKey) {
+      messages.value[pendingIndex].key = messageKey
     }
-  ]
+    messages.value[pendingIndex].batchId = runId.value
+    return pendingIndex
+  }
+
+  const nextMessageKey = messageKey || `ai-${Date.now()}-${Math.random()}`
+  messages.value.push({
+    key: nextMessageKey,
+    type: 'ai',
+    content: '',
+    batchId: runId.value
+  })
+  return messages.value.length - 1
 }
 
 function isTodoTool(toolName?: string): boolean {
@@ -172,14 +182,10 @@ onMounted(async () => {
     if (activeRun) {
       runId.value = activeRun.run_id
       status.value = 'streaming'
-      ensureTrailingAssistantMessage()
       const rejoinPromise = consumeStream(
         client.runs.joinStream(threadId.value, activeRun.run_id, {
           streamMode: [...STREAM_MODE]
-        }),
-        {
-          appendToExistingAssistant: true
-        }
+        })
       )
       void rejoinPromise.catch((error) => {
         console.error('Failed to rejoin active run:', error)
@@ -307,7 +313,7 @@ async function handleSubmit(userMessage: string, files: ChatFile[] = []) {
     messages.value = [
       ...messages.value,
       {
-        key: assistantMessageId,
+        key: `pending-${assistantMessageId}`,
         type: 'ai',
         content: '',
         batchId: ''
@@ -368,15 +374,10 @@ async function handleSubmit(userMessage: string, files: ChatFile[] = []) {
 }
 
 async function consumeStream(
-  streamResponse: AsyncIterable<any>,
-  options: {
-    appendToExistingAssistant?: boolean
-  } = {}
+  streamResponse: AsyncIterable<any>
 ) {
-  let assistantContent = options.appendToExistingAssistant ? getLastAssistantContent() : ''
   // 使用 message.id + index 跟踪同一条流式工具调用，避免 chunks 的空 id / 空 name 无法匹配。
   const assistantToolCalls = new Map<string, { id: string; name: string; args: string; messageKey?: string }>()
-  let needNewAssistantMessage = false // 是否需要创建新的 assistant 消息
 
   // 辅助函数：创建工具消息
   function createToolMessage(toolCallId: string, name: string, args: string, state: string): ChatMessage {
@@ -541,9 +542,6 @@ async function consumeStream(
               messageCount: messages.value.length
             })
 
-            // 标记下一条 AI 消息需要创建新消息
-            needNewAssistantMessage = true
-
             continue // 跳过后续处理
           }
 
@@ -701,39 +699,12 @@ async function consumeStream(
               .join('')
           }
 
-          // 检查是否需要创建新消息（tool 消息后第一条 AI 消息）
-          if (needNewAssistantMessage) {
-            // 标记当前 ai 消息完成
-            for (let i = messages.value.length - 1; i >= 0; i--) {
-              if (messages.value[i].type === 'ai') {
-                break
-              }
+          const assistantIndex = ensureAssistantMessageByStreamId(message.id)
+          if (assistantIndex >= 0) {
+            if (content !== undefined) {
+              messages.value[assistantIndex].content += content
             }
-
-            // 创建新的 ai 消息
-            const newAssistantMessageId = `ai-${Date.now()}`
-            messages.value.push({
-              key: newAssistantMessageId,
-              type: 'ai',
-              content: '',
-              batchId: runId.value
-            })
-            assistantContent = ''
-            needNewAssistantMessage = false
-          }
-
-          // 更新消息内容 - 后端返回的是增量内容，需要累加
-          // content 可能是空字符串，所以用 !== undefined 来判断
-          if (content !== undefined) {
-            // 直接累加内容
-            assistantContent += content
-          }
-
-          // 找到最后一条 ai 消息并更新
-          const lastAssistantIndex = getLastAssistantIndex()
-          if (lastAssistantIndex >= 0) {
-            messages.value[lastAssistantIndex].content = assistantContent
-            messages.value[lastAssistantIndex].batchId = runId.value
+            messages.value[assistantIndex].batchId = runId.value
           }
         }
       }

@@ -82,6 +82,9 @@ export async function loadThreadHistory(
         const content = typeof msgContent === 'string' ? msgContent : Array.isArray(msgContent)
           ? msgContent.filter((b: any) => b.type === 'text').map((b: any) => b.text).join('')
           : ''
+        const aiRunId = msg.response_metadata?.run_id
+          || msg.additional_kwargs?.run_id
+          || msg.run_id
 
         // 获取 tool_calls
         const toolCalls = msg.tool_calls?.map((tc: any) => ({
@@ -97,6 +100,7 @@ export async function loadThreadHistory(
           key: msg.id || `ai-${Date.now()}-${Math.random()}`,
           type: 'ai',
           content,
+          batchId: aiRunId,
           toolCalls: toolCalls.length > 0 ? toolCalls : undefined
         })
 
