@@ -106,7 +106,6 @@ function formatCustomContent(content: unknown) {
               :api-url="apiUrl"
               :api-key="apiKey"
               assistant-id="research"
-              thread-id="9f31354d-b2f8-4472-8ab7-fd49cd52e377"
               assistant-name="我的助手"
               :system-prompt="GENERAL_TOOL_PROMPT"
               :show-header-actions="false"
@@ -122,7 +121,7 @@ function formatCustomContent(content: unknown) {
                 </button>
               </template>
 
-              <template #empty>
+              <template #empty="{ sendMessage }">
                 <div class="welcome-card">
                   <div class="ai-logo">AI</div>
                   <h2 class="welcome-title">您好，我是AI工具助手</h2>
@@ -130,6 +129,29 @@ function formatCustomContent(content: unknown) {
                   <p class="welcome-desc">
                     可以帮助您处理各种任务、生成内容和执行工具操作。请切换左侧主题，观察整体视觉、输入框和消息区域表现。
                   </p>
+                  <div class="demo-buttons">
+                    <button
+                      type="button"
+                      class="demo-button"
+                      @click="sendMessage('帮我分析这个文档并提取关键信息')"
+                    >
+                      分析文档
+                    </button>
+                    <button
+                      type="button"
+                      class="demo-button"
+                      @click="sendMessage('生成一份项目总结报告')"
+                    >
+                      生成报告
+                    </button>
+                    <button
+                      type="button"
+                      class="demo-button"
+                      @click="sendMessage('帮我整理这些数据的格式')"
+                    >
+                      数据处理
+                    </button>
+                  </div>
                 </div>
               </template>
 
@@ -173,7 +195,7 @@ function formatCustomContent(content: unknown) {
         </button>
       </template>
 
-      <template #empty>
+      <template #empty="{ sendMessage }">
         <div class="welcome-card">
           <div class="ai-logo">AI</div>
           <h2 class="welcome-title">您好，我是AI工具助手</h2>
@@ -181,6 +203,29 @@ function formatCustomContent(content: unknown) {
           <p class="welcome-desc">
             可以帮助您处理各种任务、生成内容和执行工具操作。请切换左侧主题，观察浮动按钮、展开面板与浮层是否同步。
           </p>
+          <div class="demo-buttons">
+            <button
+              type="button"
+              class="demo-button"
+              @click="sendMessage('帮我分析这个文档并提取关键信息')"
+            >
+              分析文档
+            </button>
+            <button
+              type="button"
+              class="demo-button"
+              @click="sendMessage('生成一份项目总结报告')"
+            >
+              生成报告
+            </button>
+            <button
+              type="button"
+              class="demo-button"
+              @click="sendMessage('帮我整理这些数据的格式')"
+            >
+              数据处理
+            </button>
+          </div>
         </div>
       </template>
 
@@ -424,6 +469,34 @@ main {
   line-height: 1.6;
   color: #666;
   margin: 0 0 24px 0;
+}
+
+.demo-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  max-width: 400px;
+}
+
+.demo-button {
+  padding: 8px 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fff;
+  color: #4A69BD;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.demo-button:hover {
+  background: #4A69BD;
+  color: #fff;
+  border-color: #4A69BD;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(74, 105, 189, 0.2);
 }
 
 .custom-message {
