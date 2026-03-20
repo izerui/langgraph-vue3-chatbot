@@ -106,6 +106,7 @@ function formatCustomContent(content: unknown) {
               :api-url="apiUrl"
               :api-key="apiKey"
               assistant-id="research"
+              thread-id="9f31354d-b2f8-4472-8ab7-fd49cd52e377"
               assistant-name="我的助手"
               :system-prompt="GENERAL_TOOL_PROMPT"
               :show-header-actions="false"

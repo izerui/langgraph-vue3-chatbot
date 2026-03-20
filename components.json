@@ -11,10 +11,10 @@
   },
   "iconLibrary": "lucide",
   "aliases": {
-    "components": "@/components",
+    "components": "@/components/ai-bot/ai-elements",
     "utils": "@/components/ai-bot/lib/utils",
     "ui": "@/components/ai-bot/ui",
-    "lib": "@/lib",
+    "lib": "@/components/ai-bot/lib",
     "composables": "@/composables"
   },
   "registries": {}
