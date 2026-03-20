@@ -348,6 +348,20 @@ function normalizeToolArgs(rawArgs: unknown) {
   return ''
 }
 
+function shouldUseInitialToolArgs(initialArgs: string, toolCallChunks?: Array<{ args?: string | null }>) {
+  if (!initialArgs) return false
+  if (!toolCallChunks?.length) return true
+
+  // 某些模型会先在 tool_calls.args 给一个占位对象，
+  // 再通过 tool_call_chunks 从头输出完整 JSON。此时不能直接拼接两份参数。
+  const hasNonEmptyChunkArgs = toolCallChunks.some(chunk => {
+    const args = typeof chunk.args === 'string' ? chunk.args : ''
+    return args.trim().length > 0
+  })
+
+  return !hasNonEmptyChunkArgs
+}
+
 function getToolCallMapKey(toolCallId?: string, streamId?: string, streamIndex?: number) {
   if (toolCallId) return `id:${toolCallId}`
   if (streamId && streamIndex !== undefined) return `stream:${streamId}_${streamIndex}`
@@ -361,7 +375,10 @@ if (message.tool_calls) {
   for (const [fallbackIndex, tc] of message.tool_calls.entries()) {
     if (!tc.id && !tc.name) continue
 
-    const initialArgs = normalizeToolArgs(tc.args)
+    const normalizedInitialArgs = normalizeToolArgs(tc.args)
+    const initialArgs = shouldUseInitialToolArgs(normalizedInitialArgs, message.tool_call_chunks)
+      ? normalizedInitialArgs
+      : ''
 
     // 真实 streamIndex 优先从 tool_call_chunks 中解析；
     // 某些模型的 chunk.index 是内容块索引，不等于工具数组下标
@@ -448,10 +465,11 @@ if (message.type === 'tool') {
 
 1. **空对象参数不显示**：`tool_calls.args = {}` 只是占位，不应显示成 `"{}"`
 2. **阶段1可以接收完整对象参数**：如果 `tool_calls.args` 已经是非空对象，可以直接转成 JSON 字符串作为初始参数
-3. **`tool_call_chunks.index` 不是工具数组下标**：它是内容块索引，需要优先通过 `id/name` 对齐到真实 `streamIndex`
-4. **匿名占位 `tool_calls` 不渲染**：`id` 和 `name` 都为空的 `tool_calls` 只是中间态，不能创建空工具组件
-5. **匿名 `tool_call_chunks` 先缓存**：没有 `id/name` 的参数增量只缓存，不直接渲染；等后续稳定身份到达后再关联
-6. **内存释放**：在 tool 消息处理完成后，删除对应的 Map 条目，释放内存避免长时间占用
+3. **避免双重拼接初始参数**：如果同一条消息里已经存在非空 `tool_call_chunks`，则不要再把 `tool_calls.args` 注入为初始参数，否则会出现 `{"reflection": ""}{"reflection": "..."}` 这类重复 JSON
+4. **`tool_call_chunks.index` 不是工具数组下标**：它是内容块索引，需要优先通过 `id/name` 对齐到真实 `streamIndex`
+5. **匿名占位 `tool_calls` 不渲染**：`id` 和 `name` 都为空的 `tool_calls` 只是中间态，不能创建空工具组件
+6. **匿名 `tool_call_chunks` 先缓存**：没有 `id/name` 的参数增量只缓存，不直接渲染；等后续稳定身份到达后再关联
+7. **内存释放**：在 tool 消息处理完成后，删除对应的 Map 条目，释放内存避免长时间占用
 
 ### 3.6 消息类型汇总
 
