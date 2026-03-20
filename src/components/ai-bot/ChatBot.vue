@@ -449,6 +449,20 @@ async function consumeStream(
     return ''
   }
 
+  function shouldUseInitialToolArgs(initialArgs: string, toolCallChunks?: Array<{ args?: string | null }>) {
+    if (!initialArgs) return false
+    if (!toolCallChunks?.length) return true
+
+    // 某些模型会先在 tool_calls.args 给一个占位对象，
+    // 再从 tool_call_chunks 重新输出完整 JSON。此时不能把两者直接拼接。
+    const hasNonEmptyChunkArgs = toolCallChunks.some(chunk => {
+      const args = typeof chunk.args === 'string' ? chunk.args : ''
+      return args.trim().length > 0
+    })
+
+    return !hasNonEmptyChunkArgs
+  }
+
   function resolveToolStreamIndex(
     toolCall: { id?: string; name?: string },
     fallbackIndex: number,
@@ -674,7 +688,10 @@ async function consumeStream(
                 const hasStableIdentity = Boolean(tc.id || tc.name)
                 if (!hasStableIdentity) continue
 
-                const initialArgs = normalizeToolArgs(tc.args)
+                const normalizedInitialArgs = normalizeToolArgs(tc.args)
+                const initialArgs = shouldUseInitialToolArgs(normalizedInitialArgs, message.tool_call_chunks)
+                  ? normalizedInitialArgs
+                  : ''
                 const streamIndex = resolveToolStreamIndex(tc, index, message.tool_call_chunks)
                 const { key: existingKey, record: existing } = findToolCallRecord({
                   toolCallId: tc.id,
