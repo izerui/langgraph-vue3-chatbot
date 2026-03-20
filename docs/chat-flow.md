@@ -225,10 +225,13 @@ for await (const chunk of streamResponse) {
 #### 阶段 1：工具调用开始
 
 当 AI 开始调用工具时，会发送 `AIMessageChunk` 消息，包含：
-- `tool_calls`: 完整的工具调用信息（但 args 为空对象 `{}`，不使用）
-- `tool_call_chunks`: 工具参数的第一个增量块（args 是字符串形式）
+- `tool_calls`: 工具调用声明。稳定信息通常是 `id` 和 `name`，`args` 可能是空对象 `{}`，也可能已经带有一部分完整参数对象
+- `tool_call_chunks`: 工具参数的原始流式增量（字符串形式）
 
-**注意**：`tool_call_chunks` 中的 `id` 和 `name` 可能为空，需要通过 `message.id + index` 复合键来匹配同一个工具调用。
+**注意**：
+- `tool_call_chunks` 中的 `id` 和 `name` 可能为空
+- `tool_call_chunks.index` 是消息内容块索引，不一定等于 `tool_calls` 数组下标
+- 同一个流里可能出现“空 `id` / 空 `name` + 有参数”的占位 `tool_calls`，这种占位项不能直接渲染成工具组件
 
 ```json
 {
@@ -240,11 +243,16 @@ for await (const chunk of streamResponse) {
 
 #### 阶段 2：args 流式
 
-工具参数在流式输出时，只发送 `tool_call_chunks` 增量：
+工具参数在流式输出时，会以 `tool_call_chunks` 增量形式持续到达：
 
 - `id` 可能为空字符串 `""`
 - `name` 可能为 `null`
 - `args` 是 JSON 字符串的片段，需要累加
+- 某些模型还会在同一条消息里返回占位 `tool_calls`：
+  - `id: null`
+  - `name: null` 或空字符串
+  - `args` 是对象
+  这类 `tool_calls` 仅作为中间态存在，不能据此创建新的工具消息
 
 ```json
 // 第一个增量
@@ -305,67 +313,111 @@ for await (const chunk of streamResponse) {
 
 ### 3.5 工具调用参数获取实现
 
-由于流式过程中 `tool_call_chunks` 的 `id` 可能为空，且同一个消息块中可能有多个工具调用，需要使用 `message.id + index` 复合键来匹配同一个工具调用。
+由于流式过程中 `tool_call_chunks` 的 `id` 可能为空，且同一个消息块中可能有多个工具调用，需要同时利用 `toolCallId` 和 `streamId + streamIndex` 两套键来匹配同一个工具调用。
 
 #### 数据结构
 
 ```typescript
-// 使用单个 Map 存储，key 为 messageId_index 格式
-// messageId: 消息块 ID，index: 工具在消息块中的索引
-const assistantToolCalls = new Map<string, { id: string; name: string; args: string }>()
+type PendingToolCall = {
+  id: string
+  name: string
+  args: string
+  messageKey?: string
+  streamId: string
+  streamIndex?: number
+}
+
+// key 优先使用 toolCallId；若 toolCallId 缺失，则回退到 streamId + streamIndex
+const assistantToolCalls = new Map<string, PendingToolCall>()
 ```
 
 #### 处理逻辑
 
 ```typescript
+function normalizeToolArgs(rawArgs: unknown) {
+  if (typeof rawArgs === 'string') return rawArgs
+  if (rawArgs && typeof rawArgs === 'object') {
+    if (Array.isArray(rawArgs)) {
+      return rawArgs.length > 0 ? JSON.stringify(rawArgs, null, 2) : ''
+    }
+    if (Object.keys(rawArgs as Record<string, unknown>).length === 0) {
+      return ''
+    }
+    return JSON.stringify(rawArgs, null, 2)
+  }
+  return ''
+}
+
+function getToolCallMapKey(toolCallId?: string, streamId?: string, streamIndex?: number) {
+  if (toolCallId) return `id:${toolCallId}`
+  if (streamId && streamIndex !== undefined) return `stream:${streamId}_${streamIndex}`
+  return undefined
+}
+
 // 1. 处理 tool_calls - 工具调用开始（阶段1）
-// 只设置 id 和 name，args 设为空字符串，由阶段2生成
+// 只处理有稳定身份的工具调用（id 或 name 至少有一个）
 if (message.tool_calls) {
   const messageId = message.id
-  for (const tc of message.tool_calls) {
-    const index = message.tool_calls.indexOf(tc)
-    const messageKey = `${messageId}_${index}`
+  for (const [fallbackIndex, tc] of message.tool_calls.entries()) {
+    if (!tc.id && !tc.name) continue
 
-    // 存储工具调用信息
-    assistantToolCalls.set(messageKey, {
+    const initialArgs = normalizeToolArgs(tc.args)
+
+    // 真实 streamIndex 优先从 tool_call_chunks 中解析；
+    // 某些模型的 chunk.index 是内容块索引，不等于工具数组下标
+    const matchedChunk = (message.tool_call_chunks || []).find((chunk) =>
+      (tc.id && chunk.id === tc.id) || (tc.name && chunk.name === tc.name)
+    )
+    const streamIndex = matchedChunk?.index ?? fallbackIndex
+
+    assistantToolCalls.set(getToolCallMapKey(tc.id, messageId, streamIndex)!, {
       id: tc.id,
       name: tc.name,
-      args: ''  // 空字符串，交给阶段2生成
+      args: initialArgs,
+      streamId: messageId,
+      streamIndex
     })
   }
 }
 
 // 2. 处理 tool_call_chunks - 参数流式累加（阶段2）
-// 只累加有实际内容的 args
+// 匿名 chunk 允许先缓存参数，但不直接渲染成空工具组件
 if (message.tool_call_chunks) {
   const messageId = message.id
   for (const chunk of message.tool_call_chunks) {
     if (chunk.index === undefined) continue
 
-    const messageKey = `${messageId}_${chunk.index}`
+    const byIdKey = chunk.id ? getToolCallMapKey(chunk.id, messageId, chunk.index) : undefined
+    const byStreamKey = getToolCallMapKey(undefined, messageId, chunk.index)
+    let existing = byIdKey ? assistantToolCalls.get(byIdKey) : undefined
+    if (!existing && byStreamKey) {
+      existing = assistantToolCalls.get(byStreamKey)
+    }
 
-    let existing = assistantToolCalls.get(messageKey)
     if (!existing) {
-      // 如果还没有工具调用记录，用 chunks 创建
-      assistantToolCalls.set(messageKey, {
+      // 只有当 chunk 自己带有 name/id 时，才允许直接创建工具调用
+      if (!chunk.id && !chunk.name) {
+        assistantToolCalls.set(byStreamKey!, {
+          id: '',
+          name: '',
+          args: chunk.args || '',
+          streamId: messageId,
+          streamIndex: chunk.index
+        })
+        continue
+      }
+
+      assistantToolCalls.set(getToolCallMapKey(chunk.id || undefined, messageId, chunk.index)!, {
         id: chunk.id || '',
         name: chunk.name || '',
-        args: chunk.args || ''
+        args: chunk.args || '',
+        streamId: messageId,
+        streamIndex: chunk.index
       })
     } else {
-      // 已有记录 - 累加有实际内容的 args
-      // 确保 args 是字符串类型
-      const chunkArgs = typeof chunk.args === 'string' ? chunk.args : JSON.stringify(chunk.args)
-      if (chunkArgs && chunkArgs.trim()) {
-        existing.args = (existing.args || '') + chunkArgs
+      if (chunk.args && chunk.args.trim()) {
+        existing.args = (existing.args || '') + chunk.args
       }
-      // 补充 id 和 name
-      if (chunk.id && !existing.id) existing.id = chunk.id
-      if (chunk.name) existing.name = chunk.name
-      if (chunk.args) {
-        existing.args += chunk.args
-      }
-      // 更新 id 和 name
       if (chunk.id && !existing.id) existing.id = chunk.id
       if (chunk.name) existing.name = chunk.name
     }
@@ -394,10 +446,12 @@ if (message.type === 'tool') {
 
 #### 关键点
 
-1. **阶段1只设置id和name**：tool_calls 的 args 为空对象 `{}`，不参与累加，args 由阶段2单独生成
-2. **阶段2累加有效args**：只有 args 有实际内容时才累加，避免空字符串覆盖
-3. **使用 messageId_index 复合键**：`tool_call_chunks` 的 `id` 可能为空，必须用 `message.id`（消息块ID）+ `index`（工具索引）复合键来匹配同一个工具调用
-4. **内存释放**：在 tool 消息处理完成后，删除对应的 Map 条目，释放内存避免长时间占用
+1. **空对象参数不显示**：`tool_calls.args = {}` 只是占位，不应显示成 `"{}"`
+2. **阶段1可以接收完整对象参数**：如果 `tool_calls.args` 已经是非空对象，可以直接转成 JSON 字符串作为初始参数
+3. **`tool_call_chunks.index` 不是工具数组下标**：它是内容块索引，需要优先通过 `id/name` 对齐到真实 `streamIndex`
+4. **匿名占位 `tool_calls` 不渲染**：`id` 和 `name` 都为空的 `tool_calls` 只是中间态，不能创建空工具组件
+5. **匿名 `tool_call_chunks` 先缓存**：没有 `id/name` 的参数增量只缓存，不直接渲染；等后续稳定身份到达后再关联
+6. **内存释放**：在 tool 消息处理完成后，删除对应的 Map 条目，释放内存避免长时间占用
 
 ### 3.6 消息类型汇总
 
