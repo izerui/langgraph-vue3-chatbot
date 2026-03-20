@@ -383,8 +383,17 @@ async function handleSubmit(userMessage: string, files: ChatFile[] = []) {
 async function consumeStream(
   streamResponse: AsyncIterable<any>
 ) {
-  // 使用 message.id + index 跟踪同一条流式工具调用，避免 chunks 的空 id / 空 name 无法匹配。
-  const assistantToolCalls = new Map<string, { id: string; name: string; args: string; messageKey?: string }>()
+  type PendingToolCall = {
+    id: string
+    name: string
+    args: string
+    messageKey?: string
+    streamId: string
+    streamIndex?: number
+  }
+
+  // 优先按 toolCallId 合并工具调用；仅在 id 缺失时回退到 streamId + streamIndex。
+  const assistantToolCalls = new Map<string, PendingToolCall>()
 
   // 辅助函数：创建工具消息
   function createToolMessage(toolCallId: string, name: string, args: string, state: string): ChatMessage {
@@ -417,6 +426,89 @@ async function consumeStream(
         msg.toolCalls[0].state = updates.state
       }
     }
+  }
+
+  function ensureToolMessage(record: PendingToolCall, state: string) {
+    if (record.messageKey !== undefined) return
+    const toolMsg = createToolMessage(record.id, record.name, record.args, state)
+    messages.value.push(toolMsg)
+    record.messageKey = (messages.value.length - 1).toString()
+  }
+
+  function normalizeToolArgs(rawArgs: unknown) {
+    if (typeof rawArgs === 'string') return rawArgs
+    if (rawArgs && typeof rawArgs === 'object') {
+      if (Array.isArray(rawArgs)) {
+        return rawArgs.length > 0 ? JSON.stringify(rawArgs, null, 2) : ''
+      }
+      if (Object.keys(rawArgs as Record<string, unknown>).length === 0) {
+        return ''
+      }
+      return JSON.stringify(rawArgs, null, 2)
+    }
+    return ''
+  }
+
+  function resolveToolStreamIndex(
+    toolCall: { id?: string; name?: string },
+    fallbackIndex: number,
+    toolCallChunks?: Array<{ id?: string | null; name?: string | null; index?: number }>
+  ) {
+    if (!toolCallChunks?.length) return fallbackIndex
+
+    const matchedChunk = toolCallChunks.find(chunk =>
+      (toolCall.id && chunk.id === toolCall.id)
+      || (toolCall.name && chunk.name === toolCall.name)
+    )
+
+    return matchedChunk?.index ?? fallbackIndex
+  }
+
+  function getToolCallMapKey(toolCallId?: string, streamId?: string, streamIndex?: number) {
+    if (toolCallId) return `id:${toolCallId}`
+    if (streamId && streamIndex !== undefined) return `stream:${streamId}_${streamIndex}`
+    return undefined
+  }
+
+  function setToolCallRecord(record: PendingToolCall, previousKey?: string) {
+    const nextKey = getToolCallMapKey(record.id, record.streamId, record.streamIndex)
+    if (!nextKey) return
+    if (previousKey && previousKey !== nextKey) {
+      assistantToolCalls.delete(previousKey)
+    }
+    assistantToolCalls.set(nextKey, record)
+  }
+
+  function findToolCallRecord({
+    toolCallId,
+    streamId,
+    streamIndex
+  }: {
+    toolCallId?: string
+    streamId?: string
+    streamIndex?: number
+  }): { key?: string; record?: PendingToolCall } {
+    const exactKey = getToolCallMapKey(toolCallId, streamId, streamIndex)
+    if (exactKey) {
+      const exact = assistantToolCalls.get(exactKey)
+      if (exact) return { key: exactKey, record: exact }
+    }
+
+    if (toolCallId) {
+      for (const [key, record] of assistantToolCalls) {
+        if (record.id === toolCallId) return { key, record }
+      }
+    }
+
+    if (streamId) {
+      const candidates = Array.from(assistantToolCalls.entries()).filter(([, record]) => record.streamId === streamId)
+      if (streamIndex !== undefined) {
+        const sameIndex = candidates.find(([, record]) => record.streamIndex === streamIndex)
+        if (sameIndex) return { key: sameIndex[0], record: sameIndex[1] }
+      }
+    }
+
+    return {}
   }
 
   try {
@@ -481,14 +573,9 @@ async function consumeStream(
             const toolStatus = message.status
 
             // 阶段4：根据 tool_call_id 找回前面阶段累加好的原始参数。
-            let foundToolCall: { id: string; name: string; args: string; messageKey?: string } | undefined
-            for (const [key, tc] of assistantToolCalls) {
-              if (tc.id === toolCallId) {
-                foundToolCall = tc
-                // 找到后删除，释放内存
-                assistantToolCalls.delete(key)
-                break
-              }
+            const { key: foundKey, record: foundToolCall } = findToolCallRecord({ toolCallId })
+            if (foundKey) {
+              assistantToolCalls.delete(foundKey)
             }
 
             // 映射后端状态到 UI 状态
@@ -555,6 +642,7 @@ async function consumeStream(
           // 阶段3：tool_call_chunks 已经结束，但工具执行结果可能还没返回。
           if (message.chunk_position === 'last') {
             for (const [, tc] of assistantToolCalls) {
+              if (tc.streamId !== message.id) continue
               if (tc.messageKey !== undefined) {
                 updateToolMessage(tc.messageKey, { state: 'running' })
               }
@@ -582,35 +670,43 @@ async function consumeStream(
           if (hasToolCalls || hasChunks) {
             // 阶段1：tool_calls 到达，只拿稳定的 id/name，args 以后续 chunks 为准。
             if (hasToolCalls) {
-              for (const tc of message.tool_calls) {
-                const index = message.tool_calls.indexOf(tc)
-                const messageKey = `${messageId}_${index}`
+              for (const [index, tc] of message.tool_calls.entries()) {
+                const hasStableIdentity = Boolean(tc.id || tc.name)
+                if (!hasStableIdentity) continue
 
-                const existing = assistantToolCalls.get(messageKey)
+                const initialArgs = normalizeToolArgs(tc.args)
+                const streamIndex = resolveToolStreamIndex(tc, index, message.tool_call_chunks)
+                const { key: existingKey, record: existing } = findToolCallRecord({
+                  toolCallId: tc.id,
+                  streamId: messageId,
+                  streamIndex
+                })
                 if (!existing) {
                   // 新建 - 创建工具消息并添加到 messages
-                  const toolMsg = createToolMessage(tc.id, tc.name, '', 'start')
+                  const toolMsg = createToolMessage(tc.id, tc.name, initialArgs, 'start')
                   messages.value.push(toolMsg)
                   // 记录消息在数组中的索引
                   const msgIndex = messages.value.length - 1
 
-                  assistantToolCalls.set(messageKey, {
+                  setToolCallRecord({
                     id: tc.id,
                     name: tc.name,
-                    args: '',
-                    messageKey: msgIndex.toString()
+                    args: initialArgs,
+                    messageKey: msgIndex.toString(),
+                    streamId: messageId,
+                    streamIndex
                   })
                   // tool_calls 的 args 常常为空对象，这里只透传原始字符串，不做解释。
                   handleToolEvent({
                     phase: 'tool_call_started',
                     id: tc.id,
                     name: tc.name,
-                    rawArgs: typeof tc.args === 'string' ? tc.args : '',
+                    rawArgs: initialArgs,
                     state: 'start'
                   })
                   console.log('📝 阶段1 - 工具调用开始:', {
                     messageId,
-                    index,
+                    index: streamIndex,
                     toolCallId: tc.id,
                     name: tc.name,
                     msgIndex
@@ -619,8 +715,12 @@ async function consumeStream(
                   // 更新 - 只更新 id 和 name
                   if (tc.id) existing.id = tc.id
                   if (tc.name) existing.name = tc.name
-                  if (tc.name) existing.name = tc.name
+                  if (!existing.args && initialArgs) existing.args = initialArgs
+                  existing.streamId = messageId
+                  existing.streamIndex = streamIndex
+                  ensureToolMessage(existing, existing.args ? 'running' : 'start')
                   // 不覆盖 args，保留 tool_call_chunks 累加的结果
+                  setToolCallRecord(existing, existingKey)
                 }
               }
             }
@@ -631,21 +731,37 @@ async function consumeStream(
                 const index = tcChunk.index
                 if (index === undefined) continue
 
-                const messageKey = `${messageId}_${index}`
-
-                let existing = assistantToolCalls.get(messageKey)
+                const { key: existingKey, record: existing } = findToolCallRecord({
+                  toolCallId: tcChunk.id || undefined,
+                  streamId: messageId,
+                  streamIndex: index
+                })
 
                 if (!existing) {
+                  // 没有 name/id 时先缓存参数，等后续 tool_calls 或带名 chunk 到达再渲染。
+                  if (!tcChunk.id && !tcChunk.name) {
+                    setToolCallRecord({
+                      id: '',
+                      name: '',
+                      args: tcChunk.args || '',
+                      streamId: messageId,
+                      streamIndex: index
+                    })
+                    continue
+                  }
+
                   // 如果还没有工具调用记录，用 chunks 创建
                   const toolMsg = createToolMessage(tcChunk.id || '', tcChunk.name || '', tcChunk.args || '', 'running')
                   messages.value.push(toolMsg)
                   const msgIndex = messages.value.length - 1
 
-                  assistantToolCalls.set(messageKey, {
+                  setToolCallRecord({
                     id: tcChunk.id || '',
                     name: tcChunk.name || '',
                     args: tcChunk.args || '',
-                    messageKey: msgIndex.toString()
+                    messageKey: msgIndex.toString(),
+                    streamId: messageId,
+                    streamIndex: index
                   })
                   // 首块 chunk 到达时就通知业务侧，便于展示“运行中”的早期状态。
                   handleToolEvent({
@@ -682,6 +798,15 @@ async function consumeStream(
                   // 补充 id 和 name
                   if (tcChunk.id && !existing.id) existing.id = tcChunk.id
                   if (tcChunk.name) existing.name = tcChunk.name
+                  existing.streamId = messageId
+                  existing.streamIndex = index
+                  if ((existing.id || existing.name) && existing.messageKey === undefined) {
+                    ensureToolMessage(existing, 'running')
+                  }
+                  if (existing.messageKey && tcChunk.args && tcChunk.args.trim()) {
+                    updateToolMessage(existing.messageKey, { args: existing.args, state: 'running' })
+                  }
+                  setToolCallRecord(existing, existingKey)
 
                   console.log('📝 阶段2 - args 流式累加:', {
                     messageId,
