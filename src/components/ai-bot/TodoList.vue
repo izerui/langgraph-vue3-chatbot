@@ -235,7 +235,7 @@ watch(
           <span class="title-label">执行计划</span>
           <span class="title-summary">{{ completedCount }}/{{ todos.length }}</span>
           <span class="title-meta">
-            {{ inProgressCount > 0 ? `进行中 ${inProgressCount}` : interruptedCount > 0 ? `中断 ${interruptedCount}` : pendingCount > 0 ? `待处理 ${pendingCount}` : '已完成' }}
+            {{ inProgressCount > 0 ? `进行中 ${inProgressCount}` : interruptedCount > 0 ? `已停止 ${interruptedCount}` : pendingCount > 0 ? `待处理 ${pendingCount}` : '已完成' }}
           </span>
         </div>
       </div>
