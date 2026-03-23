@@ -18,6 +18,8 @@ export interface ToolCall {
   result?: string
   state?: string
   error?: string
+  startedAt?: number
+  completedAt?: number
 }
 
 export type ChatFileType = 'file' | 'image' | 'file_url'

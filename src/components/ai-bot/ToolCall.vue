@@ -2,7 +2,7 @@
 import type { ToolCall } from './lib/message-types'
 import { ChevronDownIcon, PlayCircle, Loader, CheckCircle, XCircle, BrainIcon, GlobeIcon, FileTextIcon, FolderSearch, FileEditIcon, ListTodoIcon, EyeIcon, SquarePen, FileSearch, BookOpenCheck, FolderSearchIcon, ZapIcon, WrenchIcon } from 'lucide-vue-next'
 import { cn } from '@/components/ai-bot/lib/utils'
-import { ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 
 defineProps<{
   toolCalls: ToolCall[]
@@ -72,9 +72,37 @@ const formatArgs = (args: string) => {
 }
 
 const openStates = ref<Record<string, boolean>>({})
+const now = ref(Date.now())
+let timer: number | undefined
+
+onMounted(() => {
+  timer = window.setInterval(() => {
+    now.value = Date.now()
+  }, 1000)
+})
+
+onBeforeUnmount(() => {
+  if (timer) window.clearInterval(timer)
+})
 
 const toggle = (id: string) => {
   openStates.value[id] = !openStates.value[id]
+}
+
+const activeStates = new Set(['start', 'running'])
+const formatElapsed = (ms: number) => {
+  const totalSeconds = Math.max(0, Math.floor(ms / 1000))
+  if (totalSeconds < 60) return `${totalSeconds}s`
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
+  return `${minutes}m ${seconds}s`
+}
+
+const getDurationText = (tool: ToolCall) => {
+  if (!tool.startedAt) return ''
+  const endAt = tool.completedAt ?? (activeStates.has(tool.state || '') ? now.value : undefined)
+  if (!endAt) return ''
+  return formatElapsed(endAt - tool.startedAt)
 }
 </script>
 
@@ -99,6 +127,10 @@ const toggle = (id: string) => {
           class="h-3.5 w-3.5 shrink-0 text-muted-foreground"
         />
         <span class="font-medium">{{ getToolName(tool.name) }}</span>
+        <span
+          v-if="getDurationText(tool)"
+          class="text-[11px] text-muted-foreground shrink-0"
+        >{{ getDurationText(tool) }}</span>
         <span class="text-muted-foreground truncate flex-1 min-w-0">{{ formatArgs(tool.args) }}</span>
         <component
           :is="getStateIcon(tool.state).icon"

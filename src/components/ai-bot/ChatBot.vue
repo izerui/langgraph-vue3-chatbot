@@ -397,6 +397,7 @@ async function consumeStream(
 
   // 辅助函数：创建工具消息
   function createToolMessage(toolCallId: string, name: string, args: string, state: string): ChatMessage {
+    const now = Date.now()
     return {
       key: `tool-${toolCallId}-${Date.now()}`,
       type: 'tool',
@@ -407,7 +408,9 @@ async function consumeStream(
         name: name,
         args: args,
         result: '',
-        state: state
+        state: state,
+        startedAt: now,
+        completedAt: state === 'completed' || state === 'error' ? now : undefined
       }]
     }
   }
@@ -416,14 +419,28 @@ async function consumeStream(
   function updateToolMessage(messageKey: string, updates: { args?: string; result?: string; state?: string }) {
     const msg = messages.value[Number(messageKey)]
     if (msg && msg.toolCalls && msg.toolCalls.length > 0) {
+      const toolCall = msg.toolCalls[0]
       if (updates.args !== undefined) {
-        msg.toolCalls[0].args = updates.args
+        toolCall.args = updates.args
       }
       if (updates.result !== undefined) {
-        msg.toolCalls[0].result = updates.result
+        toolCall.result = updates.result
       }
       if (updates.state !== undefined) {
-        msg.toolCalls[0].state = updates.state
+        const previousState = toolCall.state
+        const now = Date.now()
+        toolCall.state = updates.state
+        if (!toolCall.startedAt && (updates.state === 'start' || updates.state === 'running' || updates.state === 'completed' || updates.state === 'error')) {
+          toolCall.startedAt = now
+        }
+        if (updates.state === 'running' && previousState !== 'running' && !toolCall.startedAt) {
+          toolCall.startedAt = now
+        }
+        if (updates.state === 'completed' || updates.state === 'error') {
+          toolCall.completedAt = now
+        } else {
+          toolCall.completedAt = undefined
+        }
       }
     }
   }
@@ -614,6 +631,7 @@ async function consumeStream(
             } else {
               // 没有找到对应的工具消息，创建新的（兼容情况）
               const toolMessageId = `tool-${toolCallId}-${Date.now()}`
+              const now = Date.now()
               const toolMessage: ChatMessage = {
                 key: toolMessageId,
                 type: 'tool',
@@ -625,7 +643,9 @@ async function consumeStream(
                   args: foundToolCall?.args || '',
                   result: toolResult,
                   state: uiState,
-                  error: toolStatus === 'error' ? toolResult : undefined
+                  error: toolStatus === 'error' ? toolResult : undefined,
+                  startedAt: now,
+                  completedAt: uiState === 'completed' || uiState === 'error' ? now : undefined
                 }]
               }
               messages.value.push(toolMessage)
