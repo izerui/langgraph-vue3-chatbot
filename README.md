@@ -65,6 +65,39 @@
 pnpm add langgraph-vue3-chatbot
 ```
 
+## 本地编译与发布
+
+如果你是在维护这个组件库本身，常用命令如下。
+
+### 本地编译组件库
+
+```bash
+pnpm install
+pnpm build:lib
+```
+
+`pnpm build:lib` 会输出 npm 发布所需的库产物和类型声明到 `dist-lib` 目录。
+
+### 发布到 npm
+
+首次发布前先登录 npm：
+
+```bash
+npm login
+```
+
+然后执行：
+
+```bash
+pnpm publish --access public
+```
+
+说明：
+
+- 当前包名是 `langgraph-vue3-chatbot`，发布时使用根目录 `package.json`
+- `prepublishOnly` 会在发布前自动执行 `npm version patch --no-git-tag-version`，并运行 `pnpm check:lib`
+- 如果只是想先手动验证构建结果，可以先执行 `pnpm build:lib`
+
 ## 快速开始
 
 ### 1. 准备 LangGraph 服务
