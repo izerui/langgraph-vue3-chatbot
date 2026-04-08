@@ -106,6 +106,11 @@ const addAttachments: AskAiBotPublicApi['addAttachments'] = (attachments) => {
   chatBotRef.value?.addAttachments(attachments)
 }
 
+const resetThread: AskAiBotPublicApi['resetThread'] = async () => {
+  await ensureExpanded()
+  await chatBotRef.value?.resetThread()
+}
+
 const sendMessage: AskAiBotPublicApi['sendMessage'] = async () => {
   await ensureExpanded()
   await chatBotRef.value?.sendMessage()
@@ -116,6 +121,7 @@ defineExpose<AskAiBotPublicApi>({
   close,
   setTextInput,
   addAttachments,
+  resetThread,
   sendMessage,
 })
 </script>

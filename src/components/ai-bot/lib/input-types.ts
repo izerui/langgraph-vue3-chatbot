@@ -68,6 +68,7 @@ export interface AiBotVisibilityOptions {
 export interface AiBotInputApi {
   setTextInput: (text: string) => void
   addAttachments: (attachments: PromptInputAttachment[]) => void
+  resetThread: () => Promise<void> | void
   sendMessage: (options?: AiBotVisibilityOptions) => Promise<void>
 }
 

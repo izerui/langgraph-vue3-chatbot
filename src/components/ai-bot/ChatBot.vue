@@ -68,6 +68,7 @@ const useWebSearch = ref(false)
 const modelSelectorOpen = ref(false)
 const isLoading = ref(true)
 const isRejoiningStream = ref(false)
+const isResettingThread = ref(false)
 
 // 消息
 const messages = ref<ChatMessage[]>([])
@@ -82,6 +83,7 @@ const suggestions = ref<string[]>([])
 const initialTodos = ref<any[]>([])
 const todoToolEvents = ref<ToolEventPayload[]>([])
 const STREAM_MODE = ['messages-tuple', 'custom'] as const
+const canResetThread = computed(() => messages.value.length > 0 || !!threadId.value)
 
 function getMessageIndexByKey(messageKey: string) {
   return messages.value.findIndex(message => message.key === messageKey)
@@ -922,6 +924,58 @@ function handleSuggestionClick(suggestion: string) {
   handleSubmit(suggestion)
 }
 
+function clearConversationState() {
+  messages.value = []
+  suggestions.value = [...props.suggestions]
+  initialTodos.value = []
+  todoToolEvents.value = []
+  runId.value = ''
+  status.value = 'ready'
+}
+
+async function handleResetThread() {
+  if (status.value === 'streaming' || isResettingThread.value || !canResetThread.value) {
+    return
+  }
+
+  if (!threadId.value) {
+    clearConversationState()
+    chatInputRef.value?.resetThread()
+    return
+  }
+
+  isResettingThread.value = true
+
+  try {
+    const response = await fetch(`${props.apiUrl}/webapp/reset/${encodeURIComponent(threadId.value)}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(props.apiKey ? { Authorization: `Bearer ${props.apiKey}` } : {}),
+      },
+      body: JSON.stringify({
+        metadata: {
+          user_id: props.userId,
+        },
+      }),
+    })
+
+    const result = await response.json().catch(() => null)
+    if (!response.ok || !result?.success) {
+      throw new Error(result?.err_message || `HTTP ${response.status}`)
+    }
+
+    clearConversationState()
+    chatInputRef.value?.resetThread()
+  } catch (error) {
+    console.error('Failed to reset thread:', error)
+    const errorMessage = error instanceof Error ? error.message : '未知错误'
+    window.alert(`清空当前对话失败：${errorMessage}`)
+  } finally {
+    isResettingThread.value = false
+  }
+}
+
 // 待办事项处理
 const emit = defineEmits<{
   close: []
@@ -953,6 +1007,10 @@ const addAttachments: AiBotPublicApi['addAttachments'] = (attachments) => {
   chatInputRef.value?.addAttachments(attachments)
 }
 
+const resetThread: AiBotPublicApi['resetThread'] = async () => {
+  await handleResetThread()
+}
+
 const sendMessage: AiBotPublicApi['sendMessage'] = async () => {
   await chatInputRef.value?.sendMessage()
 }
@@ -960,6 +1018,7 @@ const sendMessage: AiBotPublicApi['sendMessage'] = async () => {
 defineExpose<AiBotPublicApi>({
   setTextInput,
   addAttachments,
+  resetThread,
   sendMessage,
 })
 </script>
@@ -1019,10 +1078,13 @@ defineExpose<AiBotPublicApi>({
         :models="models"
         :suggestions="suggestions"
         :use-web-search="useWebSearch"
+        :can-reset-thread="canResetThread"
+        :is-resetting-thread="isResettingThread"
         :allow-model-switch="props.allowModelSwitch"
         v-model:modelSelectorOpen="modelSelectorOpen"
         @submit="handleFormSubmit"
         @stop="handleStop"
+        @reset-thread="handleResetThread"
         @select-suggestion="handleSuggestionClick"
         @update:current-model="currentModel = $event"
         @update:use-web-search="useWebSearch = $event"

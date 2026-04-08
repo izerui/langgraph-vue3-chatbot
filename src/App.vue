@@ -103,6 +103,7 @@ function formatCustomContent(content: unknown) {
           <div class="demo-container">
             <ChatBot
               :theme="currentTheme"
+              thread-id="dfdd4f39-b904-498d-a6e3-eacc92165a91"
               :api-url="apiUrl"
               :api-key="apiKey"
               assistant-id="research"

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, provide, onBeforeUnmount } from 'vue'
+import { computed, ref, provide, onBeforeUnmount, watch, nextTick } from 'vue'
 import type { ChatStatus } from './lib/message-types'
 import { nanoid } from 'nanoid'
 import { PROMPT_INPUT_KEY } from './lib/prompt-input'
@@ -7,9 +7,11 @@ import type { AiBotInputApi, AttachmentFile, AttachmentTriggerSlotProps, PromptI
 import { getProviderByModelName, type ModelInfo } from './lib/models'
 import PromptInputAttachmentsDisplay from './InputAttachmentsDisplay.vue'
 import ChatSuggestions from './ChatSuggestions.vue'
-import { CheckIcon, ChevronDownIcon, Loader2Icon, CornerDownLeftIcon, PaperclipIcon } from 'lucide-vue-next'
+import { CheckIcon, ChevronDownIcon, Loader2Icon, CornerDownLeftIcon, PaperclipIcon, Trash2Icon } from 'lucide-vue-next'
 import { InputGroup, InputGroupAddon, InputGroupTextarea, InputGroupButton } from '@/components/ai-bot/ui/input-group'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuItem } from '@/components/ai-bot/ui/dropdown-menu'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ai-bot/ui/tooltip'
+import { usePortalHost } from './lib/portal-host'
 
 // ============== 类型定义 ==============
 interface Props {
@@ -18,16 +20,21 @@ interface Props {
   models: ModelInfo[]
   suggestions: string[]
   useWebSearch: boolean
+  canResetThread?: boolean
+  isResettingThread?: boolean
   allowModelSwitch?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  canResetThread: false,
+  isResettingThread: false,
   allowModelSwitch: true,
 })
 
 const emit = defineEmits<{
   submit: [message: { text: string, files: AttachmentFile[] }]
   stop: []
+  resetThread: []
   selectSuggestion: [suggestion: string]
   'update:currentModel': [model: ModelInfo]
   'update:useWebSearch': [value: boolean]
@@ -47,6 +54,11 @@ const hasFiles = ref(false)
 const files = ref<AttachmentFile[]>([])
 const fileInputRef = ref<HTMLInputElement | null>(null)
 const isLoading = ref(false)
+const isConfirmingReset = ref(false)
+const resetConfirmRef = ref<HTMLElement | null>(null)
+const resetTriggerRef = ref<HTMLElement | null>(null)
+const resetPopoverStyle = ref<Record<string, string>>({})
+const { portalHost } = usePortalHost()
 
 // Cleanup object URLs
 onBeforeUnmount(() => {
@@ -54,6 +66,63 @@ onBeforeUnmount(() => {
     if (f.url && f.url.startsWith('blob:')) {
       URL.revokeObjectURL(f.url)
     }
+  })
+})
+
+function updateResetPopoverPosition() {
+  const triggerEl = resetTriggerRef.value
+  const hostEl = portalHost.value
+  if (!triggerEl || !hostEl) {
+    return
+  }
+
+  const triggerRect = triggerEl.getBoundingClientRect()
+  const hostRect = hostEl.getBoundingClientRect()
+  const popoverWidth = 280
+  const spacing = 10
+
+  const left = Math.min(
+    Math.max(triggerRect.left - hostRect.left - 4, 8),
+    Math.max(hostRect.width - popoverWidth - 8, 8),
+  )
+
+  const top = Math.max(triggerRect.top - hostRect.top - spacing, 8)
+
+  resetPopoverStyle.value = {
+    left: `${left}px`,
+    top: `${top}px`,
+    '--reset-confirm-arrow-left': `${Math.min(Math.max(triggerRect.left - hostRect.left + (triggerRect.width / 2) - left - 7, 16), popoverWidth - 28)}px`,
+  }
+}
+
+watch(isConfirmingReset, async (open, _prev, onCleanup) => {
+  if (!open) {
+    return
+  }
+
+  await nextTick()
+  updateResetPopoverPosition()
+
+  const handleClickOutside = (event: MouseEvent) => {
+    const target = event.target as Node | null
+    if (resetConfirmRef.value?.contains(target) || resetTriggerRef.value?.contains(target)) {
+      return
+    }
+    isConfirmingReset.value = false
+    document.removeEventListener('mousedown', handleClickOutside)
+  }
+
+  const handleReposition = () => {
+    updateResetPopoverPosition()
+  }
+
+  document.addEventListener('mousedown', handleClickOutside)
+  window.addEventListener('resize', handleReposition)
+  window.addEventListener('scroll', handleReposition, true)
+  onCleanup(() => {
+    document.removeEventListener('mousedown', handleClickOutside)
+    window.removeEventListener('resize', handleReposition)
+    window.removeEventListener('scroll', handleReposition, true)
   })
 })
 
@@ -167,8 +236,36 @@ const clearInput = () => {
   inputText.value = ''
 }
 
+const resetThread: AiBotInputApi['resetThread'] = () => {
+  clearInput()
+  clearFiles()
+  isConfirmingReset.value = false
+}
+
 const openFileDialog = () => {
+  isConfirmingReset.value = false
   fileInputRef.value?.click()
+}
+
+const handleResetThread = () => {
+  if (props.status === 'streaming' || props.isResettingThread || !props.canResetThread) {
+    return
+  }
+
+  isConfirmingReset.value = true
+}
+
+const cancelResetThread = () => {
+  isConfirmingReset.value = false
+}
+
+const confirmResetThread = () => {
+  if (props.status === 'streaming' || props.isResettingThread || !props.canResetThread) {
+    return
+  }
+
+  isConfirmingReset.value = false
+  emit('resetThread')
 }
 
 const convertBlobUrlToBase64 = async (url: string): Promise<string | null> => {
@@ -224,6 +321,7 @@ const sendMessage: AiBotInputApi['sendMessage'] = async () => {
 defineExpose<AiBotInputApi>({
   setTextInput,
   addAttachments,
+  resetThread,
   sendMessage,
 })
 
@@ -434,19 +532,61 @@ function onFileChange(e: Event) {
           class="justify-between gap-1"
         >
           <!-- 工具栏内容 (PromptInputTools) -->
-          <div class="flex items-center gap-1">
-            <InputGroupButton
-              type="button"
-              class="attachment-button cursor-pointer text-muted-foreground"
-              @click="openFileDialog"
-            >
-              <PaperclipIcon class="size-4" />
-            </InputGroupButton>
+          <TooltipProvider>
+            <div class="flex items-center gap-1">
+              <div ref="resetTriggerRef" class="relative">
+                <Tooltip v-if="!isConfirmingReset">
+                  <TooltipTrigger as-child>
+                    <InputGroupButton
+                      type="button"
+                      class="attachment-button cursor-pointer text-muted-foreground"
+                      :disabled="props.status === 'streaming' || props.isResettingThread || !props.canResetThread"
+                      title="新对话"
+                      @click="handleResetThread"
+                    >
+                      <Trash2Icon class="size-4" />
+                    </InputGroupButton>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>清空当前对话</p>
+                  </TooltipContent>
+                </Tooltip>
+
+                <InputGroupButton
+                  v-else
+                  type="button"
+                  class="attachment-button cursor-pointer text-muted-foreground"
+                  :disabled="props.status === 'streaming' || props.isResettingThread || !props.canResetThread"
+                  title="新对话"
+                  @click="cancelResetThread"
+                >
+                  <Trash2Icon class="size-4" />
+                </InputGroupButton>
+
+              </div>
+
+              <Tooltip>
+                <TooltipTrigger as-child>
+                  <InputGroupButton
+                    type="button"
+                    class="attachment-button cursor-pointer text-muted-foreground"
+                    title="添加附件"
+                    @click="openFileDialog"
+                  >
+                    <PaperclipIcon class="size-4" />
+                  </InputGroupButton>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>添加附件</p>
+                </TooltipContent>
+              </Tooltip>
+
             <slot
               name="attachment-trigger"
               :addAttachments="addAttachments"
             />
-          </div>
+            </div>
+          </TooltipProvider>
 
           <!-- 右侧：模型选择器 + 发送按钮 -->
           <div class="flex items-center gap-1">
@@ -516,6 +656,37 @@ function onFileChange(e: Event) {
       </InputGroup>
     </div>
   </div>
+
+  <Teleport v-if="isConfirmingReset && portalHost" :to="portalHost">
+    <div
+      ref="resetConfirmRef"
+      class="reset-confirm-popover"
+      :style="resetPopoverStyle"
+    >
+      <div class="reset-confirm-arrow" />
+      <p class="reset-confirm-title">清空当前会话？</p>
+      <p class="reset-confirm-description">
+        当前聊天记录会被清空，并开始一个新的空会话。
+      </p>
+      <div class="reset-confirm-actions">
+        <button
+          type="button"
+          class="reset-confirm-button reset-confirm-button-secondary"
+          @click="cancelResetThread"
+        >
+          取消
+        </button>
+        <button
+          type="button"
+          class="reset-confirm-button reset-confirm-button-danger"
+          :disabled="props.status === 'streaming' || props.isResettingThread || !props.canResetThread"
+          @click="confirmResetThread"
+        >
+          确认清空
+        </button>
+      </div>
+    </div>
+  </Teleport>
 </template>
 
 <style scoped>
@@ -580,5 +751,92 @@ function onFileChange(e: Event) {
 .attachment-button[data-state='open'] {
   background: transparent !important;
   color: inherit !important;
+}
+
+.reset-confirm-popover {
+  position: absolute;
+  z-index: 20;
+  width: 280px;
+  transform: translateY(-100%);
+  padding: 14px;
+  border: 1px solid var(--ai-layer-border);
+  border-radius: 14px;
+  background: var(--ai-layer-bg);
+  color: var(--ai-layer-text);
+  box-shadow: var(--ai-layer-shadow);
+}
+
+.reset-confirm-arrow {
+  position: absolute;
+  left: var(--reset-confirm-arrow-left, 16px);
+  bottom: -7px;
+  width: 14px;
+  height: 14px;
+  background: var(--ai-layer-bg);
+  border-right: 1px solid var(--ai-layer-border);
+  border-bottom: 1px solid var(--ai-layer-border);
+  transform: rotate(45deg);
+}
+
+.reset-confirm-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--foreground);
+}
+
+.reset-confirm-description {
+  margin: 6px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ai-layer-heading);
+}
+
+.reset-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.reset-confirm-button {
+  min-width: 64px;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.18s ease;
+}
+
+.reset-confirm-button-secondary {
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--ai-control-muted);
+}
+
+.reset-confirm-button-secondary:hover {
+  background: var(--ai-control-hover-bg);
+  color: var(--ai-control-hover-text);
+}
+
+.reset-confirm-button-danger {
+  background: var(--destructive);
+  color: white;
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--destructive) 22%, transparent);
+}
+
+.reset-confirm-button-danger:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 24px color-mix(in srgb, var(--destructive) 28%, transparent);
+}
+
+.reset-confirm-button-danger:disabled,
+.reset-confirm-button-secondary:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  transform: none;
+  box-shadow: none;
 }
 </style>
